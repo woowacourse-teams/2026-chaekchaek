@@ -4,6 +4,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
+import { ScrollToTopButton } from '@/frames/ScrollToTopButton';
 
 import { Title, ContentArea } from '@chaekchaek/design-system';
 
@@ -53,7 +54,7 @@ export const BookFeedPage = () => {
   }, [reviewsDataAll]);
 
   return (
-    <Layout>
+    <Layout floating={<ScrollToTopButton />}>
       <Header />
       <Main>
         <Container>

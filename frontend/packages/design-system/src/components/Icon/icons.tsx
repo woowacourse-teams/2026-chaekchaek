@@ -51,6 +51,12 @@ export const InvisibleIcon = createIcon(Invisible);
 import LongArrowRight from './imgs/long-arrow-right.svg?component';
 export const LongArrowRightIcon = createIcon(LongArrowRight);
 
+import LongArrowUp from './imgs/long-arrow-up.svg?component';
+export const LongArrowUpIcon = createIcon(LongArrowUp);
+
+import LongArrowUpRight from './imgs/long-arrow-up-right.svg?component';
+export const LongArrowUpRightIcon = createIcon(LongArrowUpRight);
+
 import Meatballs from './imgs/meatballs.svg?component';
 export const MeatballsOffIcon = createIcon(Meatballs);
 

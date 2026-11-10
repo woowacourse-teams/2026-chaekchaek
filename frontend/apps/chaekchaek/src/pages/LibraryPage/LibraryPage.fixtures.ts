@@ -25,6 +25,18 @@ export const libraryResponse = {
 
 export const renamedLibraryName = '다시 읽고 싶은 책';
 
+export const otherLibraryResponse = {
+  ...libraryResponse,
+  libraryId: 2,
+  name: '주말에 읽을 책',
+  isDefault: false,
+};
+
+export const librariesBeforeRenameResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse, otherLibraryResponse],
+};
+
 export const searchedBook = {
   bookId: 44,
   title: '마션',
@@ -100,4 +112,32 @@ export const fullLibraryResponse = {
   isDefault: libraryResponse.isDefault,
   totalCount: libraryBooks.length,
   items: libraryBooks,
+};
+
+export const deletableLibraryResponse = {
+  ...libraryResponse,
+  libraryId: 3,
+  name: '삭제할 책장',
+  isDefault: false,
+};
+
+export const librariesBeforeDeleteResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse, deletableLibraryResponse],
+};
+
+export const librariesAfterDeleteResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse],
+};
+
+export const [bookToDelete, bookToKeep] = libraryResponse.items as [
+  (typeof libraryResponse.items)[number],
+  (typeof libraryResponse.items)[number],
+];
+
+export const libraryAfterBookDeleteResponse = {
+  ...libraryResponse,
+  totalCount: 1,
+  items: [bookToKeep],
 };

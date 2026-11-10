@@ -2,11 +2,17 @@ import { Button, Dialog, Divider, Icon, Text } from '@chaekchaek/design-system';
 
 import type { ManageLibraryDialogProps } from './ManageLibraryDialog.types';
 
-export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDialogProps) => {
+export const ManageLibraryDialog = ({
+  libraryName,
+  canDeleteLibrary,
+  onStartEdit,
+  onOpenDialog,
+  onClose,
+}: ManageLibraryDialogProps) => {
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header>나를 넓히는 책들</Dialog.Header>
+        <Dialog.Header>{libraryName}</Dialog.Header>
         <Dialog.Body>
           <Button
             block
@@ -25,6 +31,7 @@ export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDial
             align="left"
             size="large"
             onClick={() => {
+              onStartEdit();
               onClose();
             }}
           >
@@ -54,18 +61,22 @@ export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDial
             <Icon.DownloadIcon size="large" sx={{ mr: 3 }} />
             이미지 저장
           </Button>
-          <Divider sx={{ mt: 1, mb: 1 }} />
-          <Button
-            block
-            align="left"
-            size="large"
-            onClick={() => {
-              onOpenDialog('DeleteLibraryDialog');
-            }}
-          >
-            <Icon.TrashIcon color="error" sx={{ mr: 3 }} />
-            <Text color="error">책장 삭제</Text>
-          </Button>
+          {canDeleteLibrary && (
+            <>
+              <Divider sx={{ mt: 1, mb: 1 }} />
+              <Button
+                block
+                align="left"
+                size="large"
+                onClick={() => {
+                  onOpenDialog('DeleteLibraryDialog');
+                }}
+              >
+                <Icon.TrashIcon color="error" sx={{ mr: 3 }} />
+                <Text color="error">책장 삭제</Text>
+              </Button>
+            </>
+          )}
           <Divider sx={{ mt: 1, mb: 1 }} />
         </Dialog.Body>
       </Dialog.Container>

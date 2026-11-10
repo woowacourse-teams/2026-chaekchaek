@@ -14,6 +14,33 @@ import type { AddBooksToLibraryDialogProps } from './AddBooksToLibraryDialog.typ
 
 type TabType = 'my-library' | 'search';
 
+export const getLibraryStatus = (totalBookCount: number, maxSize: number | undefined) => {
+  if (maxSize === undefined) return { status: 'loading' } as const;
+
+  const remainingBookCount = maxSize - totalBookCount;
+
+  return {
+    status: remainingBookCount ? 'available' : 'full',
+    maxSize,
+    totalBookCount,
+    remainingBookCount,
+  } as const;
+};
+
+export const getInfoMessage = (libraryStatus: ReturnType<typeof getLibraryStatus>) => {
+  switch (libraryStatus.status) {
+    case 'loading':
+      return '';
+
+    case 'full':
+      return '책장이 가득 찼어요. 책을 추가하려면 선택을 해제해 주세요.';
+    case 'available':
+      return `${libraryStatus.remainingBookCount}권 더 담을 수 있어요 (${libraryStatus.totalBookCount}/${libraryStatus.maxSize})`;
+    default:
+      return '';
+  }
+};
+
 export const AddBooksToLibraryDialog = ({
   libraryId,
   onBookAdded,

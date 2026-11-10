@@ -44,6 +44,24 @@ export const Small: Story = {
   },
 };
 
+export const WithContentLeading: Story = {
+  args: {
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          leading="leading"
+          title="title"
+          content="content"
+          description="description"
+        />
+      </>
+    ),
+  },
+};
+
 export const WithAvatar: Story = {
   args: {
     children: (

@@ -12,7 +12,6 @@ type Reply = {
   content: string;
   likedByMe: boolean;
   likeCount: number;
-  deleted: boolean;
 };
 
 export type UpdateReplyProps = {

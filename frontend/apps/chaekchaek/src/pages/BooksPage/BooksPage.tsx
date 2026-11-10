@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
+import { ScrollToTopButton } from '@/frames/ScrollToTopButton';
 
-import { Chip, Icon, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
+import { Chip, Icon, IconButton, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -49,16 +50,24 @@ export const BooksPage = () => {
     const { value } = e.target;
     setQuery(value);
     setPage(1);
+  };
 
+  const handleSearch = () => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
         next.set('page', '1');
-        next.set('query', value);
+        next.set('query', query);
         return next;
       },
       { replace: true },
     );
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
@@ -88,7 +97,8 @@ export const BooksPage = () => {
   }, [keywordQuery, defaultPage]);
 
   const {
-    status: { data },
+    status: { data, status },
+    refetch: refetchGEtBooksLoadData,
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
@@ -124,7 +134,9 @@ export const BooksPage = () => {
     handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
-  const handleBookRegistered = () => {
+  const handleBookRegistered = async () => {
+    await refetchGEtBooksLoadData();
+
     track('library_add', {
       source: 'search',
       status: 'reading',
@@ -173,7 +185,7 @@ export const BooksPage = () => {
   const dialogElement = renderDialog(dialog);
 
   return (
-    <Layout>
+    <Layout floating={<ScrollToTopButton />}>
       <Header />
       <Main>
         <Container>
@@ -187,25 +199,30 @@ export const BooksPage = () => {
                     <Input
                       aria-label="책 검색"
                       block
-                      leading={<Icon.SearchIcon />}
+                      trailing={
+                        <IconButton onClick={handleSearch} edge="end" aria-label="검색">
+                          <Icon.SearchIcon size="large" />
+                        </IconButton>
+                      }
                       autoFocus
                       value={query}
                       onChange={handleChangeQuery}
+                      onKeyDown={handleKeyDown}
                     />
                     <VisuallyHidden role="status">{searchAnnouncement}</VisuallyHidden>
                   </>
                 }
               >
-                책 찾기
+                검색
               </Title>
             </Split.Side>
             <Split.Content>
               <Title level="main" trailing={<></>} sx={{ mb: 5 }}>
-                '{keywordQuery}' 검색 결과
+                {keywordQuery.length
+                  ? `'${keywordQuery}' 검색 결과`
+                  : '책 제목이나 작가를 입력해 주세요.'}
               </Title>
-              {data && !data?.items?.length && (
-                <Notice height={500}>검색된 데이터가 없습니다.</Notice>
-              )}
+              {data && !data?.items?.length && <Notice height={500}>검색 결과가 없어요.</Notice>}
               <List>
                 {!!data?.items.length &&
                   data?.items.map((item) => {

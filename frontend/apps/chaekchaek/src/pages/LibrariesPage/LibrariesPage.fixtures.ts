@@ -47,3 +47,30 @@ export const librariesAfterCreateResponse = {
   ...librariesResponse,
   libraries: [...librariesResponse.libraries, createdLibraryResponse],
 };
+
+export const libraryToDelete = librariesResponse.libraries[1]!;
+export const libraryToKeep = librariesResponse.libraries[0]!;
+
+export const libraryToRename = librariesResponse.libraries[1]!;
+export const renamedLibraryName = '주말에 읽을 책';
+
+export const librariesAfterDeleteResponse = {
+  ...librariesResponse,
+  libraries: [libraryToKeep],
+};
+
+export const libraryToShare = librariesResponse.libraries[1]!;
+
+export const libraryImageDataUrl =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+
+export const libraryToEditResponse = {
+  ...librariesResponse.libraries[1]!,
+  memberId: librariesResponse.memberId,
+  nextPage: null,
+  items: librariesResponse.libraries[1]!.items.map((book) => ({
+    ...book,
+    isbn13: '9788925588650',
+    totalPages: 600,
+  })),
+};

@@ -7,10 +7,9 @@ import {
   ConstrainedImgBox,
   Dialog,
   DisplayCard,
+  ScrollArea,
   Showcase,
 } from '@chaekchaek/design-system';
-
-import ConstrainedImgBoxDummyImg1 from '../../../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
 
 import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
@@ -73,9 +72,11 @@ export const ShareLibraryImageDialog = ({
             ref={domRef}
           >
             <Showcase>
-              {imgs.map((img) => {
-                return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
-              })}
+              <ScrollArea width="100%" height="auto">
+                {imgs.map((img) => {
+                  return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
+                })}
+              </ScrollArea>
             </Showcase>
           </DisplayCard>
         </Dialog.Body>

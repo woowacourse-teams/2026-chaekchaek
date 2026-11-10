@@ -14,16 +14,24 @@ import { server } from '@/mocks/msw/server';
 import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/render';
 
 import { LibraryPage } from '@/pages/LibraryPage';
+import { LibrariesPage } from '@/pages/LibrariesPage';
 
 import {
   addedBookResponse,
   bookSearchResponse,
   downloadedLibraryImageDataUrl,
+  deletableLibraryResponse,
+  librariesAfterDeleteResponse,
   emptyBookSearchResponse,
   fullLibraryResponse,
   libraryAfterAddResponse,
+  libraryAfterBookDeleteResponse,
+  bookToDelete,
+  bookToKeep,
   libraryResponse,
   myLibraryResponse,
+  librariesBeforeRenameResponse,
+  otherLibraryResponse,
   renamedLibraryName,
   searchedBook,
 } from './LibraryPage.fixtures';
@@ -147,6 +155,97 @@ describe('LibraryPage', () => {
 
     // 변경한 책장 이름이 표시되는지 확인한다.
     expect(await screen.findByText(renamedLibraryName)).toBeVisible();
+  });
+
+  it('특정 책장의 이름을 변경하면 해당 책장의 이름만 변경된다', async () => {
+    const user = userEvent.setup();
+    const currentLibraries = structuredClone(librariesBeforeRenameResponse);
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(currentLibraries));
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/:libraryId`, ({ params }) => {
+        const library = currentLibraries.libraries.find(
+          (item) => item.libraryId === Number(params.libraryId),
+        );
+        return library
+          ? HttpResponse.json(structuredClone(library))
+          : new HttpResponse(null, { status: 404 });
+      }),
+      http.patch(`${ENV.APP_API_URL}/api/v1/libraries/:libraryId`, async ({ params, request }) => {
+        const library = currentLibraries.libraries.find(
+          (item) => item.libraryId === Number(params.libraryId),
+        );
+        if (!library) return new HttpResponse(null, { status: 404 });
+        const { name } = (await request.json()) as { name: string };
+        library.name = name;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    // 서재 페이지에 진입한다.
+    const { unmount } = renderProvider(
+      <Routes>
+        <Route path="/libraries" element={<LibrariesPage />} />
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      { auth: defaultLoggedAuthContextValue, initialEntries: ['/libraries'] },
+    );
+
+    // 이름을 변경할 책장과 다른 책장이 표시되는지 확인한다.
+    const targetLibrary = await screen.findByRole('link', {
+      name: libraryResponse.name
+    });
+    expect(targetLibrary).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: otherLibraryResponse.name }),
+    ).toBeVisible();
+
+    // 이름을 변경할 책장을 선택한다.
+    await user.click(targetLibrary);
+    expect(await screen.findByText(libraryResponse.name, { exact: true })).toBeVisible();
+
+    // 책장 더보기 메뉴에서 책장 이름 바꾸기를 선택한다.
+    await user.click(screen.getByRole('button', { name: '책장 더보기' }));
+    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기' }));
+
+    // 기존 이름을 지우고 새로운 책장 이름을 입력한다.
+    const nameInput = screen.getByPlaceholderText('예: 다시 펼치고 싶은 책');
+    await user.clear(nameInput);
+    await user.type(nameInput, renamedLibraryName);
+
+    // 저장 버튼을 클릭한다.
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    // 상세 화면에 변경한 책장 이름이 표시되고 이름 변경 팝업이 닫히는지 확인한다.
+    expect(await screen.findByText(renamedLibraryName, { exact: true })).toBeVisible();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument();
+    });
+
+    // 서재 메뉴를 선택해 책장 목록으로 돌아간다.
+    const librariesLink = screen.getByRole('link', { name: '내 서재' });
+    expect(librariesLink).toHaveAttribute('href', '/libraries');
+    // 일반 링크의 전체 페이지 이동은 jsdom에서 지원하지 않아 목적지 화면을 새로 연다.
+    unmount();
+    renderProvider(<LibrariesPage />, {
+      auth: defaultLoggedAuthContextValue,
+      initialEntries: ['/libraries'],
+    });
+
+    // 선택한 책장에만 새 이름이 표시되고 다른 책장의 이름은 유지되는지 확인한다.
+    const renamedLibrary = await screen.findByRole('link', {
+      name: renamedLibraryName
+    });
+    expect(renamedLibrary).toBeVisible();
+    expect(renamedLibrary).toHaveAttribute('href', `/libraries/${libraryResponse.libraryId}`);
+    const otherLibrary = screen.getByRole('link', { name: otherLibraryResponse.name });
+    expect(otherLibrary).toBeVisible();
+    expect(otherLibrary).toHaveAttribute('href', `/libraries/${otherLibraryResponse.libraryId}`);
+    expect(
+      screen.queryByRole('link', { name: libraryResponse.name }),
+    ).not.toBeInTheDocument();
   });
 
   it('이미지 저장 시 현재 책장의 책등 이미지가 다운로드된다', async () => {
@@ -400,5 +499,207 @@ describe('LibraryPage', () => {
         Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
       }
     }
+  });
+
+  it('책장을 삭제하면 서재 페이지로 이동한다', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${deletableLibraryResponse.libraryId}`, () => {
+        return HttpResponse.json(structuredClone(deletableLibraryResponse));
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(librariesAfterDeleteResponse));
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${deletableLibraryResponse.libraryId}`,
+        () => {
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+        <Route path="/libraries" element={<LibrariesPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${deletableLibraryResponse.libraryId}`],
+      },
+    );
+
+    // 더보기 버튼을 클릭한다.
+    const libraryName = await screen.findByText(deletableLibraryResponse.name);
+    const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('책장 제목을 찾을 수 없습니다.');
+    await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
+
+    // 관리 팝업에서 책장 삭제를 선택한다.
+    await user.click(screen.getByRole('button', { name: '책장 삭제' }));
+
+    // 삭제 팝업에서 삭제 버튼을 클릭한다.
+    await user.click(screen.getByRole('button', { name: '책장 삭제' }));
+
+    // 서재 페이지로 이동했는지 확인한다.
+    expect(await screen.findByText('내 책장')).toBeVisible();
+  });
+
+  it('편집 모드에서 책의 삭제 버튼을 클릭하면 해당 책이 목록에서 제거된다', async () => {
+    const user = userEvent.setup();
+    let isBookDeleted = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookDeleted ? libraryAfterBookDeleteResponse : libraryResponse),
+        );
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}/books/${bookToDelete.bookId}`,
+        () => {
+          isBookDeleted = true;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+
+    // 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 삭제할 책과 남겨둘 책이 목록에 표시되는지 확인한다.
+    const bookTitle = await screen.findByText(bookToDelete.title);
+    expect(bookTitle).toBeVisible();
+    expect(await screen.findByText(bookToKeep.title)).toBeVisible();
+
+    // 편집 버튼을 클릭한다.
+    await user.click(screen.getByRole('button', { name: '편집' }));
+
+    // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
+    const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
+    expect(deleteButton).toBeVisible();
+
+    // 해당 책의 삭제 버튼을 클릭한다.
+    await user.click(deleteButton);
+
+    // 삭제한 책은 목록에서 사라지고 다른 책은 그대로 표시되는지 확인한다.
+    await waitFor(() => {
+      expect(screen.queryByText(bookToDelete.title)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(bookToKeep.title)).toBeVisible();
+  });
+
+  it('책 삭제를 선택하면 편집 모드로 전환되고, 삭제 버튼을 누르면 해당 책이 목록에서 제거된다', async () => {
+    const user = userEvent.setup();
+    let isBookDeleted = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookDeleted ? libraryAfterBookDeleteResponse : libraryResponse),
+        );
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}/books/${bookToDelete.bookId}`,
+        () => {
+          isBookDeleted = true;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+
+    // 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 삭제할 책과 남겨둘 책이 목록에 표시되는지 확인한다.
+    const bookTitle = await screen.findByText(bookToDelete.title);
+    expect(bookTitle).toBeVisible();
+    expect(await screen.findByText(bookToKeep.title)).toBeVisible();
+
+    // 책장 제목 옆의 더보기 버튼을 클릭한다.
+    const libraryName = screen.getByText(libraryResponse.name);
+    const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('책장 제목을 찾을 수 없습니다.');
+    await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
+
+    // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
+    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제' });
+    expect(deleteBooksButton).toBeVisible();
+
+    // 관리 팝업에서 책 삭제 메뉴를 선택한다.
+    await user.click(deleteBooksButton);
+
+    // 관리 팝업이 닫히고 편집 모드의 완료 버튼이 표시되는지 확인한다.
+    expect(screen.queryByRole('button', { name: '책 삭제' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '완료' })).toBeVisible();
+
+    // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
+    const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
+    expect(deleteButton).toBeVisible();
+
+    // 해당 책의 삭제 버튼을 클릭한다.
+    await user.click(deleteButton);
+
+    // 삭제한 책은 목록에서 사라지고 다른 책은 그대로 표시되는지 확인한다.
+    await waitFor(() => {
+      expect(screen.queryByText(bookToDelete.title)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(bookToKeep.title)).toBeVisible();
+  });
+
+  it('기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는다', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(structuredClone(libraryResponse));
+      }),
+    );
+
+    // 기본 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 기본 책장의 더보기 버튼을 클릭한다.
+    const libraryName = await screen.findByText(libraryResponse.name);
+    const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('기본 책장의 제목을 찾을 수 없습니다.');
+    await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
+
+    // 관리 팝업에 책장 이름 바꾸기 메뉴가 표시되는지 확인한다.
+    expect(screen.getByRole('button', { name: '책장 이름 바꾸기' })).toBeVisible();
+
+    // 기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는지 확인한다.
+    expect(
+      screen.queryByRole('button', { name: '책장 삭제' }),
+    ).not.toBeInTheDocument();
   });
 });

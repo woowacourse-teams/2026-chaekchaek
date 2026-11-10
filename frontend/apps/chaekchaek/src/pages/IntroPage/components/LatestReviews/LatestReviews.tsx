@@ -13,6 +13,7 @@ import {
   Partition,
   scrollbar,
   Media,
+  Divider,
 } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
@@ -81,7 +82,7 @@ export const LatestReviews = () => {
   return (
     <div className={`${styles['scene-latest-reviews']} ${scrollbar.dark}`}>
       <div className={styles['latest-reviews-title']}>
-        <h1>방금 남겨진 문장</h1>
+        <h1>최근 감상</h1>
         <div className={styles['latest-reviews-title-right']}>
           <IconButton as={Link} to={ROUTES.FEED} target="_blank">
             <Icon.ExternalLinkIcon color="secondary" />
@@ -92,20 +93,21 @@ export const LatestReviews = () => {
       {data?.reviews.map((review, index) => {
         return (
           <>
+            <Divider />
             <Partition>
               <Partition.Item>
                 <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
                   <Media
-                    media={<ImgBox size="medium" reverse img={review.bookCoverImageUrl} />}
+                    media={<ImgBox size="medium" img={review.bookCoverImageUrl} />}
                     sx={{ ml: 8 }}
                   />
                 </Link>
               </Partition.Item>
               <Partition.Item>
-                <Entry reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
+                <Entry spacing="large" key={`${review.bookId}${index}`}>
                   <Entry.Main>
                     <Entry.Header>
-                      <Shell reverse>
+                      <Shell>
                         <Shell.Content
                           title={
                             <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
@@ -145,7 +147,7 @@ export const LatestReviews = () => {
                         shape="link"
                         size="small"
                         inverse
-                        leading={<Icon.CommentIcon color="inverse" />}
+                        leading={<Icon.CommentIcon />}
                         disabled
                       >
                         {review.replyCount}

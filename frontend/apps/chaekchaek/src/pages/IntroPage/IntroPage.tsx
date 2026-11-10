@@ -5,15 +5,22 @@ import { Main } from '@/frames';
 import { PopularBooks } from './components/PopularBooks';
 import { LatestReviews } from './components/LatestReviews';
 
+import { PMFSurvey } from './components/PMFSurvey';
+
 import styles from './IntroPage.module.css';
 
 export const IntroPage = () => {
   return (
     <Layout className={styles[`intro-page`]}>
-      <Header reverse />
+      <Header />
       <Main className={styles.wrap}>
-        <PopularBooks />
-        <LatestReviews />
+        <div className={styles[`intro-left-side`]}>
+          <PopularBooks />
+        </div>
+        <div className={styles[`intro-right-side`]}>
+          <LatestReviews />
+          <PMFSurvey />
+        </div>
       </Main>
     </Layout>
   );

@@ -1,15 +1,23 @@
 import { useCallback, useState, type ChangeEvent } from 'react';
-import { Link } from 'react-router-dom';
 
-import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
-
-import { getLibraries } from '@/services/apis/libraries/repository';
-
-import { useLoadData } from '@/services/core/useLoadData';
-
-import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
+import {
+  Button,
+  Checkbox,
+  Icon,
+  ImgBox,
+  InfoMessage,
+  Input,
+  List,
+  ScrollArea,
+} from '@chaekchaek/design-system';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import { getLibraries } from '@/services/apis/libraries/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
+import { getInfoMessage, getLibraryStatus } from '../../AddBooksToLibraryDialog';
+import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
 
 export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => {
   const { user } = useAuthContext();
@@ -64,10 +72,16 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
     onSubmit(selection);
   };
 
+  const maxSize = currentLibrary?.maxSize;
+  const totalBookCount = (currentLibrary?.items.length ?? 0) + selection.length;
+  const libraryStatus = getLibraryStatus(totalBookCount, maxSize);
+  const isLimitReached = libraryStatus.status === 'full';
+  const infoMessage = getInfoMessage(libraryStatus);
+
   return (
     <>
       <Input
-        sx={{ mt: 2, mb: 4 }}
+        sx={{ mt: 2, mb: 1 }}
         size="small"
         leading={<Icon.SearchIcon />}
         placeholder="책 제목이나 작가를 검색하세요"
@@ -75,20 +89,28 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
         onChange={handleChange}
       />
 
-      <ScrollArea height="340px">
+      <InfoMessage title={infoMessage} />
+
+      <ScrollArea height="310px">
         <List>
           {queryFilteredBooks?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
 
             const isRegisteredInCurrentLibrary = !!currentLibraryBooks.find(
               (currentLibraryBook) => currentLibraryBook.isbn13 === item.isbn13,
-            );
+            ); // 현재 책장에 담겨 있는 책
+
+            const isSelectionDisabled = !isIncluded && isLimitReached; // 최대 권수를 채운 경우 더 추가하지 못하게
+
+            const isCheckDisabled = isRegisteredInCurrentLibrary || isSelectionDisabled;
 
             return (
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
                   <Checkbox
-                    disabled={isRegisteredInCurrentLibrary}
+                    sx={{ mr: 2 }}
+                    size="large"
+                    disabled={isCheckDisabled}
                     value={item.isbn13}
                     checked={isIncluded}
                     onChange={handleChangeSelection}

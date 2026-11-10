@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComponentProps } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+
+import { DragDropProvider } from '@dnd-kit/react';
+import { isSortable } from '@dnd-kit/react/sortable';
+
+type DragEndEvent = Parameters<
+  NonNullable<ComponentProps<typeof DragDropProvider>['onDragEnd']>
+>[0];
 
 import {
   Button,
@@ -28,21 +36,25 @@ import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/reposi
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
+import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
+
+import { ManageLibraryDialog } from '@/shared/ManageLibrary';
+import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
+
+import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
+import { RenameLibraryDialog } from '@/shared/RenameLibrary';
+import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
-import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
-import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
-import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
-import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 
 export type LibraryPageDialogType =
-  | 'AddBooksToLibraryDialog'
+  | ManageLibraryDialogType
   | 'ManageLibraryDialog'
-  | 'ShareLibraryImageDialog'
-  | 'RenameLibraryDialog'
-  | 'DeleteLibraryDialog'
+  | 'AddBooksToLibraryDialog'
   | 'UpdateNicknameDialog';
 
 const booksHeight = [
@@ -50,6 +62,23 @@ const booksHeight = [
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
 ];
+const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
+  return !isDefault;
+};
+
+import { Sortable } from './components/Sortable/Sortable';
+
+const move = <T,>(array: T[], from: number, to: number): T[] => {
+  const result = [...array];
+
+  const [item] = result.splice(from, 1);
+
+  if (item === undefined) return array;
+
+  result.splice(to, 0, item);
+
+  return result;
+};
 
 export const LibraryPage = () => {
   const { user, updateAccount } = useAuthContext();
@@ -68,6 +97,23 @@ export const LibraryPage = () => {
   } = useLoadData({
     queryFn: getLibrariesLibraryIdLoadData,
   });
+
+  const [orderedBookIds, setOrderedBookIds] = useState<number[] | null>(null);
+
+  useEffect(() => {
+    if (!libraryItemsData) return;
+    setOrderedBookIds(libraryItemsData.items.map((item) => item.bookId));
+  }, [libraryItemsData]);
+
+  const books = useMemo(() => {
+    if (!libraryItemsData) return [];
+
+    if (!orderedBookIds) return libraryItemsData.items;
+
+    const bookMap = new Map(libraryItemsData.items.map((book) => [book.bookId, book]));
+
+    return orderedBookIds.map((id) => bookMap.get(id)).filter((book) => book !== undefined);
+  }, [libraryItemsData, orderedBookIds]);
 
   const [isCopied, setIsCopied] = useState(false);
 
@@ -116,6 +162,57 @@ export const LibraryPage = () => {
     });
   };
 
+  const location = useLocation();
+  const state = location.state as { startEditing: boolean };
+
+  const [isEditing, setIsEditing] = useState(state?.startEditing || false);
+  const handleClickStartEdit = () => {
+    setIsEditing(true);
+  };
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
+  };
+
+  const { mutate: deleteBookMutate } = useExecute({
+    executeFn: deleteLibrariesLibraryIdBooksBookId,
+  });
+
+  const handleClickDeleteBook = async (bookId: number) => {
+    await deleteBookMutate({ libraryId: Number(libraryId), bookId });
+
+    await refetchGetLibrary();
+  };
+
+  const navigate = useNavigate();
+  const handleGoToLibraries = async () => {
+    navigate(ROUTES.LIBRARIES);
+  };
+
+  const { mutate: patchBookOrderMutate } = useExecute({
+    executeFn: patchLibrariesLibraryIdBooksOrder,
+  });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    if (!libraryItemsData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
+    });
+
+    setOrderedBookIds(reorderBooksId);
+  };
+
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
   const handleOpenDialog = (dialog: LibraryPageDialogType) => {
     setDialog(dialog);
@@ -137,7 +234,17 @@ export const LibraryPage = () => {
           />
         );
       case 'ManageLibraryDialog':
-        return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
+        return (
+          libraryItemsData && (
+            <ManageLibraryDialog
+              canDeleteLibrary={canDeleteLibrary(libraryItemsData)}
+              libraryName={libraryItemsData.name}
+              onStartEdit={handleClickStartEdit}
+              onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       case 'ShareLibraryImageDialog':
         return (
           libraryItemsData && (
@@ -165,7 +272,18 @@ export const LibraryPage = () => {
           )
         );
       case 'DeleteLibraryDialog':
-        return <DeleteLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          libraryItemsData && (
+            <DeleteLibraryDialog
+              libraryId={Number(libraryId)}
+              libraryName={libraryItemsData.name}
+              onLibraryDeleted={handleGoToLibraries}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -229,17 +347,19 @@ export const LibraryPage = () => {
             </Title>
             {libraryItemsData !== null && !!libraryItemsData?.items.length && (
               <Showcase>
-                {libraryItemsData?.items.map((item, index) => {
-                  return (
-                    <ConstrainedImgBox
-                      as={Link}
-                      to={`${ROUTES.BOOK_DETAIL}/${item.isbn13}`}
-                      img={item.spineImageUrl}
-                      maxWidth="80px"
-                      maxHeight={`${booksHeight[index]}px`}
-                    />
-                  );
-                })}
+                <DragDropProvider onDragEnd={handleDragEnd}>
+                  {books.map((item, index) => {
+                    return (
+                      <Sortable key={item.bookId} id={item.bookId} index={index}>
+                        <ConstrainedImgBox
+                          img={item.spineImageUrl}
+                          maxWidth="80px"
+                          maxHeight={`${booksHeight[index]}px`}
+                        />
+                      </Sortable>
+                    );
+                  })}
+                </DragDropProvider>
               </Showcase>
             )}
 
@@ -288,7 +408,15 @@ export const LibraryPage = () => {
               level="detail"
               trailing={
                 <>
-                  <Button variant="default">편집</Button>
+                  {!isEditing ? (
+                    <Button variant="default" onClick={handleClickStartEdit}>
+                      편집
+                    </Button>
+                  ) : (
+                    <Button variant="default" onClick={handleClickEndEdit}>
+                      완료
+                    </Button>
+                  )}
                 </>
               }
             >
@@ -301,27 +429,46 @@ export const LibraryPage = () => {
               <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
             )}
 
-            <List columns={2}>
-              {libraryItemsData?.items.map((item) => {
-                return (
-                  <List.Item key={item.bookId}>
-                    <List.Item.Leading>
-                      <IconButton edge="start">
-                        <Icon.DragHandleIcon />
-                      </IconButton>
-                      <Link to={`/books/${item.isbn13}`}>
-                        <ImgBox img={item.coverImageUrl} size="small" />
-                      </Link>
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      title={<>{item.title}</>}
-                      content={item.authors?.join(' · ')}
-                    />
-                    <List.Item.Trailing></List.Item.Trailing>
-                  </List.Item>
-                );
-              })}
-            </List>
+            <DragDropProvider onDragEnd={handleDragEnd}>
+              <List columns={2}>
+                {books.map((item, index) => {
+                  return (
+                    <Sortable key={item.bookId} id={item.bookId} index={index}>
+                      <List.Item>
+                        <List.Item.Leading>
+                          <Link to={`/books/${item.isbn13}`}>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        </List.Item.Leading>
+                        <List.Item.Content
+                          title={<>{item.title}</>}
+                          content={item.authors?.join(' · ')}
+                        />
+
+                        <List.Item.Trailing>
+                          {isEditing ? (
+                            <IconButton
+                              aria-label="빼기"
+                              onClick={() => {
+                                handleClickDeleteBook(item.bookId);
+                              }}
+                            >
+                              <Icon.CloseIcon color="error" />
+                            </IconButton>
+                          ) : (
+                            <Sortable.Handle>
+                              <IconButton edge="start">
+                                <Icon.DragHandleIcon />
+                              </IconButton>
+                            </Sortable.Handle>
+                          )}
+                        </List.Item.Trailing>
+                      </List.Item>
+                    </Sortable>
+                  );
+                })}
+              </List>
+            </DragDropProvider>
           </ContentArea>
         </Container>
       </Main>

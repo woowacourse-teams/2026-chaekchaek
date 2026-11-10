@@ -132,6 +132,9 @@ export type { Props as IconProps } from './components/Icon';
 export { IconButton } from './components/IconButton';
 export type { Props as IconButtonProps } from './components/IconButton';
 
+export { FloatingButton } from './components/FloatingButton';
+export type { Props as FloatingButtonProps } from './components/FloatingButton';
+
 export { Text } from './components/Text';
 export type { Props as TextProps } from './components/Text';
 

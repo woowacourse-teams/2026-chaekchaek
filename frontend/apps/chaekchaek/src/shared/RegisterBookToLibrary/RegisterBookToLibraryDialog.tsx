@@ -8,6 +8,8 @@ import {
   ConstrainedImgBox,
   Dialog,
   List,
+  ScrollArea,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
@@ -126,28 +128,50 @@ export const RegisterBookToLibraryDialog = ({
     onClose();
   };
 
+  const infoMessage = '책장이 가득 찼어요.';
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
         <Dialog.Header subTitle={`최근 담은 책장이 선택되어 있어요.`}>
-          담을 책장 고르기
+          책장 선택하기
         </Dialog.Header>
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {
               const isIncluded = selection.includes(library.libraryId);
 
+              const isLimitReached = library.items.length >= library.maxSize;
+
+              const isCheckDisabled = !isIncluded && isLimitReached;
+
               return (
                 <List.Item key={library.libraryId}>
                   <List.Item.Leading>
-                    {library.items.map((item) => {
-                      return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
-                    })}
+                    <ScrollArea height="auto" width="80px">
+                      {library.items.map((item) => {
+                        return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
+                      })}
+                    </ScrollArea>
                   </List.Item.Leading>
-                  <List.Item.Content title={library.name} content={`${library.items.length}권`} />
+                  <List.Item.Content
+                    title={
+                      <>
+                        {library.name} <br />
+                      </>
+                    }
+                    content={
+                      isLimitReached ? (
+                        <Text size="x-small">{infoMessage}</Text>
+                      ) : (
+                        `${library.items.length}권`
+                      )
+                    }
+                  />
                   <List.Item.Trailing>
                     <Checkbox
                       size="large"
+                      disabled={isCheckDisabled}
                       checked={isIncluded}
                       value={library.libraryId}
                       onChange={handleChangeSelection}

@@ -11,6 +11,7 @@ export const BookOverview = ({
   publisher,
   description,
   averageRating,
+  ratingCount,
   reviewCount,
   replyCount,
   coverImageUrl,
@@ -28,7 +29,7 @@ export const BookOverview = ({
         meta={
           <>
             <Badge variant="ghost">
-              ★ {myRating || 0} / {averageRating || 0}
+              {ratingCount === 0 ? '별점 없음' : `★ ${myRating || 0} / ${averageRating || 0}`}
             </Badge>
             <Badge variant="ghost">
               감상 {reviewCount || 0} · 답글: {replyCount}

@@ -30,6 +30,7 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
 };
 
 const RatingMessages = {
+  0: '선택 안 함',
   0.5: '아쉬웠어요',
   1.0: '별로였어요',
   1.5: '조금 아쉬웠어요',
@@ -171,7 +172,7 @@ export const UpdateReviewDialog = ({
                   readOnly
                   onClick={handleSpoilerClick}
                 >
-                  스포일러
+                  스포일러 포함
                 </Radio>
               </Field.Content>
             </Field>
@@ -220,7 +221,7 @@ export const UpdateReviewDialog = ({
                   <Rating
                     value={rating}
                     onChange={handleChangeRating}
-                    description={`${rating} · ${ratingMessage}`}
+                    description={rating === 0 ? ratingMessage : `${rating} · ${ratingMessage}`}
                     block
                   />
                 </Field.Content>

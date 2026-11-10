@@ -32,7 +32,6 @@ export type PatchReviewsReviewIdResponseDto = ResponseDto<{
   recentReplies: {
     createdAt: string;
     likedByMe: boolean;
-    deleted: boolean;
     author: {
       mine: boolean;
       displayName: string;
@@ -46,7 +45,6 @@ export type PatchReviewsReviewIdResponseDto = ResponseDto<{
   replyCount: number;
   isSpoiler: boolean;
   likedByMe: boolean;
-  deleted: boolean;
   quote: string;
   reviewId: number;
 }>;

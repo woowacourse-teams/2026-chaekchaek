@@ -38,10 +38,10 @@ export const BookInfo = ({
         )}
       </Surface>
       <DataInfo sx={{ mt: 4 }} heading="책 정보">
-        {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}
-        {publishedDate && <DataInfo.Item title="출간" content={publishedDate} />}
+        {formattedCategory && <DataInfo.Item title="분류" content={formattedCategory} />}
+        {publishedDate && <DataInfo.Item title="출간일" content={publishedDate} />}
         {isbn13 && <DataInfo.Item title="ISBN" content={isbn13} />}
-        {!!authors?.length && <DataInfo.Item title="지은이" content={authors.join(' · ')} />}
+        {!!authors?.length && <DataInfo.Item title="작가" content={authors.join(' · ')} />}
         {!!translators?.length && <DataInfo.Item title="옮김" content={translators.join(' · ')} />}
       </DataInfo>
       {purchaseUrl && (

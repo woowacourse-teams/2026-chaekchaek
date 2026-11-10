@@ -73,6 +73,15 @@
   justify-content: flex-end;
 }
 
+.leading {
+  color: var(--chaek-color-text-muted);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: -0.2328px;
+}
+
 .title {
   color: var(--chaek-color-text-primary);
   font-family: var(--chaek-font-family-gowun-dodum);
@@ -116,13 +125,12 @@
   text-align: right;
 }
 .is-reverse {
-  color: #ffffff;
+  color: #fff;
 }
 
-.is-reverse .title {
-  color: #ffffff;
-}
-
-.is-reverse .content {
-  color: #999999;
+.is-reverse .leading,
+.is-reverse .title,
+.is-reverse .content,
+.is-reverse .description {
+  color: #fff;
 }

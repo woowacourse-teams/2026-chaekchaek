@@ -11,7 +11,6 @@ export interface PatchRepliesReplyIdParams {
 export type PatchRepliesReplyId = (params: PatchRepliesReplyIdParams) => Promise<{
   createdAt: string;
   likedByMe: boolean;
-  deleted: boolean;
   author: {
     mine: boolean;
     actorType: string;

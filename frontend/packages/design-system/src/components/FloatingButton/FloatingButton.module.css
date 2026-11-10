@@ -1,0 +1,37 @@
+.root {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  appearance: none;
+  background: var(--floating-button-background);
+  color: var(--floating-button-color);
+  box-shadow: var(--floating-button-shadow);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.variant-default {
+  --floating-button-background: transparent;
+  --floating-button-color: inherit;
+  --floating-button-shadow: none;
+}
+
+.variant-primary {
+  --floating-button-background: var(--chaek-color-surface-inverse);
+  --floating-button-color: var(--chaek-color-text-inverse);
+  --floating-button-shadow: 2px 5px 9px rgb(0 0 0 / 13.3333%);
+}
+
+.variant-secondary {
+  --floating-button-background: var(--chaek-color-surface-canvas);
+  --floating-button-color: var(--chaek-color-text-primary);
+  --floating-button-shadow: 2px 5px 9px rgb(0 0 0 / 13.3333%);
+}

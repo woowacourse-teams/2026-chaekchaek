@@ -1,16 +1,11 @@
 .scene {
-  position: relative;
-  display: inline-block;
-  width: 936px;
-  padding-top: 40px;
-  min-height: 700px;
-  background: #090a0c;
+  background: var(--chaek-color-surface-canvas);
   vertical-align: top;
 }
 
 .popular-books-title {
   font-size: 32px;
-  color: #fff;
+  color: var(--chaek-color-text-primary);
   font-weight: 700;
   padding: 0 0 80px 60px;
 }
@@ -122,7 +117,7 @@
 }
 
 .popular-books .book:hover .book-float {
-  box-shadow: 28px 36px 46px #000000e6, -4px -4px 14px #ffffff24;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 14%), 0 16px 32px rgb(0 0 0 / 18%);
   filter: saturate(1.08);
 }
 
@@ -173,6 +168,10 @@
 
 .popular-books:has(> .book:hover) > .book:hover .book-float {
   opacity: 1;
+}
+
+.popular-books .book a img {
+  vertical-align: top;
 }
 
 /* 확대는 책 전체에 적용하므로 기존 이미지 확대를 중복 적용하지 않는다. */

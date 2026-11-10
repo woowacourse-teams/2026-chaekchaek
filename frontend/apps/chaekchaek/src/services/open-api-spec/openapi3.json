@@ -422,6 +422,7 @@
                           "isDefault",
                           "items",
                           "libraryId",
+                          "maxSize",
                           "name",
                           "totalCount"
                         ],
@@ -440,6 +441,10 @@
                           "name": {
                             "type": "string",
                             "description": "책장 이름"
+                          },
+                          "maxSize": {
+                            "type": "number",
+                            "description": "책장에 등록 가능한 최대 도서 수"
                           },
                           "totalCount": {
                             "type": "integer",
@@ -509,7 +514,7 @@
                 },
                 "examples": {
                   "libraries-public-collection": {
-                    "value": "{\"memberId\":1,\"libraries\":[{\"libraryId\":7,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[\"두 번째 저자\",\"첫 번째 저자\"]}]}]}"
+                    "value": "{\"memberId\":1,\"libraries\":[{\"libraryId\":7,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"maxSize\":30,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[\"두 번째 저자\",\"첫 번째 저자\"]}]}]}"
                   }
                 }
               }
@@ -626,7 +631,6 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
-                "title": "CreateLibraryRequest",
                 "required": [
                   "name"
                 ],
@@ -644,22 +648,22 @@
                 "library-create": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
-                "library-create-unauthorized": {
-                  "value": "{\"name\":\"올해읽을책\"}\n"
-                },
-                "library-create-nickname-required": {
+                "library-create-name-already-exists": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
                 "library-create-invalid-request": {
                   "value": "{}"
                 },
-                "library-create-forbidden": {
-                  "value": "{\"name\":\"올해읽을책\"}\n"
-                },
                 "library-create-internal-server-error": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
-                "library-create-name-already-exists": {
+                "library-create-nickname-required": {
+                  "value": "{\"name\":\"올해읽을책\"}\n"
+                },
+                "library-create-forbidden": {
+                  "value": "{\"name\":\"올해읽을책\"}\n"
+                },
+                "library-create-unauthorized": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 }
               }
@@ -686,6 +690,7 @@
                     "isDefault",
                     "items",
                     "libraryId",
+                    "maxSize",
                     "name",
                     "totalCount"
                   ],
@@ -704,6 +709,10 @@
                     "name": {
                       "type": "string",
                       "description": "저장된 책장 이름"
+                    },
+                    "maxSize": {
+                      "type": "number",
+                      "description": "책장에 등록 가능한 최대 도서 수"
                     },
                     "totalCount": {
                       "type": "integer",
@@ -749,7 +758,7 @@
                 },
                 "examples": {
                   "library-create": {
-                    "value": "{\"libraryId\":7,\"name\":\"올해읽을책\",\"isDefault\":false,\"totalCount\":0,\"items\":[]}"
+                    "value": "{\"libraryId\":7,\"name\":\"올해읽을책\",\"isDefault\":false,\"totalCount\":0,\"maxSize\":30,\"items\":[]}"
                   }
                 }
               }
@@ -1121,6 +1130,7 @@
                   "required": [
                     "filteredCount",
                     "items",
+                    "maxSize",
                     "totalCount",
                     "nextPage"
                   ],
@@ -1134,6 +1144,10 @@
                       "type": "number",
                       "description": "다음 페이지 번호. 마지막 페이지면 null",
                       "nullable": true
+                    },
+                    "maxSize": {
+                      "type": "number",
+                      "description": "책장에 등록 가능한 최대 도서 수"
                     },
                     "totalCount": {
                       "type": "number",
@@ -1252,7 +1266,7 @@
                 },
                 "examples": {
                   "library-list": {
-                    "value": "{\"totalCount\":3,\"filteredCount\":2,\"nextPage\":2,\"items\":[{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5,\"addedAt\":\"2026-08-14T03:00:00Z\",\"readingUpdatedAt\":\"2026-08-14T03:30:00Z\"}]}"
+                    "value": "{\"totalCount\":3,\"maxSize\":30,\"filteredCount\":2,\"nextPage\":2,\"items\":[{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5,\"addedAt\":\"2026-08-14T03:00:00Z\",\"readingUpdatedAt\":\"2026-08-14T03:30:00Z\"}]}"
                   }
                 }
               }
@@ -1405,34 +1419,34 @@
                 }
               },
               "examples": {
-                "library-add-book-not-found": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-already-exists": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-unauthorized": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-invalid-request": {
+                "library-add-total-pages-conflict": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-add-limit-exceeded": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add-invalid-reading-state": {
+                "library-add-book-not-found": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-forbidden": {
+                "library-add-unauthorized": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-add-nickname-required": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add-total-pages-conflict": {
+                "library-add": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add-already-exists": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add-forbidden": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add-invalid-request": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add-invalid-reading-state": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 }
               }
@@ -1801,14 +1815,14 @@
                   }
                 },
                 "examples": {
-                  "library-add-already-exists": {
-                    "value": "{\"detail\":\"이미 책장에 담긴 책입니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_ALREADY_EXISTS\"}"
+                  "library-add-total-pages-conflict": {
+                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
                   },
                   "library-add-limit-exceeded": {
                     "value": "{\"detail\":\"책장에는 최대 30권까지 등록할 수 있습니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_LIMIT_EXCEEDED\"}"
                   },
-                  "library-add-total-pages-conflict": {
-                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
+                  "library-add-already-exists": {
+                    "value": "{\"detail\":\"이미 책장에 담긴 책입니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_ALREADY_EXISTS\"}"
                   }
                 }
               }
@@ -1856,11 +1870,115 @@
                   }
                 },
                 "examples": {
-                  "library-add-invalid-reading-state": {
-                    "value": "{\"detail\":\"현재 읽기 상태에서는 요청을 처리할 수 없습니다.\",\"instance\":\"/api/v1/library\",\"status\":422,\"title\":\"Unprocessable Content\",\"type\":\"about:blank\",\"code\":\"INVALID_READING_STATE\"}"
-                  },
                   "library-add-nickname-required": {
                     "value": "{\"detail\":\"닉네임을 먼저 설정해 주세요.\",\"instance\":\"/api/v1/library\",\"status\":422,\"title\":\"Unprocessable Content\",\"type\":\"about:blank\",\"code\":\"NICKNAME_REQUIRED\"}"
+                  },
+                  "library-add-invalid-reading-state": {
+                    "value": "{\"detail\":\"현재 읽기 상태에서는 요청을 처리할 수 없습니다.\",\"instance\":\"/api/v1/library\",\"status\":422,\"title\":\"Unprocessable Content\",\"type\":\"about:blank\",\"code\":\"INVALID_READING_STATE\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pmf-survey": {
+      "get": {
+        "tags": [
+          "PMF 설문"
+        ],
+        "summary": "PMF 설문 조회",
+        "description": "현재 사용자의 최근 14일 핵심 행동과 팀 제외 여부, 기존 응답 여부를 확인한다. 응답 가능한 사용자는 문항, 선택지, actor에 묶인 제출용 토큰을 받는다. 제출 시 핵심 행동 기간을 다시 확인하지 않는다.",
+        "operationId": "pmf-survey-get",
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "PmfSurveyAvailabilityResponse",
+                  "required": [
+                    "alreadySubmitted",
+                    "eligible",
+                    "questions",
+                    "submissionToken"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "alreadySubmitted": {
+                      "type": "boolean",
+                      "description": "이미 응답을 제출했는지 여부"
+                    },
+                    "eligible": {
+                      "type": "boolean",
+                      "description": "최근 14일 핵심 행동 및 팀 제외 기준을 만족하는지 여부"
+                    },
+                    "submissionToken": {
+                      "type": "string",
+                      "description": "조회 시점의 대상 여부를 증명하는 actor별 서명 토큰, 대상이 아니거나 이미 응답했다면 null"
+                    },
+                    "questions": {
+                      "type": "array",
+                      "description": "응답 가능한 문항 목록, 대상이 아니거나 이미 제출했다면 빈 배열",
+                      "items": {
+                        "required": [
+                          "multipleSelection",
+                          "options",
+                          "question",
+                          "questionCode"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "question": {
+                            "type": "string",
+                            "description": "화면에 표시할 질문"
+                          },
+                          "questionCode": {
+                            "type": "string",
+                            "description": "문항 코드"
+                          },
+                          "options": {
+                            "type": "array",
+                            "description": "문항 선택지",
+                            "items": {
+                              "required": [
+                                "answerCode",
+                                "label"
+                              ],
+                              "type": "object",
+                              "properties": {
+                                "answerCode": {
+                                  "type": "string",
+                                  "description": "제출할 선택지 코드"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "description": "화면에 표시할 선택지"
+                                }
+                              }
+                            }
+                          },
+                          "multipleSelection": {
+                            "type": "boolean",
+                            "description": "복수 선택 문항 여부"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "pmf-survey-get": {
+                    "value": "{\"eligible\":true,\"alreadySubmitted\":false,\"submissionToken\":\"signed-pmf-eligibility-token\",\"questions\":[{\"questionCode\":\"PMF_CORE\",\"question\":\"이 제품을 더 이상 쓸 수 없다면 어떻겠습니까?\",\"multipleSelection\":false,\"options\":[{\"answerCode\":\"VERY_DISAPPOINTED\",\"label\":\"매우 실망\"},{\"answerCode\":\"SLIGHTLY_DISAPPOINTED\",\"label\":\"약간 실망\"},{\"answerCode\":\"NOT_DISAPPOINTED\",\"label\":\"실망하지 않음\"},{\"answerCode\":\"NO_LONGER_USING\",\"label\":\"더 이상 쓰지 않음\"}]},{\"questionCode\":\"MOST_MISSED_FEATURE\",\"question\":\"책췍을 더 이상 사용할 수 없다면, 가장 아쉬울 기능은 무엇입니까?\",\"multipleSelection\":false,\"options\":[{\"answerCode\":\"LIBRARY_AND_SHELVES\",\"label\":\"내 서재와 책장\"},{\"answerCode\":\"OTHERS_FEED\",\"label\":\"다른 사람들 감상 보기(피드)\"},{\"answerCode\":\"REVIEWS_AND_REPLIES\",\"label\":\"감상, 답글 작성\"},{\"answerCode\":\"NO_MISSING_FEATURE\",\"label\":\"특별히 아쉬운 기능 없음\"}]},{\"questionCode\":\"UNKNOWN_FEATURES\",\"question\":\"책췍을 사용하면서 있는 줄 몰랐던 기능을 모두 골라 주세요\",\"multipleSelection\":true,\"options\":[{\"answerCode\":\"OTHERS_FEED\",\"label\":\"다른 사람들 감상 보기(피드)\"},{\"answerCode\":\"ADD_BOOK_TO_LIBRARY\",\"label\":\"책 서재에 담기\"},{\"answerCode\":\"WRITE_REVIEW_OR_REPLY\",\"label\":\"감상/답글 남기기\"},{\"answerCode\":\"SEARCH_BOOKS\",\"label\":\"책 검색하기\"},{\"answerCode\":\"CHANGE_NICKNAME\",\"label\":\"닉네임 변경하기\"},{\"answerCode\":\"TOGGLE_REVIEW_ANONYMITY\",\"label\":\"감상/답글 익명으로 설정하고 해제하기\"},{\"answerCode\":\"NO_UNKNOWN_FEATURES\",\"label\":\"몰랐던 기능 없음\"}]},{\"questionCode\":\"RELAUNCH_INTENT\",\"question\":\"책췍이 다시 출시된다면 사용해 볼 의향이 있습니까?\",\"multipleSelection\":false,\"options\":[{\"answerCode\":\"YES\",\"label\":\"예\"},{\"answerCode\":\"NO\",\"label\":\"아니요\"},{\"answerCode\":\"UNSURE\",\"label\":\"잘 모르겠음\"}]}]}"
                   }
                 }
               }
@@ -1963,6 +2081,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "AddRecommendedBookRequest",
                 "required": [
                   "isbn13"
                 ],
@@ -1975,13 +2094,13 @@
                 }
               },
               "examples": {
+                "recommended-book-add": {
+                  "value": "{\"isbn13\":\"9788925568683\"}"
+                },
                 "recommended-book-add-forbidden": {
                   "value": "{\"isbn13\":\"9788925568683\"}"
                 },
                 "recommended-book-add-limit-exceeded": {
-                  "value": "{\"isbn13\":\"9788925568683\"}"
-                },
-                "recommended-book-add": {
                   "value": "{\"isbn13\":\"9788925568683\"}"
                 }
               }
@@ -2686,7 +2805,7 @@
                           },
                           "reviewCount": {
                             "type": "number",
-                            "description": "삭제되지 않은 감상 수"
+                            "description": "감상 목록에 표시되는 감상 수(정상 답글이 남은 삭제 감상 포함)"
                           },
                           "coverImageUrl": {
                             "type": "string",
@@ -2761,20 +2880,20 @@
                 "library-order-forbidden": {
                   "value": "{\"libraryIds\":[20,10]}"
                 },
-                "library-order": {
-                  "value": "{\"libraryIds\":[2,1]}"
-                },
-                "library-order-invalid": {
-                  "value": "{}"
-                },
                 "library-order-conflict": {
                   "value": "{\"libraryIds\":[20,10]}"
                 },
                 "library-order-unauthorized": {
                   "value": "{\"libraryIds\":[20,10]}"
                 },
+                "library-order-invalid": {
+                  "value": "{}"
+                },
                 "library-order-empty": {
                   "value": "{\"libraryIds\":[]}"
+                },
+                "library-order": {
+                  "value": "{\"libraryIds\":[2,1]}"
                 }
               }
             }
@@ -3024,6 +3143,7 @@
                     "isDefault",
                     "items",
                     "libraryId",
+                    "maxSize",
                     "memberId",
                     "name",
                     "totalCount"
@@ -3043,6 +3163,10 @@
                     "name": {
                       "type": "string",
                       "description": "책장 이름"
+                    },
+                    "maxSize": {
+                      "type": "number",
+                      "description": "책장에 등록 가능한 최대 도서 수"
                     },
                     "totalCount": {
                       "type": "integer",
@@ -3141,10 +3265,10 @@
                 },
                 "examples": {
                   "libraries-public-detail-without-authors": {
-                    "value": "{\"libraryId\":7,\"memberId\":1,\"name\":\"책장\",\"isDefault\":false,\"totalCount\":1,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[],\"totalPages\":null,\"status\":\"READING\",\"currentPage\":0,\"readingUpdatedAt\":\"2026-10-23T03:00:00Z\"}]}"
+                    "value": "{\"libraryId\":7,\"memberId\":1,\"name\":\"책장\",\"isDefault\":false,\"totalCount\":1,\"maxSize\":30,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[],\"totalPages\":null,\"status\":\"READING\",\"currentPage\":0,\"readingUpdatedAt\":\"2026-10-23T03:00:00Z\"}]}"
                   },
                   "libraries-public-detail": {
-                    "value": "{\"libraryId\":7,\"memberId\":1,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[\"두 번째 저자\",\"첫 번째 저자\"],\"totalPages\":null,\"status\":\"READING\",\"currentPage\":23,\"readingUpdatedAt\":\"2026-10-23T03:00:00Z\"}]}"
+                    "value": "{\"libraryId\":7,\"memberId\":1,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"maxSize\":30,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[\"두 번째 저자\",\"첫 번째 저자\"],\"totalPages\":null,\"status\":\"READING\",\"currentPage\":23,\"readingUpdatedAt\":\"2026-10-23T03:00:00Z\"}]}"
                   }
                 }
               }
@@ -3273,6 +3397,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "AddLibraryItemRequest",
                 "required": [
                   "isbn13",
                   "status"
@@ -3286,52 +3411,46 @@
                   "totalPages": {
                     "type": "number",
                     "description": "전체 페이지 수",
-                    "nullable": true,
-                    "minimum": 1
+                    "nullable": true
                   },
                   "status": {
                     "type": "string",
-                    "description": "초기 읽기 상태",
-                    "enum": [
-                      "WANT_TO_READ",
-                      "READING",
-                      "FINISHED"
-                    ]
+                    "description": "초기 읽기 상태"
                   }
                 }
               },
               "examples": {
-                "library-book-add-external-api-error": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-limit-exceeded": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-library-not-found": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
                 "library-book-add": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-invalid-reading-state": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-invalid-request": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":0}\n"
                 },
                 "library-book-add-already-exists": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-book-add-forbidden": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-unauthorized": {
+                "library-book-add-book-not-found": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-book-add-total-pages-conflict": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-book-add-book-not-found": {
+                "library-book-add-forbidden": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-external-api-error": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-library-not-found": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-invalid-request": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":0}\n"
+                },
+                "library-book-add-unauthorized": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-invalid-reading-state": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-limit-exceeded": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 }
               }
@@ -3651,11 +3770,11 @@
                   }
                 },
                 "examples": {
-                  "library-book-add-library-not-found": {
-                    "value": "{\"detail\":\"책장을 찾을 수 없습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"LIBRARY_NOT_FOUND\"}"
-                  },
                   "library-book-add-book-not-found": {
                     "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
+                  },
+                  "library-book-add-library-not-found": {
+                    "value": "{\"detail\":\"책장을 찾을 수 없습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"LIBRARY_NOT_FOUND\"}"
                   }
                 }
               }
@@ -3703,14 +3822,14 @@
                   }
                 },
                 "examples": {
-                  "library-book-add-limit-exceeded": {
-                    "value": "{\"detail\":\"책장에는 최대 30권까지 등록할 수 있습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_LIMIT_EXCEEDED\"}"
-                  },
                   "library-book-add-already-exists": {
                     "value": "{\"detail\":\"이미 책장에 담긴 책입니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_ALREADY_EXISTS\"}"
                   },
                   "library-book-add-total-pages-conflict": {
                     "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
+                  },
+                  "library-book-add-limit-exceeded": {
+                    "value": "{\"detail\":\"책장에는 최대 30권까지 등록할 수 있습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_LIMIT_EXCEEDED\"}"
                   }
                 }
               }
@@ -4126,6 +4245,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "RenameLibraryRequest",
                 "required": [
                   "name"
                 ],
@@ -4140,25 +4260,25 @@
                 }
               },
               "examples": {
-                "library-rename-forbidden": {
-                  "value": "{\"name\":\"읽을책\"}\n"
+                "library-rename": {
+                  "value": "{\"name\":\"읽을 책\"}\n"
                 },
-                "library-rename-library-not-found": {
+                "library-rename-forbidden": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
                 "library-rename-unauthorized": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
+                "library-rename-invalid-request": {
+                  "value": "{\"name\":\"읽을책\"}\n"
+                },
                 "library-rename-internal-server-error": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
-                "library-rename-name-already-exists": {
+                "library-rename-library-not-found": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
-                "library-rename": {
-                  "value": "{\"name\":\"읽을 책\"}\n"
-                },
-                "library-rename-invalid-request": {
+                "library-rename-name-already-exists": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 }
               }
@@ -4487,6 +4607,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "BulkDeleteLibraryItemsRequest",
                 "required": [
                   "bookIds"
                 ],
@@ -4506,19 +4627,19 @@
                 }
               },
               "examples": {
-                "library-bulk-delete-unauthorized": {
-                  "value": "{\"bookIds\":[10,20]}\n"
-                },
                 "library-bulk-delete": {
-                  "value": "{\"bookIds\":[10,20]}\n"
-                },
-                "library-bulk-delete-forbidden": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 },
                 "library-bulk-delete-invalid-request": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 },
                 "library-bulk-delete-not-found": {
+                  "value": "{\"bookIds\":[10,20]}\n"
+                },
+                "library-bulk-delete-unauthorized": {
+                  "value": "{\"bookIds\":[10,20]}\n"
+                },
+                "library-bulk-delete-forbidden": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 }
               }
@@ -4748,7 +4869,6 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
-                "title": "BulkUpdateLibraryStatusRequest",
                 "required": [
                   "bookIds",
                   "status"
@@ -4778,22 +4898,22 @@
                 }
               },
               "examples": {
-                "library-bulk-status": {
+                "library-bulk-status-unauthorized": {
+                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
+                },
+                "library-bulk-status-not-found": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
                 "library-bulk-status-invalid-request": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
-                "library-bulk-status-forbidden": {
-                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
-                },
                 "library-bulk-status-invalid-reading-state": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
-                "library-bulk-status-unauthorized": {
+                "library-bulk-status-forbidden": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
-                "library-bulk-status-not-found": {
+                "library-bulk-status": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 }
               }
@@ -5291,10 +5411,13 @@
                 }
               },
               "examples": {
-                "library-update-total-pages-conflict": {
+                "library-update-unauthorized": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
                 "library-update-forbidden": {
+                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                },
+                "library-update": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
                 "library-update-invalid-reading-state": {
@@ -5303,13 +5426,10 @@
                 "library-update-not-found": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
+                "library-update-total-pages-conflict": {
+                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                },
                 "library-update-invalid-request": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
-                },
-                "library-update": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
-                },
-                "library-update-unauthorized": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 }
               }
@@ -5872,7 +5992,7 @@
           "회원"
         ],
         "summary": "회원 탈퇴",
-        "description": "회원을 탈퇴 처리하고 인증 토큰을 폐기한다. 기존 감상과 댓글은 유지된다",
+        "description": "유효한 Access Token이 없으면 인증 오류를 반환한다",
         "operationId": "member-withdraw",
         "responses": {
           "204": {
@@ -5930,6 +6050,113 @@
                 "examples": {
                   "member-withdraw-unauthorized": {
                     "value": "{\"detail\":\"인증이 필요합니다.\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pmf-survey/responses": {
+      "post": {
+        "tags": [
+          "PMF 설문"
+        ],
+        "summary": "PMF 설문 응답 제출",
+        "description": "설문 조회에서 받은 제출용 토큰으로 조회 당시의 대상 자격을 확인하고, 인증된 사용자의 actorId를 서버에서 연결해 답변을 저장한다. 조회 후 핵심 행동의 14일 기간이 지나도 제출할 수 있다. 복수 선택 문항은 answerCodes에 여러 코드를 전달한다.",
+        "operationId": "pmf-survey-submit",
+        "requestBody": {
+          "content": {
+            "application/json;charset=UTF-8": {
+              "schema": {
+                "title": "PmfSurveySubmitRequest",
+                "required": [
+                  "answers",
+                  "submissionToken"
+                ],
+                "type": "object",
+                "properties": {
+                  "submissionToken": {
+                    "type": "string",
+                    "description": "설문 조회 API가 현재 사용자에게 발급한 제출용 서명 토큰"
+                  },
+                  "answers": {
+                    "type": "array",
+                    "description": "문항별 선택 답변 목록",
+                    "items": {
+                      "required": [
+                        "answerCodes",
+                        "questionCode"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "questionCode": {
+                          "type": "string",
+                          "description": "문항 코드"
+                        },
+                        "answerCodes": {
+                          "type": "array",
+                          "description": "선택한 답변 코드 목록, 단일 선택 문항은 하나만 전달",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "pmf-survey-submit": {
+                  "value": "{\n  \"answers\": [\n    {\"questionCode\":\"PMF_CORE\",\"answerCodes\":[\"VERY_DISAPPOINTED\"]},\n    {\"questionCode\":\"MOST_MISSED_FEATURE\",\"answerCodes\":[\"LIBRARY_AND_SHELVES\"]},\n    {\"questionCode\":\"UNKNOWN_FEATURES\",\"answerCodes\":[\"OTHERS_FEED\",\"SEARCH_BOOKS\"]},\n    {\"questionCode\":\"RELAUNCH_INTENT\",\"answerCodes\":[\"YES\"]}\n  ],\n  \"submissionToken\":\"signed-pmf-eligibility-token\"\n}\n"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "PmfSurveySubmissionResponse",
+                  "required": [
+                    "submittedAt"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "submittedAt": {
+                      "type": "string",
+                      "description": "서버가 기록한 제출 시각"
+                    }
+                  }
+                },
+                "examples": {
+                  "pmf-survey-submit": {
+                    "value": "{\"submittedAt\":\"2026-11-05T03:00:00Z\"}"
                   }
                 }
               }
@@ -6243,11 +6470,11 @@
                   }
                 },
                 "examples": {
-                  "reply-delete-not-found": {
-                    "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/404\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
-                  },
                   "reply-delete-deleted-reply": {
                     "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/409\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
+                  },
+                  "reply-delete-not-found": {
+                    "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/404\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
                   }
                 }
               }
@@ -6302,23 +6529,23 @@
                 }
               },
               "examples": {
-                "reply-update-not-found": {
-                  "value": "{\"content\":\"답글\"}"
-                },
                 "reply-update-invalid-request": {
                   "value": "{}"
                 },
+                "reply-update-not-found": {
+                  "value": "{\"content\":\"답글\"}"
+                },
                 "reply-update-forbidden": {
                   "value": "{\"content\":\"답글\"}"
+                },
+                "reply-update": {
+                  "value": "{\"content\":\"수정한 답글\"}"
                 },
                 "reply-update-deleted-reply": {
                   "value": "{\"content\":\"답글\"}"
                 },
                 "reply-update-unauthorized": {
                   "value": "{\"content\":\"답글\"}"
-                },
-                "reply-update": {
-                  "value": "{\"content\":\"수정한 답글\"}"
                 }
               }
             }
@@ -6334,7 +6561,6 @@
                     "author",
                     "content",
                     "createdAt",
-                    "deleted",
                     "likeCount",
                     "likedByMe",
                     "replyId"
@@ -6348,10 +6574,6 @@
                     "likedByMe": {
                       "type": "boolean",
                       "description": "내가 좋아요를 눌렀는지 여부"
-                    },
-                    "deleted": {
-                      "type": "boolean",
-                      "description": "soft delete 여부"
                     },
                     "author": {
                       "required": [
@@ -6412,7 +6634,7 @@
                 },
                 "examples": {
                   "reply-update": {
-                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
+                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
                   }
                 }
               }
@@ -6923,29 +7145,29 @@
                 }
               },
               "examples": {
-                "review-update-invalid-reading-state": {
-                  "value": "{\"currentPage\":100}"
-                },
-                "review-update": {
-                  "value": "{\"content\":\"수정한 감상\",\"isSpoiler\":true}"
+                "review-update-deleted-resource": {
+                  "value": "{\"content\":\"감상\"}"
                 },
                 "review-update-not-found": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-update-deleted-resource": {
+                "review-update-total-pages-conflict": {
+                  "value": "{\"currentPage\":100}"
+                },
+                "review-update-unauthorized": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-update-invalid-request": {
-                  "value": "{}"
-                },
-                "review-update-total-pages-conflict": {
+                "review-update-invalid-reading-state": {
                   "value": "{\"currentPage\":100}"
                 },
                 "review-update-forbidden": {
                   "value": "{\"content\":\"수정\"}"
                 },
-                "review-update-unauthorized": {
-                  "value": "{\"content\":\"감상\"}"
+                "review-update": {
+                  "value": "{\"content\":\"수정한 감상\",\"isSpoiler\":true}"
+                },
+                "review-update-invalid-request": {
+                  "value": "{}"
                 }
               }
             }
@@ -7039,7 +7261,6 @@
                           "author",
                           "content",
                           "createdAt",
-                          "deleted",
                           "likeCount",
                           "likedByMe",
                           "replyId"
@@ -7053,10 +7274,6 @@
                           "likedByMe": {
                             "type": "boolean",
                             "description": "내가 좋아요를 눌렀는지 여부"
-                          },
-                          "deleted": {
-                            "type": "boolean",
-                            "description": "soft delete 여부"
                           },
                           "author": {
                             "required": [
@@ -7150,7 +7367,7 @@
                 },
                 "examples": {
                   "review-update": {
-                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -7467,6 +7684,100 @@
         ]
       }
     },
+    "/api/v1/admin/pmf-survey/responses": {
+      "get": {
+        "tags": [
+          "PMF 설문"
+        ],
+        "summary": "PMF 설문 응답 집계 조회",
+        "description": "관리자가 응답자 총수와 각 문항의 선택지별 응답자 수를 조회한다. 선택되지 않은 선택지도 0으로 반환한다.",
+        "operationId": "pmf-survey-admin-summary",
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "PmfSurveySummaryResponse",
+                  "required": [
+                    "questions",
+                    "respondentCount"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "respondentCount": {
+                      "type": "number",
+                      "description": "응답자 수"
+                    },
+                    "questions": {
+                      "type": "array",
+                      "description": "문항별 선택지 집계",
+                      "items": {
+                        "required": [
+                          "answerCounts",
+                          "question",
+                          "questionCode"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "answerCounts": {
+                            "type": "array",
+                            "description": "선택지별 응답자 수",
+                            "items": {
+                              "required": [
+                                "answerCode",
+                                "label",
+                                "respondentCount"
+                              ],
+                              "type": "object",
+                              "properties": {
+                                "respondentCount": {
+                                  "type": "number",
+                                  "description": "해당 선택지를 고른 응답자 수"
+                                },
+                                "answerCode": {
+                                  "type": "string",
+                                  "description": "선택지 코드"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "description": "선택지 문구"
+                                }
+                              }
+                            }
+                          },
+                          "question": {
+                            "type": "string",
+                            "description": "문항 내용"
+                          },
+                          "questionCode": {
+                            "type": "string",
+                            "description": "문항 코드"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "pmf-survey-admin-summary": {
+                    "value": "{\"respondentCount\":2,\"questions\":[{\"questionCode\":\"PMF_CORE\",\"question\":\"이 제품을 더 이상 쓸 수 없다면 어떻겠습니까?\",\"answerCounts\":[{\"answerCode\":\"VERY_DISAPPOINTED\",\"label\":\"매우 실망\",\"respondentCount\":1},{\"answerCode\":\"SLIGHTLY_DISAPPOINTED\",\"label\":\"약간 실망\",\"respondentCount\":0},{\"answerCode\":\"NOT_DISAPPOINTED\",\"label\":\"실망하지 않음\",\"respondentCount\":0},{\"answerCode\":\"NO_LONGER_USING\",\"label\":\"더 이상 쓰지 않음\",\"respondentCount\":0}]},{\"questionCode\":\"MOST_MISSED_FEATURE\",\"question\":\"책췍을 더 이상 사용할 수 없다면, 가장 아쉬울 기능은 무엇입니까?\",\"answerCounts\":[{\"answerCode\":\"LIBRARY_AND_SHELVES\",\"label\":\"내 서재와 책장\",\"respondentCount\":0},{\"answerCode\":\"OTHERS_FEED\",\"label\":\"다른 사람들 감상 보기(피드)\",\"respondentCount\":0},{\"answerCode\":\"REVIEWS_AND_REPLIES\",\"label\":\"감상, 답글 작성\",\"respondentCount\":0},{\"answerCode\":\"NO_MISSING_FEATURE\",\"label\":\"특별히 아쉬운 기능 없음\",\"respondentCount\":0}]},{\"questionCode\":\"UNKNOWN_FEATURES\",\"question\":\"책췍을 사용하면서 있는 줄 몰랐던 기능을 모두 골라 주세요\",\"answerCounts\":[{\"answerCode\":\"OTHERS_FEED\",\"label\":\"다른 사람들 감상 보기(피드)\",\"respondentCount\":0},{\"answerCode\":\"ADD_BOOK_TO_LIBRARY\",\"label\":\"책 서재에 담기\",\"respondentCount\":0},{\"answerCode\":\"WRITE_REVIEW_OR_REPLY\",\"label\":\"감상/답글 남기기\",\"respondentCount\":0},{\"answerCode\":\"SEARCH_BOOKS\",\"label\":\"책 검색하기\",\"respondentCount\":0},{\"answerCode\":\"CHANGE_NICKNAME\",\"label\":\"닉네임 변경하기\",\"respondentCount\":0},{\"answerCode\":\"TOGGLE_REVIEW_ANONYMITY\",\"label\":\"감상/답글 익명으로 설정하고 해제하기\",\"respondentCount\":0},{\"answerCode\":\"NO_UNKNOWN_FEATURES\",\"label\":\"몰랐던 기능 없음\",\"respondentCount\":0}]},{\"questionCode\":\"RELAUNCH_INTENT\",\"question\":\"책췍이 다시 출시된다면 사용해 볼 의향이 있습니까?\",\"answerCounts\":[{\"answerCode\":\"YES\",\"label\":\"예\",\"respondentCount\":0},{\"answerCode\":\"NO\",\"label\":\"아니요\",\"respondentCount\":0},{\"answerCode\":\"UNSURE\",\"label\":\"잘 모르겠음\",\"respondentCount\":0}]}]}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/guest-token/refresh": {
       "post": {
         "tags": [
@@ -7647,7 +7958,7 @@
           "인증"
         ],
         "summary": "모바일 Apple 로그인",
-        "description": "Apple 인증 정보로 자체 Access Token과 Refresh Token을 발급한다",
+        "description": "Apple 인증 필수값이 없거나 비어 있으면 요청을 거부한다",
         "operationId": "mobile-apple-login",
         "requestBody": {
           "content": {
@@ -7675,11 +7986,11 @@
                 }
               },
               "examples": {
-                "mobile-apple-login": {
-                  "value": "{\n  \"identityToken\": \"apple-identity-token\",\n  \"authorizationCode\": \"apple-authorization-code\",\n  \"nonce\": \"raw-nonce\"\n}\n"
-                },
                 "mobile-apple-login-invalid-request": {
                   "value": "{\n  \"identityToken\": \"\",\n  \"authorizationCode\": \"\",\n  \"nonce\": \"\"\n}\n"
+                },
+                "mobile-apple-login": {
+                  "value": "{\n  \"identityToken\": \"apple-identity-token\",\n  \"authorizationCode\": \"apple-authorization-code\",\n  \"nonce\": \"raw-nonce\"\n}\n"
                 }
               }
             }
@@ -7799,7 +8110,7 @@
           "인증"
         ],
         "summary": "모바일 Google 로그인",
-        "description": "Google SDK에서 받은 ID Token으로 모바일 Access Token과 Refresh Token을 발급한다. 만료 값의 단위는 초다",
+        "description": "Google ID Token이 없거나 비어 있으면 요청을 거부한다",
         "operationId": "mobile-google-login",
         "requestBody": {
           "content": {
@@ -7817,11 +8128,11 @@
                 }
               },
               "examples": {
-                "mobile-google-login": {
-                  "value": "{\n  \"idToken\": \"google-id-token\"\n}\n"
-                },
                 "mobile-google-login-invalid-request": {
                   "value": "{\n  \"idToken\": \"\"\n}\n"
+                },
+                "mobile-google-login": {
+                  "value": "{\n  \"idToken\": \"google-id-token\"\n}\n"
                 }
               }
             }
@@ -8702,7 +9013,6 @@
                                 "author",
                                 "content",
                                 "createdAt",
-                                "deleted",
                                 "likeCount",
                                 "likedByMe",
                                 "replyId"
@@ -8716,10 +9026,6 @@
                                 "likedByMe": {
                                   "type": "boolean",
                                   "description": "내가 좋아요를 눌렀는지 여부"
-                                },
-                                "deleted": {
-                                  "type": "boolean",
-                                  "description": "soft delete 여부"
                                 },
                                 "author": {
                                   "required": [
@@ -8816,7 +9122,7 @@
                 },
                 "examples": {
                   "review-list": {
-                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}]}"
+                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}]}"
                   },
                   "review-normal": {
                     "summary": "일반 감상",
@@ -8899,8 +9205,22 @@
                           },
                           "likeCount": 0,
                           "likedByMe": false,
-                          "replyCount": 0,
-                          "recentReplies": []
+                          "replyCount": 1,
+                          "recentReplies": [
+                            {
+                              "replyId": 201,
+                              "content": "저도 그 장면이 기억나요.",
+                              "createdAt": "2026-08-14T15:00:00Z",
+                              "author": {
+                                "displayName": "다른 닉네임",
+                                "profileImageUrl": null,
+                                "anonymous": false,
+                                "mine": false
+                              },
+                              "likeCount": 0,
+                              "likedByMe": false
+                            }
+                          ]
                         }
                       ]
                     }
@@ -9122,23 +9442,23 @@
                 }
               },
               "examples": {
-                "review-create-total-pages-conflict": {
-                  "value": "{\"content\":\"감상\"}"
+                "review-create-invalid-request": {
+                  "value": "{}"
                 },
-                "review-create-unauthorized": {
+                "review-create": {
+                  "value": "{\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\n\"currentPage\":120,\"totalPages\":308,\"isSpoiler\":false}\n"
+                },
+                "review-create-total-pages-conflict": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-book-not-found": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-invalid-reading-state": {
+                "review-create-unauthorized": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create": {
-                  "value": "{\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\n\"currentPage\":120,\"totalPages\":308,\"isSpoiler\":false}\n"
-                },
-                "review-create-invalid-request": {
-                  "value": "{}"
+                "review-create-invalid-reading-state": {
+                  "value": "{\"content\":\"감상\"}"
                 }
               }
             }
@@ -9240,7 +9560,6 @@
                           "author",
                           "content",
                           "createdAt",
-                          "deleted",
                           "likeCount",
                           "likedByMe",
                           "replyId"
@@ -9254,10 +9573,6 @@
                           "likedByMe": {
                             "type": "boolean",
                             "description": "내가 좋아요를 눌렀는지 여부"
-                          },
-                          "deleted": {
-                            "type": "boolean",
-                            "description": "soft delete 여부"
                           },
                           "author": {
                             "required": [
@@ -9351,7 +9666,7 @@
                 },
                 "examples": {
                   "review-create": {
-                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -9656,23 +9971,23 @@
                 }
               },
               "examples": {
-                "library-rate-unauthorized": {
-                  "value": "{\"rating\":4.5}\n"
-                },
-                "library-rate": {
-                  "value": "{\"rating\":4.5}\n"
-                },
                 "library-rate-forbidden": {
                   "value": "{\"rating\":4.5}\n"
                 },
-                "library-rate-without-reading-state": {
-                  "value": "{\"rating\":4.5}"
+                "library-rate-unauthorized": {
+                  "value": "{\"rating\":4.5}\n"
                 },
                 "library-rate-book-not-found": {
                   "value": "{\"rating\":4.5}\n"
                 },
                 "library-rate-invalid-request": {
                   "value": "{\"rating\":4.5}\n"
+                },
+                "library-rate": {
+                  "value": "{\"rating\":4.5}\n"
+                },
+                "library-rate-without-reading-state": {
+                  "value": "{\"rating\":4.5}"
                 }
               }
             }
@@ -10195,7 +10510,7 @@
           "회원"
         ],
         "summary": "익명 여부 수정",
-        "description": "유효한 Access Token이 없으면 인증 오류를 반환한다",
+        "description": "공개 닉네임을 설정하지 않고 익명을 해제하면 처리 불가 오류를 반환한다",
         "operationId": "member-anonymity-update",
         "requestBody": {
           "content": {
@@ -10213,6 +10528,9 @@
                 }
               },
               "examples": {
+                "member-anonymity-update-nickname-required": {
+                  "value": "{\"displayAnonymous\":false}"
+                },
                 "member-anonymity-update-unauthorized": {
                   "value": "{\"displayAnonymous\":true}"
                 },
@@ -10221,9 +10539,6 @@
                 },
                 "member-anonymity-update-invalid": {
                   "value": "{}"
-                },
-                "member-anonymity-update-nickname-required": {
-                  "value": "{\"displayAnonymous\":false}"
                 }
               }
             }
@@ -10450,6 +10765,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "UpdateNicknameRequest",
                 "required": [
                   "nickname"
                 ],
@@ -10464,23 +10780,23 @@
                 }
               },
               "examples": {
-                "member-nickname-update-unauthorized": {
-                  "value": "{\"nickname\":\"책책이\"}"
-                },
                 "member-nickname-update": {
                   "value": "{\"nickname\":\"책책이\"}"
                 },
-                "member-nickname-update-forbidden": {
+                "member-nickname-update-unauthorized": {
+                  "value": "{\"nickname\":\"책책이\"}"
+                },
+                "member-nickname-update-conflict": {
                   "value": "{\"nickname\":\"책책이\"}"
                 },
                 "member-nickname-update-first-invalid": {
                   "value": "{\"nickname\":\"책책책책책책책책책책책\"}"
                 },
-                "member-nickname-update-conflict": {
-                  "value": "{\"nickname\":\"책책이\"}"
-                },
                 "member-nickname-update-invalid": {
                   "value": "{\"nickname\":\" \"}"
+                },
+                "member-nickname-update-forbidden": {
+                  "value": "{\"nickname\":\"책책이\"}"
                 }
               }
             }
@@ -10804,6 +11120,7 @@
                   "required": [
                     "filteredCount",
                     "items",
+                    "maxSize",
                     "member",
                     "totalCount"
                   ],
@@ -10840,6 +11157,10 @@
                         }
                       },
                       "description": "공개 서재 회원 정보"
+                    },
+                    "maxSize": {
+                      "type": "number",
+                      "description": "책장에 등록 가능한 최대 도서 수"
                     },
                     "totalCount": {
                       "type": "number",
@@ -10946,7 +11267,7 @@
                 },
                 "examples": {
                   "public-library-list": {
-                    "value": "{\"member\":{\"memberId\":1,\"displayName\":\"책책이\",\"profileImageUrl\":\"https://example.com/profile.jpg\"},\"totalCount\":1,\"filteredCount\":1,\"nextPage\":null,\"items\":[{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5}]}"
+                    "value": "{\"member\":{\"memberId\":1,\"displayName\":\"책책이\",\"profileImageUrl\":\"https://example.com/profile.jpg\"},\"totalCount\":1,\"maxSize\":30,\"filteredCount\":1,\"nextPage\":null,\"items\":[{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5}]}"
                   }
                 }
               }
@@ -11202,11 +11523,11 @@
                   }
                 },
                 "examples": {
-                  "reply-reaction-create-conflict": {
-                    "value": "{\"detail\":\"이미 좋아요를 남겼습니다.\",\"instance\":\"/api/v1/replies/410/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"REACTION_ALREADY_EXISTS\"}"
-                  },
                   "reply-reaction-create-deleted-resource": {
                     "value": "{\"detail\":\"삭제된 리소스입니다.\",\"instance\":\"/api/v1/replies/409/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"DELETED_RESOURCE\"}"
+                  },
+                  "reply-reaction-create-conflict": {
+                    "value": "{\"detail\":\"이미 좋아요를 남겼습니다.\",\"instance\":\"/api/v1/replies/410/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"REACTION_ALREADY_EXISTS\"}"
                   }
                 }
               }
@@ -11550,11 +11871,11 @@
                   }
                 },
                 "examples": {
-                  "review-reaction-create-conflict": {
-                    "value": "{\"detail\":\"이미 좋아요를 남겼습니다.\",\"instance\":\"/api/v1/reviews/101/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"REACTION_ALREADY_EXISTS\"}"
-                  },
                   "review-reaction-create-deleted-resource": {
                     "value": "{\"detail\":\"삭제된 리소스입니다.\",\"instance\":\"/api/v1/reviews/409/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"DELETED_RESOURCE\"}"
+                  },
+                  "review-reaction-create-conflict": {
+                    "value": "{\"detail\":\"이미 좋아요를 남겼습니다.\",\"instance\":\"/api/v1/reviews/101/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"REACTION_ALREADY_EXISTS\"}"
                   }
                 }
               }
@@ -11768,7 +12089,6 @@
                           "author",
                           "content",
                           "createdAt",
-                          "deleted",
                           "likeCount",
                           "likedByMe",
                           "replyId"
@@ -11782,10 +12102,6 @@
                           "likedByMe": {
                             "type": "boolean",
                             "description": "내가 좋아요를 눌렀는지 여부"
-                          },
-                          "deleted": {
-                            "type": "boolean",
-                            "description": "soft delete 여부"
                           },
                           "author": {
                             "required": [
@@ -11849,7 +12165,7 @@
                 },
                 "examples": {
                   "reply-list": {
-                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -11991,20 +12307,20 @@
                 }
               },
               "examples": {
-                "reply-create-review-not-found": {
-                  "value": "{\"content\":\"답글\"}"
-                },
                 "reply-create-invalid-request": {
                   "value": "{}"
                 },
                 "reply-create-deleted-resource": {
                   "value": "{\"content\":\"답글\"}"
                 },
-                "reply-create-unauthorized": {
-                  "value": "{\"content\":\"답글\"}"
-                },
                 "reply-create": {
                   "value": "{\"content\":\"저도 그 부분이 좋았어요.\"}"
+                },
+                "reply-create-review-not-found": {
+                  "value": "{\"content\":\"답글\"}"
+                },
+                "reply-create-unauthorized": {
+                  "value": "{\"content\":\"답글\"}"
                 }
               }
             }
@@ -12028,7 +12344,6 @@
                     "author",
                     "content",
                     "createdAt",
-                    "deleted",
                     "likeCount",
                     "likedByMe",
                     "replyId"
@@ -12042,10 +12357,6 @@
                     "likedByMe": {
                       "type": "boolean",
                       "description": "내가 좋아요를 눌렀는지 여부"
-                    },
-                    "deleted": {
-                      "type": "boolean",
-                      "description": "soft delete 여부"
                     },
                     "author": {
                       "required": [
@@ -12106,7 +12417,7 @@
                 },
                 "examples": {
                   "reply-create": {
-                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
+                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
                   }
                 }
               }
@@ -12334,7 +12645,7 @@
           {
             "name": "isbn13",
             "in": "path",
-            "description": "ISBN-13",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -12525,11 +12836,11 @@
                   }
                 },
                 "examples": {
-                  "book-detail-v2-with-rating": {
-                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://example.com/books/cover.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":{\"myRating\":4.2},\"isRegisteredInMyLibrary\":true,\"purchaseUrl\":\"https://www.yes24.com/product/goods/101375809\",\"source\":\"yes24\",\"bookQuestion\":{\"question\":\"화성에 홀로 남는다면 무엇부터 하시겠어요?\",\"plot\":\"줄거리\",\"extract\":\"발췌문\"}}"
-                  },
                   "book-detail-v2-without-rating": {
                     "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://example.com/books/cover.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":null,\"isRegisteredInMyLibrary\":true,\"purchaseUrl\":\"https://www.yes24.com/product/goods/101375809\",\"source\":\"yes24\",\"bookQuestion\":{\"question\":\"화성에 홀로 남는다면 무엇부터 하시겠어요?\",\"plot\":\"줄거리\",\"extract\":\"발췌문\"}}"
+                  },
+                  "book-detail-v2-with-rating": {
+                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://example.com/books/cover.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":{\"myRating\":4.2},\"isRegisteredInMyLibrary\":true,\"purchaseUrl\":\"https://www.yes24.com/product/goods/101375809\",\"source\":\"yes24\",\"bookQuestion\":{\"question\":\"화성에 홀로 남는다면 무엇부터 하시겠어요?\",\"plot\":\"줄거리\",\"extract\":\"발췌문\"}}"
                   }
                 }
               }
@@ -12691,7 +13002,7 @@
           "별점"
         ],
         "summary": "ISBN으로 도서 별점 등록, 수정",
-        "description": "인증된 활성 회원이 ISBN으로 도서에 별점을 등록하거나 기존 별점을 변경한다.\n\n- `isbn13`: 검색, 상세 응답의 ISBN 문자열을 그대로 전달한다. `bookId` 확보 요청은 필요하지 않다.\n- `rating`: 기존 ID 경로와 같은 `0.1`부터 `5.0`까지 소수 첫째 자리의 별점이다.\n- DB에 있는 도서는 그대로 사용하고, 미등록 도서만 외부 상세 조회 후 저장한다.\n- 책장, 닉네임과 감상 등록을 요구하지 않으며 책장 배치와 독서 기록을 만들지 않는다.\n- 기존 독서 상태, 현재 페이지와 독서 갱신 시각은 유지하고 초기화된 기록도 되살리지 않는다.\n- 등록, 수정과 같은 값 재요청 모두 `200`이며 기존 `PUT /api/v1/library/{bookId}/rating`과\n  응답 필드, 타입, nullable 조건과 의미가 같다. 별점만 있으면 `status`, `currentPage`, `readingUpdatedAt`은 `null`이다.\n- 응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`을 호출할 수 있다.\n- 미등록 도서의 외부 조회 결과가 없으면 `404`, `BOOK_NOT_FOUND`, 외부 조회 실패는 `502`, `EXTERNAL_API_ERROR`다.\n- 도서 확보 후 별점 저장에 실패하면 도서만 남을 수 있다. 같은 요청을 다시 보내면 기존 도서를 재사용한다.\n",
+        "description": "인증된 활성 회원이 ISBN으로 도서에 별점을 등록하거나 기존 별점을 변경한다.\n\n- `isbn13`: 검색, 상세 응답의 ISBN 문자열을 그대로 전달한다. `bookId` 확보 요청은 필요하지 않다.\n- `rating`: 기존 ID 경로와 같은 `0.1`부터 `5.0`까지 소수 첫째 자리의 별점이다.\n- DB에 있는 도서는 그대로 사용하고, 미등록 도서만 외부 상세 조회 후 저장한다.\n- 책장, 닉네임과 감상 등록을 요구하지 않으며 책장 배치와 독서 기록을 만들지 않는다.\n- 기존 독서 상태, 현재 페이지와 독서 갱신 시각은 유지하고 초기화된 기록도 되살리지 않는다.\n- 등록, 수정과 같은 값 재요청 모두 `200`이며 기존 `PUT /api/v1/library/{bookId}/rating`과\n  응답 필드, 타입, nullable 조건과 의미가 같다. 별점만 있으면 `status`, `currentPage`, `readingUpdatedAt`은 `null`이다.\n- 삭제는 `DELETE /api/v1/books/by-isbn/{isbn13}/rating`을 사용하며,\n  응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`도 호출할 수 있다.\n- 미등록 도서의 외부 조회 결과가 없으면 `404`, `BOOK_NOT_FOUND`, 외부 조회 실패는 `502`, `EXTERNAL_API_ERROR`다.\n- 도서 확보 후 별점 저장에 실패하면 도서만 남을 수 있다. 같은 요청을 다시 보내면 기존 도서를 재사용한다.\n",
         "operationId": "books-rate-by-isbn",
         "parameters": [
           {
@@ -12727,25 +13038,25 @@
                 "books-rate-by-isbn-internal-server-error": {
                   "value": "{\"rating\":4.5}"
                 },
-                "books-rate-by-isbn-invalid-request": {
-                  "value": "{\"rating\":4.5}"
-                },
-                "books-rate-by-isbn-without-reading-state": {
-                  "value": "{\"rating\":4.5}"
-                },
-                "books-rate-by-isbn-forbidden": {
-                  "value": "{\"rating\":4.5}"
-                },
-                "books-rate-by-isbn": {
+                "books-rate-by-isbn-unauthorized": {
                   "value": "{\"rating\":4.5}"
                 },
                 "books-rate-by-isbn-external-api-error": {
                   "value": "{\"rating\":4.5}"
                 },
+                "books-rate-by-isbn-forbidden": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-without-reading-state": {
+                  "value": "{\"rating\":4.5}"
+                },
                 "books-rate-by-isbn-book-not-found": {
                   "value": "{\"rating\":4.5}"
                 },
-                "books-rate-by-isbn-unauthorized": {
+                "books-rate-by-isbn-invalid-request": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn": {
                   "value": "{\"rating\":4.5}"
                 }
               }
@@ -13178,6 +13489,185 @@
             "accessTokenCookie": []
           }
         ]
+      },
+      "delete": {
+        "tags": [
+          "별점"
+        ],
+        "summary": "ISBN으로 도서 별점 삭제",
+        "description": "인증된 활성 회원이 ISBN으로 내 별점을 삭제한다. 요청 본문 없이 호출하며 성공 시 `204`를 반환한다.\n독서 기록과 책장 배치는 유지한다. 별점이나 내 공유 기록이 없거나 반복 삭제해도 성공한다.\nDB에 저장되지 않은 ISBN은 외부 조회나 도서 생성 없이 `404`, `BOOK_NOT_FOUND`를 반환한다.\n기존 `DELETE /api/v1/library/{bookId}/rating`도 계속 지원한다.\n",
+        "operationId": "books-remove-rating-by-isbn",
+        "parameters": [
+          {
+            "name": "isbn13",
+            "in": "path",
+            "description": "검색, 상세 응답의 ISBN 문자열",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "204"
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-remove-rating-by-isbn-unauthorized": {
+                    "value": "{\"detail\":\"인증이 필요합니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-remove-rating-by-isbn-forbidden": {
+                    "value": "{\"detail\":\"요청한 작업을 수행할 권한이 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":403,\"title\":\"Forbidden\",\"type\":\"about:blank\",\"code\":\"FORBIDDEN\"}"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-remove-rating-by-isbn-book-not-found": {
+                    "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
       }
     },
     "/api/v1/books/by-isbn/{isbn13}/reviews": {
@@ -13244,29 +13734,29 @@
                 }
               },
               "examples": {
-                "review-create-by-isbn-total-pages-conflict": {
-                  "value": "{\"content\":\"감상\"}"
-                },
                 "review-create-by-isbn-invalid-reading-state": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn-invalid-request": {
-                  "value": "{}"
-                },
-                "review-create-by-isbn-forbidden": {
+                "review-create-by-isbn-external-api-error": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn": {
-                  "value": "{\"content\":\"인상 깊었다.\"}"
+                "review-create-by-isbn-total-pages-conflict": {
+                  "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn-unauthorized": {
+                "review-create-by-isbn-forbidden": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-by-isbn-book-not-found": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn-external-api-error": {
+                "review-create-by-isbn-invalid-request": {
+                  "value": "{}"
+                },
+                "review-create-by-isbn-unauthorized": {
                   "value": "{\"content\":\"감상\"}"
+                },
+                "review-create-by-isbn": {
+                  "value": "{\"content\":\"인상 깊었다.\"}"
                 }
               }
             }
@@ -13375,7 +13865,6 @@
                               "author",
                               "content",
                               "createdAt",
-                              "deleted",
                               "likeCount",
                               "likedByMe",
                               "replyId"
@@ -13389,10 +13878,6 @@
                               "likedByMe": {
                                 "type": "boolean",
                                 "description": "내가 좋아요를 눌렀는지 여부"
-                              },
-                              "deleted": {
-                                "type": "boolean",
-                                "description": "soft delete 여부"
                               },
                               "author": {
                                 "required": [
@@ -13493,7 +13978,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn": {
-                    "value": "{\"bookId\":42,\"review\":{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}}"
+                    "value": "{\"bookId\":42,\"review\":{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}}"
                   }
                 }
               }
@@ -13900,29 +14385,29 @@
                 }
               },
               "examples": {
-                "library-book-order-not-found": {
-                  "value": "{\"bookIds\":[20,10]}"
-                },
                 "library-book-order-forbidden": {
                   "value": "{\"bookIds\":[20,10]}"
                 },
-                "library-book-order-invalid": {
-                  "value": "{}"
-                },
-                "library-book-order-migrated-35": {
-                  "value": "{\"bookIds\":[35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]}"
-                },
-                "library-book-order-unauthorized": {
+                "library-book-order-not-found": {
                   "value": "{\"bookIds\":[20,10]}"
                 },
                 "library-book-order-empty": {
                   "value": "{\"bookIds\":[]}"
+                },
+                "library-book-order-unauthorized": {
+                  "value": "{\"bookIds\":[20,10]}"
+                },
+                "library-book-order-migrated-35": {
+                  "value": "{\"bookIds\":[35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]}"
                 },
                 "library-book-order-conflict": {
                   "value": "{\"bookIds\":[20,10]}"
                 },
                 "library-book-order": {
                   "value": "{\"bookIds\":[20,10]}"
+                },
+                "library-book-order-invalid": {
+                  "value": "{}"
                 }
               }
             }
@@ -14781,6 +15266,26 @@
   },
   "components": {
     "schemas": {
+      "BulkDeleteLibraryItemsRequest": {
+        "title": "BulkDeleteLibraryItemsRequest",
+        "required": [
+          "bookIds"
+        ],
+        "type": "object",
+        "properties": {
+          "bookIds": {
+            "type": "array",
+            "description": "삭제할 도서 ID 목록. 최대 10개",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true
+          }
+        }
+      },
       "api-v1-replies-replyId-reactions1578631323": {
         "required": [
           "likeCount",
@@ -14798,45 +15303,260 @@
           }
         }
       },
-      "BulkUpdateLibraryStatusRequest": {
-        "title": "BulkUpdateLibraryStatusRequest",
+      "LibraryShelf": {
+        "title": "LibraryShelf",
         "required": [
-          "bookIds",
-          "status"
+          "isDefault",
+          "items",
+          "libraryId",
+          "maxSize",
+          "name",
+          "totalCount"
         ],
         "type": "object",
         "properties": {
-          "bookIds": {
-            "type": "array",
-            "description": "상태를 변경할 도서 ID 목록. 최대 10개",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "minItems": 1,
-            "maxItems": 10,
-            "uniqueItems": true
+          "isDefault": {
+            "type": "boolean",
+            "description": "기본 책장 여부. 일반 책장은 false"
           },
-          "status": {
+          "libraryId": {
+            "type": "integer",
+            "description": "생성된 책장 ID",
+            "format": "int64",
+            "minimum": 1
+          },
+          "name": {
             "type": "string",
-            "description": "변경할 읽기 상태",
-            "enum": [
-              "WANT_TO_READ",
-              "READING",
-              "FINISHED"
-            ]
+            "description": "저장된 책장 이름"
+          },
+          "maxSize": {
+            "type": "number",
+            "description": "책장에 등록 가능한 최대 도서 수"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "책장의 전체 도서 수",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "description": "표시 순서대로 반환하는 전체 도서 목록",
+            "items": {
+              "type": "object",
+              "properties": {
+                "isbn13": {
+                  "type": "string",
+                  "description": "도서 상세 조회에 사용하는 ISBN-13",
+                  "pattern": "^\\d{13}$"
+                },
+                "spineImageUrl": {
+                  "type": "string",
+                  "description": "책등 이미지 URL. 이미지가 없으면 null",
+                  "nullable": true
+                },
+                "title": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "bookId": {
+                  "type": "integer",
+                  "description": "도서 ID",
+                  "format": "int64",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "bookId",
+                "title",
+                "spineImageUrl",
+                "isbn13"
+              ]
+            }
           }
         }
       },
-      "api-v1-recommended-books-1231260270": {
+      "UpdateNicknameRequest": {
+        "title": "UpdateNicknameRequest",
         "required": [
-          "isbn13"
+          "nickname"
         ],
         "type": "object",
         "properties": {
-          "isbn13": {
+          "nickname": {
             "type": "string",
-            "description": "추천할 도서의 ISBN-13"
+            "description": "공개 닉네임, 공백뿐이 아닌 1~10자",
+            "minLength": 1,
+            "maxLength": 10
+          }
+        }
+      },
+      "PmfSurveySubmitRequest": {
+        "title": "PmfSurveySubmitRequest",
+        "required": [
+          "answers",
+          "submissionToken"
+        ],
+        "type": "object",
+        "properties": {
+          "submissionToken": {
+            "type": "string",
+            "description": "설문 조회 API가 현재 사용자에게 발급한 제출용 서명 토큰"
+          },
+          "answers": {
+            "type": "array",
+            "description": "문항별 선택 답변 목록",
+            "items": {
+              "required": [
+                "answerCodes",
+                "questionCode"
+              ],
+              "type": "object",
+              "properties": {
+                "questionCode": {
+                  "type": "string",
+                  "description": "문항 코드"
+                },
+                "answerCodes": {
+                  "type": "array",
+                  "description": "선택한 답변 코드 목록, 단일 선택 문항은 하나만 전달",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LibraryCollectionResponse": {
+        "title": "LibraryCollectionResponse",
+        "required": [
+          "libraries",
+          "memberId"
+        ],
+        "type": "object",
+        "properties": {
+          "libraries": {
+            "type": "array",
+            "description": "설정한 순서의 책장 목록",
+            "items": {
+              "required": [
+                "isDefault",
+                "items",
+                "libraryId",
+                "maxSize",
+                "name",
+                "totalCount"
+              ],
+              "type": "object",
+              "properties": {
+                "isDefault": {
+                  "type": "boolean",
+                  "description": "기본 책장 여부"
+                },
+                "libraryId": {
+                  "type": "integer",
+                  "description": "책장 ID",
+                  "format": "int64",
+                  "minimum": 1
+                },
+                "name": {
+                  "type": "string",
+                  "description": "책장 이름"
+                },
+                "maxSize": {
+                  "type": "number",
+                  "description": "책장에 등록 가능한 최대 도서 수"
+                },
+                "totalCount": {
+                  "type": "integer",
+                  "description": "책장에 담긴 도서 수",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "items": {
+                  "type": "array",
+                  "description": "설정한 순서의 도서 목록",
+                  "items": {
+                    "required": [
+                      "authors",
+                      "bookId",
+                      "coverImageUrl",
+                      "isbn13",
+                      "title",
+                      "spineImageUrl"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "coverImageUrl": {
+                        "type": "string",
+                        "description": "도서 표지 이미지 URL"
+                      },
+                      "isbn13": {
+                        "type": "string",
+                        "description": "상세 조회에 사용하는 ISBN-13",
+                        "pattern": "^[0-9]{13}$"
+                      },
+                      "spineImageUrl": {
+                        "type": "string",
+                        "description": "책등 이미지 URL, 없으면 null",
+                        "nullable": true,
+                        "format": "uri"
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "도서 제목"
+                      },
+                      "authors": {
+                        "type": "array",
+                        "description": "저자 이름 목록, 없으면 빈 배열",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "bookId": {
+                        "type": "integer",
+                        "description": "도서 ID",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "memberId": {
+            "type": "integer",
+            "description": "서재 소유 회원 ID",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "PmfSurveySubmissionResponse": {
+        "title": "PmfSurveySubmissionResponse",
+        "required": [
+          "submittedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "submittedAt": {
+            "type": "string",
+            "description": "서버가 기록한 제출 시각"
           }
         }
       },
@@ -14930,15 +15650,204 @@
           }
         }
       },
-      "api-v1-auth-mobile-google1868037826": {
+      "api-v1-books-by-isbn-isbn13-reviews-1565068506": {
         "required": [
-          "idToken"
+          "bookId",
+          "review"
         ],
         "type": "object",
         "properties": {
-          "idToken": {
-            "type": "string",
-            "description": "Google SDK에서 발급받은 ID Token"
+          "review": {
+            "required": [
+              "author",
+              "content",
+              "createdAt",
+              "deleted",
+              "isSpoiler",
+              "likeCount",
+              "likedByMe",
+              "recentReplies",
+              "replyCount",
+              "reviewId"
+            ],
+            "type": "object",
+            "properties": {
+              "chapter": {
+                "type": "string",
+                "description": "챕터",
+                "nullable": true
+              },
+              "author": {
+                "required": [
+                  "actorType",
+                  "anonymous",
+                  "displayName",
+                  "mine",
+                  "profileStatus"
+                ],
+                "type": "object",
+                "properties": {
+                  "mine": {
+                    "type": "boolean",
+                    "description": "내가 작성한 감상인지 여부"
+                  },
+                  "actorType": {
+                    "type": "string",
+                    "description": "작성자 유형(MEMBER, GUEST)"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "작성자 표시 이름"
+                  },
+                  "profileStatus": {
+                    "type": "string",
+                    "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                  },
+                  "anonymous": {
+                    "type": "boolean",
+                    "description": "익명 작성 여부"
+                  },
+                  "profileImageUrl": {
+                    "type": "string",
+                    "description": "작성자 프로필 이미지 URL",
+                    "nullable": true
+                  },
+                  "memberId": {
+                    "type": "number",
+                    "description": "공개 서재 조회용 회원 ID",
+                    "nullable": true
+                  }
+                },
+                "description": "작성자 정보"
+              },
+              "likeCount": {
+                "type": "number",
+                "description": "좋아요 수"
+              },
+              "content": {
+                "type": "string",
+                "description": "감상 내용"
+              },
+              "createdAt": {
+                "type": "string",
+                "description": "작성 시각(UTC)"
+              },
+              "recentReplies": {
+                "type": "array",
+                "description": "최근 답글 최대 3개",
+                "items": {
+                  "required": [
+                    "author",
+                    "content",
+                    "createdAt",
+                    "likeCount",
+                    "likedByMe",
+                    "replyId"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "description": "작성 시각(UTC)"
+                    },
+                    "likedByMe": {
+                      "type": "boolean",
+                      "description": "내가 좋아요를 눌렀는지 여부"
+                    },
+                    "author": {
+                      "required": [
+                        "actorType",
+                        "anonymous",
+                        "displayName",
+                        "mine",
+                        "profileStatus"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "mine": {
+                          "type": "boolean",
+                          "description": "내가 작성한 답글인지 여부"
+                        },
+                        "actorType": {
+                          "type": "string",
+                          "description": "작성자 유형(MEMBER, GUEST)"
+                        },
+                        "displayName": {
+                          "type": "string",
+                          "description": "작성자 표시 이름"
+                        },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
+                        "anonymous": {
+                          "type": "boolean",
+                          "description": "익명 작성 여부"
+                        },
+                        "profileImageUrl": {
+                          "type": "string",
+                          "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
+                          "nullable": true
+                        }
+                      },
+                      "description": "작성자 정보"
+                    },
+                    "replyId": {
+                      "type": "number",
+                      "description": "답글 ID"
+                    },
+                    "likeCount": {
+                      "type": "number",
+                      "description": "좋아요 수"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "답글 내용"
+                    }
+                  }
+                }
+              },
+              "replyCount": {
+                "type": "number",
+                "description": "삭제되지 않은 답글 수"
+              },
+              "isSpoiler": {
+                "type": "boolean",
+                "description": "스포일러 여부"
+              },
+              "likedByMe": {
+                "type": "boolean",
+                "description": "내가 좋아요를 눌렀는지 여부"
+              },
+              "deleted": {
+                "type": "boolean",
+                "description": "soft delete 여부"
+              },
+              "quote": {
+                "type": "string",
+                "description": "인용문",
+                "nullable": true
+              },
+              "currentPage": {
+                "type": "number",
+                "description": "감상을 남긴 현재 페이지",
+                "nullable": true
+              },
+              "reviewId": {
+                "type": "number",
+                "description": "감상 ID"
+              }
+            },
+            "description": "작성된 감상"
+          },
+          "bookId": {
+            "type": "number",
+            "description": "로컬 도서 ID"
           }
         }
       },
@@ -14976,6 +15885,18 @@
           "status": {
             "type": "number",
             "description": "HTTP 상태 코드"
+          }
+        }
+      },
+      "api-v1-auth-mobile-google1868037826": {
+        "required": [
+          "idToken"
+        ],
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "Google SDK에서 발급받은 ID Token"
           }
         }
       },
@@ -15038,109 +15959,6 @@
           }
         }
       },
-      "api-v1-reviews-reviewId-replies389013299": {
-        "required": [
-          "items",
-          "totalCount"
-        ],
-        "type": "object",
-        "properties": {
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "전체 항목 수"
-          },
-          "items": {
-            "type": "array",
-            "description": "페이지 항목 목록",
-            "items": {
-              "required": [
-                "author",
-                "content",
-                "createdAt",
-                "deleted",
-                "likeCount",
-                "likedByMe",
-                "replyId"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "작성 시각(UTC)"
-                },
-                "likedByMe": {
-                  "type": "boolean",
-                  "description": "내가 좋아요를 눌렀는지 여부"
-                },
-                "deleted": {
-                  "type": "boolean",
-                  "description": "soft delete 여부"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine",
-                    "profileStatus"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 답글인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "profileStatus": {
-                      "type": "string",
-                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    },
-                    "memberId": {
-                      "type": "number",
-                      "description": "공개 서재 조회용 회원 ID",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "replyId": {
-                  "type": "number",
-                  "description": "답글 ID"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "답글 내용"
-                }
-              }
-            }
-          }
-        }
-      },
       "api-v1-libraries-libraryId-books-order-1029545153": {
         "required": [
           "bookIds"
@@ -15160,7 +15978,7 @@
           }
         }
       },
-      "api-v1-replies-replyId89780935": {
+      "api-v1-reviews-reviewId-replies89780935": {
         "required": [
           "content"
         ],
@@ -15170,414 +15988,6 @@
             "type": "string",
             "description": "답글 내용. 공백 불가, 최대 200자",
             "maxLength": 200
-          }
-        }
-      },
-      "api-v1-home-popular-books405862161": {
-        "required": [
-          "books"
-        ],
-        "type": "object",
-        "properties": {
-          "books": {
-            "type": "array",
-            "description": "인기 책 목록",
-            "items": {
-              "required": [
-                "authors",
-                "bookId",
-                "coverImageUrl",
-                "isbn13",
-                "replyCount",
-                "reviewCount",
-                "title"
-              ],
-              "type": "object",
-              "properties": {
-                "replyCount": {
-                  "type": "number",
-                  "description": "삭제되지 않은 답글 수"
-                },
-                "reviewCount": {
-                  "type": "number",
-                  "description": "삭제되지 않은 감상 수"
-                },
-                "coverImageUrl": {
-                  "type": "string",
-                  "description": "표지 이미지 URL"
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13"
-                },
-                "title": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "authors": {
-                  "type": "array",
-                  "description": "저자 목록",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "bookId": {
-                  "type": "number",
-                  "description": "도서 ID"
-                }
-              }
-            }
-          }
-        }
-      },
-      "api-v1-books-bookId-reviews-1133898033": {
-        "required": [
-          "items",
-          "totalCount",
-          "nextPage"
-        ],
-        "type": "object",
-        "properties": {
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "전체 항목 수"
-          },
-          "items": {
-            "type": "array",
-            "description": "페이지 항목 목록",
-            "items": {
-              "required": [
-                "author",
-                "content",
-                "createdAt",
-                "deleted",
-                "isSpoiler",
-                "likeCount",
-                "likedByMe",
-                "recentReplies",
-                "replyCount",
-                "reviewId",
-                "quote",
-                "chapter",
-                "currentPage"
-              ],
-              "type": "object",
-              "properties": {
-                "chapter": {
-                  "type": "string",
-                  "description": "챕터",
-                  "nullable": true
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine",
-                    "profileStatus"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 감상인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "profileStatus": {
-                      "type": "string",
-                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    },
-                    "memberId": {
-                      "type": "number",
-                      "description": "공개 서재 조회용 회원 ID",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "감상 내용"
-                },
-                "createdAt": {
-                  "type": "string",
-                  "description": "작성 시각(UTC)"
-                },
-                "recentReplies": {
-                  "type": "array",
-                  "description": "최근 답글 최대 3개",
-                  "items": {
-                    "required": [
-                      "author",
-                      "content",
-                      "createdAt",
-                      "deleted",
-                      "likeCount",
-                      "likedByMe",
-                      "replyId"
-                    ],
-                    "type": "object",
-                    "properties": {
-                      "createdAt": {
-                        "type": "string",
-                        "description": "작성 시각(UTC)"
-                      },
-                      "likedByMe": {
-                        "type": "boolean",
-                        "description": "내가 좋아요를 눌렀는지 여부"
-                      },
-                      "deleted": {
-                        "type": "boolean",
-                        "description": "soft delete 여부"
-                      },
-                      "author": {
-                        "required": [
-                          "actorType",
-                          "anonymous",
-                          "displayName",
-                          "mine",
-                          "profileStatus"
-                        ],
-                        "type": "object",
-                        "properties": {
-                          "mine": {
-                            "type": "boolean",
-                            "description": "내가 작성한 답글인지 여부"
-                          },
-                          "actorType": {
-                            "type": "string",
-                            "description": "작성자 유형(MEMBER, GUEST)"
-                          },
-                          "displayName": {
-                            "type": "string",
-                            "description": "작성자 표시 이름"
-                          },
-                          "profileStatus": {
-                            "type": "string",
-                            "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                          },
-                          "anonymous": {
-                            "type": "boolean",
-                            "description": "익명 작성 여부"
-                          },
-                          "profileImageUrl": {
-                            "type": "string",
-                            "description": "작성자 프로필 이미지 URL",
-                            "nullable": true
-                          },
-                          "memberId": {
-                            "type": "number",
-                            "description": "공개 서재 조회용 회원 ID",
-                            "nullable": true
-                          }
-                        },
-                        "description": "작성자 정보"
-                      },
-                      "replyId": {
-                        "type": "number",
-                        "description": "답글 ID"
-                      },
-                      "likeCount": {
-                        "type": "number",
-                        "description": "좋아요 수"
-                      },
-                      "content": {
-                        "type": "string",
-                        "description": "답글 내용"
-                      }
-                    }
-                  }
-                },
-                "replyCount": {
-                  "type": "number",
-                  "description": "삭제되지 않은 답글 수"
-                },
-                "isSpoiler": {
-                  "type": "boolean",
-                  "description": "스포일러 여부"
-                },
-                "likedByMe": {
-                  "type": "boolean",
-                  "description": "내가 좋아요를 눌렀는지 여부"
-                },
-                "deleted": {
-                  "type": "boolean",
-                  "description": "soft delete 여부"
-                },
-                "quote": {
-                  "type": "string",
-                  "description": "인용문",
-                  "nullable": true
-                },
-                "currentPage": {
-                  "type": "number",
-                  "description": "감상을 남긴 현재 페이지",
-                  "nullable": true
-                },
-                "reviewId": {
-                  "type": "number",
-                  "description": "감상 ID"
-                }
-              }
-            }
-          }
-        }
-      },
-      "api-v1-library-1843128574": {
-        "required": [
-          "filteredCount",
-          "items",
-          "totalCount",
-          "nextPage"
-        ],
-        "type": "object",
-        "properties": {
-          "filteredCount": {
-            "type": "number",
-            "description": "필터 적용 후 도서 수"
-          },
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "내 서재 전체 도서 수"
-          },
-          "items": {
-            "type": "array",
-            "description": "내 서재 도서 목록",
-            "items": {
-              "required": [
-                "addedAt",
-                "authors",
-                "bookId",
-                "category",
-                "commentCount",
-                "coverImageUrl",
-                "currentPage",
-                "isbn13",
-                "publishedDate",
-                "publisher",
-                "readingUpdatedAt",
-                "status",
-                "title",
-                "translators",
-                "totalPages",
-                "rating"
-              ],
-              "type": "object",
-              "properties": {
-                "addedAt": {
-                  "type": "string",
-                  "description": "서재 추가 시각"
-                },
-                "coverImageUrl": {
-                  "type": "string",
-                  "description": "표지 이미지 URL"
-                },
-                "rating": {
-                  "type": "number",
-                  "description": "내 별점",
-                  "nullable": true
-                },
-                "title": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "readingUpdatedAt": {
-                  "type": "string",
-                  "description": "읽기 정보 갱신 시각. 독서 기록이 초기화된 항목이면 null"
-                },
-                "commentCount": {
-                  "type": "number",
-                  "description": "감상과 답글 수"
-                },
-                "bookId": {
-                  "type": "number",
-                  "description": "도서 ID"
-                },
-                "translators": {
-                  "type": "array",
-                  "description": "옮긴이 이름 목록",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13"
-                },
-                "totalPages": {
-                  "type": "number",
-                  "description": "전체 페이지 수",
-                  "nullable": true
-                },
-                "publisher": {
-                  "type": "string",
-                  "description": "출판사"
-                },
-                "spineImageUrl": {
-                  "type": "string",
-                  "description": "책등 이미지 URL",
-                  "nullable": true
-                },
-                "publishedDate": {
-                  "type": "string",
-                  "description": "출판일"
-                },
-                "currentPage": {
-                  "type": "number",
-                  "description": "현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null"
-                },
-                "category": {
-                  "type": "string",
-                  "description": "도서 카테고리"
-                },
-                "backImageUrl": {
-                  "type": "string",
-                  "description": "책뒷면 이미지 URL",
-                  "nullable": true
-                },
-                "status": {
-                  "type": "string",
-                  "description": "읽기 상태. 독서 기록이 초기화된 항목이면 null"
-                },
-                "authors": {
-                  "type": "array",
-                  "description": "저자 이름 목록",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
           }
         }
       },
@@ -15797,6 +16207,391 @@
           }
         }
       },
+      "api-v1-members-memberId-library1341467358": {
+        "required": [
+          "filteredCount",
+          "items",
+          "maxSize",
+          "member",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "filteredCount": {
+            "type": "number",
+            "description": "필터 적용 후 도서 수"
+          },
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "member": {
+            "required": [
+              "displayName",
+              "memberId"
+            ],
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string",
+                "description": "회원 표시 이름"
+              },
+              "profileImageUrl": {
+                "type": "string",
+                "description": "회원 프로필 이미지 URL",
+                "nullable": true
+              },
+              "memberId": {
+                "type": "number",
+                "description": "회원 ID"
+              }
+            },
+            "description": "공개 서재 회원 정보"
+          },
+          "maxSize": {
+            "type": "number",
+            "description": "책장에 등록 가능한 최대 도서 수"
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "공개 서재 전체 도서 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "공개 서재 도서 목록",
+            "items": {
+              "required": [
+                "authors",
+                "bookId",
+                "category",
+                "commentCount",
+                "coverImageUrl",
+                "currentPage",
+                "isbn13",
+                "publishedDate",
+                "publisher",
+                "status",
+                "title",
+                "translators"
+              ],
+              "type": "object",
+              "properties": {
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "표지 이미지 URL"
+                },
+                "rating": {
+                  "type": "number",
+                  "description": "서재 소유자가 부여한 별점",
+                  "nullable": true
+                },
+                "title": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "commentCount": {
+                  "type": "number",
+                  "description": "감상과 답글 수"
+                },
+                "bookId": {
+                  "type": "number",
+                  "description": "도서 ID"
+                },
+                "translators": {
+                  "type": "array",
+                  "description": "옮긴이 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13"
+                },
+                "totalPages": {
+                  "type": "number",
+                  "description": "전체 페이지 수",
+                  "nullable": true
+                },
+                "publisher": {
+                  "type": "string",
+                  "description": "출판사"
+                },
+                "spineImageUrl": {
+                  "type": "string",
+                  "description": "책등 이미지 URL",
+                  "nullable": true
+                },
+                "publishedDate": {
+                  "type": "string",
+                  "description": "출판일"
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "서재 소유자의 현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null"
+                },
+                "category": {
+                  "type": "string",
+                  "description": "도서 카테고리"
+                },
+                "backImageUrl": {
+                  "type": "string",
+                  "description": "책뒷면 이미지 URL",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "description": "서재 소유자의 읽기 상태. 독서 기록이 초기화된 항목이면 null"
+                },
+                "authors": {
+                  "type": "array",
+                  "description": "저자 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "api-v1-library451115215": {
+        "required": [
+          "filteredCount",
+          "items",
+          "maxSize",
+          "totalCount",
+          "nextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "filteredCount": {
+            "type": "number",
+            "description": "필터 적용 후 도서 수"
+          },
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "maxSize": {
+            "type": "number",
+            "description": "책장에 등록 가능한 최대 도서 수"
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "내 서재 전체 도서 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "내 서재 도서 목록",
+            "items": {
+              "required": [
+                "addedAt",
+                "authors",
+                "bookId",
+                "category",
+                "commentCount",
+                "coverImageUrl",
+                "currentPage",
+                "isbn13",
+                "publishedDate",
+                "publisher",
+                "readingUpdatedAt",
+                "status",
+                "title",
+                "translators",
+                "totalPages",
+                "rating"
+              ],
+              "type": "object",
+              "properties": {
+                "addedAt": {
+                  "type": "string",
+                  "description": "서재 추가 시각"
+                },
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "표지 이미지 URL"
+                },
+                "rating": {
+                  "type": "number",
+                  "description": "내 별점",
+                  "nullable": true
+                },
+                "title": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "readingUpdatedAt": {
+                  "type": "string",
+                  "description": "읽기 정보 갱신 시각. 독서 기록이 초기화된 항목이면 null"
+                },
+                "commentCount": {
+                  "type": "number",
+                  "description": "감상과 답글 수"
+                },
+                "bookId": {
+                  "type": "number",
+                  "description": "도서 ID"
+                },
+                "translators": {
+                  "type": "array",
+                  "description": "옮긴이 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13"
+                },
+                "totalPages": {
+                  "type": "number",
+                  "description": "전체 페이지 수",
+                  "nullable": true
+                },
+                "publisher": {
+                  "type": "string",
+                  "description": "출판사"
+                },
+                "spineImageUrl": {
+                  "type": "string",
+                  "description": "책등 이미지 URL",
+                  "nullable": true
+                },
+                "publishedDate": {
+                  "type": "string",
+                  "description": "출판일"
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null"
+                },
+                "category": {
+                  "type": "string",
+                  "description": "도서 카테고리"
+                },
+                "backImageUrl": {
+                  "type": "string",
+                  "description": "책뒷면 이미지 URL",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "description": "읽기 상태. 독서 기록이 초기화된 항목이면 null"
+                },
+                "authors": {
+                  "type": "array",
+                  "description": "저자 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "api-v1-reviews-reviewId-replies816815262": {
+        "required": [
+          "items",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "전체 항목 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "페이지 항목 목록",
+            "items": {
+              "required": [
+                "author",
+                "content",
+                "createdAt",
+                "likeCount",
+                "likedByMe",
+                "replyId"
+              ],
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "description": "작성 시각(UTC)"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부"
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 답글인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "replyId": {
+                  "type": "number",
+                  "description": "답글 ID"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "답글 내용"
+                }
+              }
+            }
+          }
+        }
+      },
       "RateBookRequest": {
         "title": "RateBookRequest",
         "required": [
@@ -15849,7 +16644,7 @@
           }
         }
       },
-      "api-v1-books-bookId-reviews453186613": {
+      "api-v1-books-by-isbn-isbn13-reviews453186613": {
         "required": [
           "content"
         ],
@@ -15890,69 +16685,59 @@
           }
         }
       },
-      "LibraryShelf": {
-        "title": "LibraryShelf",
+      "api-v1-home-popular-books746559687": {
         "required": [
-          "isDefault",
-          "items",
-          "libraryId",
-          "name",
-          "totalCount"
+          "books"
         ],
         "type": "object",
         "properties": {
-          "isDefault": {
-            "type": "boolean",
-            "description": "기본 책장 여부. 일반 책장은 false"
-          },
-          "libraryId": {
-            "type": "integer",
-            "description": "생성된 책장 ID",
-            "format": "int64",
-            "minimum": 1
-          },
-          "name": {
-            "type": "string",
-            "description": "저장된 책장 이름"
-          },
-          "totalCount": {
-            "type": "integer",
-            "description": "책장의 전체 도서 수",
-            "minimum": 0
-          },
-          "items": {
+          "books": {
             "type": "array",
-            "description": "표시 순서대로 반환하는 전체 도서 목록",
+            "description": "인기 책 목록",
             "items": {
+              "required": [
+                "authors",
+                "bookId",
+                "coverImageUrl",
+                "isbn13",
+                "replyCount",
+                "reviewCount",
+                "title"
+              ],
               "type": "object",
               "properties": {
+                "replyCount": {
+                  "type": "number",
+                  "description": "삭제되지 않은 답글 수"
+                },
+                "reviewCount": {
+                  "type": "number",
+                  "description": "감상 목록에 표시되는 감상 수(정상 답글이 남은 삭제 감상 포함)"
+                },
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "표지 이미지 URL"
+                },
                 "isbn13": {
                   "type": "string",
-                  "description": "도서 상세 조회에 사용하는 ISBN-13",
-                  "pattern": "^\\d{13}$"
-                },
-                "spineImageUrl": {
-                  "type": "string",
-                  "description": "책등 이미지 URL. 이미지가 없으면 null",
-                  "nullable": true
+                  "description": "ISBN-13"
                 },
                 "title": {
                   "type": "string",
                   "description": "도서 제목"
                 },
+                "authors": {
+                  "type": "array",
+                  "description": "저자 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                },
                 "bookId": {
-                  "type": "integer",
-                  "description": "도서 ID",
-                  "format": "int64",
-                  "minimum": 1
+                  "type": "number",
+                  "description": "도서 ID"
                 }
-              },
-              "required": [
-                "bookId",
-                "title",
-                "spineImageUrl",
-                "isbn13"
-              ]
+              }
             }
           }
         }
@@ -16060,6 +16845,252 @@
             "description": "저자 이름 목록",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "PmfSurveySummaryResponse": {
+        "title": "PmfSurveySummaryResponse",
+        "required": [
+          "questions",
+          "respondentCount"
+        ],
+        "type": "object",
+        "properties": {
+          "respondentCount": {
+            "type": "number",
+            "description": "응답자 수"
+          },
+          "questions": {
+            "type": "array",
+            "description": "문항별 선택지 집계",
+            "items": {
+              "required": [
+                "answerCounts",
+                "question",
+                "questionCode"
+              ],
+              "type": "object",
+              "properties": {
+                "answerCounts": {
+                  "type": "array",
+                  "description": "선택지별 응답자 수",
+                  "items": {
+                    "required": [
+                      "answerCode",
+                      "label",
+                      "respondentCount"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "respondentCount": {
+                        "type": "number",
+                        "description": "해당 선택지를 고른 응답자 수"
+                      },
+                      "answerCode": {
+                        "type": "string",
+                        "description": "선택지 코드"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "선택지 문구"
+                      }
+                    }
+                  }
+                },
+                "question": {
+                  "type": "string",
+                  "description": "문항 내용"
+                },
+                "questionCode": {
+                  "type": "string",
+                  "description": "문항 코드"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AddLibraryItemRequest": {
+        "title": "AddLibraryItemRequest",
+        "required": [
+          "isbn13",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "isbn13": {
+            "type": "string",
+            "description": "추가할 도서의 ISBN-13"
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "전체 페이지 수",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "초기 읽기 상태"
+          }
+        }
+      },
+      "AddRecommendedBookRequest": {
+        "title": "AddRecommendedBookRequest",
+        "required": [
+          "isbn13"
+        ],
+        "type": "object",
+        "properties": {
+          "isbn13": {
+            "type": "string",
+            "description": "추천할 도서의 ISBN-13"
+          }
+        }
+      },
+      "api-v1-reviews-reviewId-replies-400326301": {
+        "required": [
+          "author",
+          "content",
+          "createdAt",
+          "likeCount",
+          "likedByMe",
+          "replyId"
+        ],
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "작성 시각(UTC)"
+          },
+          "likedByMe": {
+            "type": "boolean",
+            "description": "내가 좋아요를 눌렀는지 여부"
+          },
+          "author": {
+            "required": [
+              "actorType",
+              "anonymous",
+              "displayName",
+              "mine",
+              "profileStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "mine": {
+                "type": "boolean",
+                "description": "내가 작성한 답글인지 여부"
+              },
+              "actorType": {
+                "type": "string",
+                "description": "작성자 유형(MEMBER, GUEST)"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "작성자 표시 이름"
+              },
+              "profileStatus": {
+                "type": "string",
+                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+              },
+              "anonymous": {
+                "type": "boolean",
+                "description": "익명 작성 여부"
+              },
+              "profileImageUrl": {
+                "type": "string",
+                "description": "작성자 프로필 이미지 URL",
+                "nullable": true
+              },
+              "memberId": {
+                "type": "number",
+                "description": "공개 서재 조회용 회원 ID",
+                "nullable": true
+              }
+            },
+            "description": "작성자 정보"
+          },
+          "replyId": {
+            "type": "number",
+            "description": "답글 ID"
+          },
+          "likeCount": {
+            "type": "number",
+            "description": "좋아요 수"
+          },
+          "content": {
+            "type": "string",
+            "description": "답글 내용"
+          }
+        }
+      },
+      "PmfSurveyAvailabilityResponse": {
+        "title": "PmfSurveyAvailabilityResponse",
+        "required": [
+          "alreadySubmitted",
+          "eligible",
+          "questions",
+          "submissionToken"
+        ],
+        "type": "object",
+        "properties": {
+          "alreadySubmitted": {
+            "type": "boolean",
+            "description": "이미 응답을 제출했는지 여부"
+          },
+          "eligible": {
+            "type": "boolean",
+            "description": "최근 14일 핵심 행동 및 팀 제외 기준을 만족하는지 여부"
+          },
+          "submissionToken": {
+            "type": "string",
+            "description": "조회 시점의 대상 여부를 증명하는 actor별 서명 토큰, 대상이 아니거나 이미 응답했다면 null"
+          },
+          "questions": {
+            "type": "array",
+            "description": "응답 가능한 문항 목록, 대상이 아니거나 이미 제출했다면 빈 배열",
+            "items": {
+              "required": [
+                "multipleSelection",
+                "options",
+                "question",
+                "questionCode"
+              ],
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "description": "화면에 표시할 질문"
+                },
+                "questionCode": {
+                  "type": "string",
+                  "description": "문항 코드"
+                },
+                "options": {
+                  "type": "array",
+                  "description": "문항 선택지",
+                  "items": {
+                    "required": [
+                      "answerCode",
+                      "label"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "answerCode": {
+                        "type": "string",
+                        "description": "제출할 선택지 코드"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "화면에 표시할 선택지"
+                      }
+                    }
+                  }
+                },
+                "multipleSelection": {
+                  "type": "boolean",
+                  "description": "복수 선택 문항 여부"
+                }
+              }
             }
           }
         }
@@ -16223,308 +17254,6 @@
           }
         }
       },
-      "CreateLibraryRequest": {
-        "title": "CreateLibraryRequest",
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
-            "minLength": 1,
-            "maxLength": 10
-          }
-        }
-      },
-      "api-v1-replies-replyId1244238446": {
-        "required": [
-          "author",
-          "content",
-          "createdAt",
-          "deleted",
-          "likeCount",
-          "likedByMe",
-          "replyId"
-        ],
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string",
-            "description": "작성 시각(UTC)"
-          },
-          "likedByMe": {
-            "type": "boolean",
-            "description": "내가 좋아요를 눌렀는지 여부"
-          },
-          "deleted": {
-            "type": "boolean",
-            "description": "soft delete 여부"
-          },
-          "author": {
-            "required": [
-              "actorType",
-              "anonymous",
-              "displayName",
-              "mine",
-              "profileStatus"
-            ],
-            "type": "object",
-            "properties": {
-              "mine": {
-                "type": "boolean",
-                "description": "내가 작성한 답글인지 여부"
-              },
-              "actorType": {
-                "type": "string",
-                "description": "작성자 유형(MEMBER, GUEST)"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "작성자 표시 이름"
-              },
-              "profileStatus": {
-                "type": "string",
-                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-              },
-              "anonymous": {
-                "type": "boolean",
-                "description": "익명 작성 여부"
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "description": "작성자 프로필 이미지 URL",
-                "nullable": true
-              },
-              "memberId": {
-                "type": "number",
-                "description": "공개 서재 조회용 회원 ID",
-                "nullable": true
-              }
-            },
-            "description": "작성자 정보"
-          },
-          "replyId": {
-            "type": "number",
-            "description": "답글 ID"
-          },
-          "likeCount": {
-            "type": "number",
-            "description": "좋아요 수"
-          },
-          "content": {
-            "type": "string",
-            "description": "답글 내용"
-          }
-        }
-      },
-      "api-v1-books-by-isbn-isbn13-reviews1422466945": {
-        "required": [
-          "bookId",
-          "review"
-        ],
-        "type": "object",
-        "properties": {
-          "review": {
-            "required": [
-              "author",
-              "content",
-              "createdAt",
-              "deleted",
-              "isSpoiler",
-              "likeCount",
-              "likedByMe",
-              "recentReplies",
-              "replyCount",
-              "reviewId"
-            ],
-            "type": "object",
-            "properties": {
-              "chapter": {
-                "type": "string",
-                "description": "챕터",
-                "nullable": true
-              },
-              "author": {
-                "required": [
-                  "actorType",
-                  "anonymous",
-                  "displayName",
-                  "mine",
-                  "profileStatus"
-                ],
-                "type": "object",
-                "properties": {
-                  "mine": {
-                    "type": "boolean",
-                    "description": "내가 작성한 감상인지 여부"
-                  },
-                  "actorType": {
-                    "type": "string",
-                    "description": "작성자 유형(MEMBER, GUEST)"
-                  },
-                  "displayName": {
-                    "type": "string",
-                    "description": "작성자 표시 이름"
-                  },
-                  "profileStatus": {
-                    "type": "string",
-                    "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                  },
-                  "anonymous": {
-                    "type": "boolean",
-                    "description": "익명 작성 여부"
-                  },
-                  "profileImageUrl": {
-                    "type": "string",
-                    "description": "작성자 프로필 이미지 URL",
-                    "nullable": true
-                  },
-                  "memberId": {
-                    "type": "number",
-                    "description": "공개 서재 조회용 회원 ID",
-                    "nullable": true
-                  }
-                },
-                "description": "작성자 정보"
-              },
-              "likeCount": {
-                "type": "number",
-                "description": "좋아요 수"
-              },
-              "content": {
-                "type": "string",
-                "description": "감상 내용"
-              },
-              "createdAt": {
-                "type": "string",
-                "description": "작성 시각(UTC)"
-              },
-              "recentReplies": {
-                "type": "array",
-                "description": "최근 답글 최대 3개",
-                "items": {
-                  "required": [
-                    "author",
-                    "content",
-                    "createdAt",
-                    "deleted",
-                    "likeCount",
-                    "likedByMe",
-                    "replyId"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "createdAt": {
-                      "type": "string",
-                      "description": "작성 시각(UTC)"
-                    },
-                    "likedByMe": {
-                      "type": "boolean",
-                      "description": "내가 좋아요를 눌렀는지 여부"
-                    },
-                    "deleted": {
-                      "type": "boolean",
-                      "description": "soft delete 여부"
-                    },
-                    "author": {
-                      "required": [
-                        "actorType",
-                        "anonymous",
-                        "displayName",
-                        "mine",
-                        "profileStatus"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "mine": {
-                          "type": "boolean",
-                          "description": "내가 작성한 답글인지 여부"
-                        },
-                        "actorType": {
-                          "type": "string",
-                          "description": "작성자 유형(MEMBER, GUEST)"
-                        },
-                        "displayName": {
-                          "type": "string",
-                          "description": "작성자 표시 이름"
-                        },
-                        "profileStatus": {
-                          "type": "string",
-                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                        },
-                        "anonymous": {
-                          "type": "boolean",
-                          "description": "익명 작성 여부"
-                        },
-                        "profileImageUrl": {
-                          "type": "string",
-                          "description": "작성자 프로필 이미지 URL",
-                          "nullable": true
-                        },
-                        "memberId": {
-                          "type": "number",
-                          "description": "공개 서재 조회용 회원 ID",
-                          "nullable": true
-                        }
-                      },
-                      "description": "작성자 정보"
-                    },
-                    "replyId": {
-                      "type": "number",
-                      "description": "답글 ID"
-                    },
-                    "likeCount": {
-                      "type": "number",
-                      "description": "좋아요 수"
-                    },
-                    "content": {
-                      "type": "string",
-                      "description": "답글 내용"
-                    }
-                  }
-                }
-              },
-              "replyCount": {
-                "type": "number",
-                "description": "삭제되지 않은 답글 수"
-              },
-              "isSpoiler": {
-                "type": "boolean",
-                "description": "스포일러 여부"
-              },
-              "likedByMe": {
-                "type": "boolean",
-                "description": "내가 좋아요를 눌렀는지 여부"
-              },
-              "deleted": {
-                "type": "boolean",
-                "description": "soft delete 여부"
-              },
-              "quote": {
-                "type": "string",
-                "description": "인용문",
-                "nullable": true
-              },
-              "currentPage": {
-                "type": "number",
-                "description": "감상을 남긴 현재 페이지",
-                "nullable": true
-              },
-              "reviewId": {
-                "type": "number",
-                "description": "감상 ID"
-              }
-            },
-            "description": "작성된 감상"
-          },
-          "bookId": {
-            "type": "number",
-            "description": "로컬 도서 ID"
-          }
-        }
-      },
       "api-v1-auth-mobile-reissue-248242179": {
         "required": [
           "refreshToken"
@@ -16534,107 +17263,6 @@
           "refreshToken": {
             "type": "string",
             "description": "재발급 또는 로그아웃할 Refresh Token"
-          }
-        }
-      },
-      "LibraryCollectionResponse": {
-        "title": "LibraryCollectionResponse",
-        "required": [
-          "libraries",
-          "memberId"
-        ],
-        "type": "object",
-        "properties": {
-          "libraries": {
-            "type": "array",
-            "description": "설정한 순서의 책장 목록",
-            "items": {
-              "required": [
-                "isDefault",
-                "items",
-                "libraryId",
-                "name",
-                "totalCount"
-              ],
-              "type": "object",
-              "properties": {
-                "isDefault": {
-                  "type": "boolean",
-                  "description": "기본 책장 여부"
-                },
-                "libraryId": {
-                  "type": "integer",
-                  "description": "책장 ID",
-                  "format": "int64",
-                  "minimum": 1
-                },
-                "name": {
-                  "type": "string",
-                  "description": "책장 이름"
-                },
-                "totalCount": {
-                  "type": "integer",
-                  "description": "책장에 담긴 도서 수",
-                  "format": "int64",
-                  "minimum": 0
-                },
-                "items": {
-                  "type": "array",
-                  "description": "설정한 순서의 도서 목록",
-                  "items": {
-                    "required": [
-                      "authors",
-                      "bookId",
-                      "coverImageUrl",
-                      "isbn13",
-                      "title",
-                      "spineImageUrl"
-                    ],
-                    "type": "object",
-                    "properties": {
-                      "coverImageUrl": {
-                        "type": "string",
-                        "description": "도서 표지 이미지 URL"
-                      },
-                      "isbn13": {
-                        "type": "string",
-                        "description": "상세 조회에 사용하는 ISBN-13",
-                        "pattern": "^[0-9]{13}$"
-                      },
-                      "spineImageUrl": {
-                        "type": "string",
-                        "description": "책등 이미지 URL, 없으면 null",
-                        "nullable": true,
-                        "format": "uri"
-                      },
-                      "title": {
-                        "type": "string",
-                        "description": "도서 제목"
-                      },
-                      "authors": {
-                        "type": "array",
-                        "description": "저자 이름 목록, 없으면 빈 배열",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "bookId": {
-                        "type": "integer",
-                        "description": "도서 ID",
-                        "format": "int64",
-                        "minimum": 1
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "memberId": {
-            "type": "integer",
-            "description": "서재 소유 회원 ID",
-            "format": "int64",
-            "minimum": 1
           }
         }
       },
@@ -16856,169 +17484,6 @@
           }
         }
       },
-      "api-v1-library-bulk-delete-348264081": {
-        "required": [
-          "bookIds"
-        ],
-        "type": "object",
-        "properties": {
-          "bookIds": {
-            "type": "array",
-            "description": "삭제할 도서 ID 목록. 최대 10개",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "minItems": 1,
-            "maxItems": 10,
-            "uniqueItems": true
-          }
-        }
-      },
-      "api-v1-members-memberId-library-1962601129": {
-        "required": [
-          "filteredCount",
-          "items",
-          "member",
-          "totalCount"
-        ],
-        "type": "object",
-        "properties": {
-          "filteredCount": {
-            "type": "number",
-            "description": "필터 적용 후 도서 수"
-          },
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "member": {
-            "required": [
-              "displayName",
-              "memberId"
-            ],
-            "type": "object",
-            "properties": {
-              "displayName": {
-                "type": "string",
-                "description": "회원 표시 이름"
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "description": "회원 프로필 이미지 URL",
-                "nullable": true
-              },
-              "memberId": {
-                "type": "number",
-                "description": "회원 ID"
-              }
-            },
-            "description": "공개 서재 회원 정보"
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "공개 서재 전체 도서 수"
-          },
-          "items": {
-            "type": "array",
-            "description": "공개 서재 도서 목록",
-            "items": {
-              "required": [
-                "authors",
-                "bookId",
-                "category",
-                "commentCount",
-                "coverImageUrl",
-                "currentPage",
-                "isbn13",
-                "publishedDate",
-                "publisher",
-                "status",
-                "title",
-                "translators"
-              ],
-              "type": "object",
-              "properties": {
-                "coverImageUrl": {
-                  "type": "string",
-                  "description": "표지 이미지 URL"
-                },
-                "rating": {
-                  "type": "number",
-                  "description": "서재 소유자가 부여한 별점",
-                  "nullable": true
-                },
-                "title": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "commentCount": {
-                  "type": "number",
-                  "description": "감상과 답글 수"
-                },
-                "bookId": {
-                  "type": "number",
-                  "description": "도서 ID"
-                },
-                "translators": {
-                  "type": "array",
-                  "description": "옮긴이 이름 목록",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13"
-                },
-                "totalPages": {
-                  "type": "number",
-                  "description": "전체 페이지 수",
-                  "nullable": true
-                },
-                "publisher": {
-                  "type": "string",
-                  "description": "출판사"
-                },
-                "spineImageUrl": {
-                  "type": "string",
-                  "description": "책등 이미지 URL",
-                  "nullable": true
-                },
-                "publishedDate": {
-                  "type": "string",
-                  "description": "출판일"
-                },
-                "currentPage": {
-                  "type": "number",
-                  "description": "서재 소유자의 현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null"
-                },
-                "category": {
-                  "type": "string",
-                  "description": "도서 카테고리"
-                },
-                "backImageUrl": {
-                  "type": "string",
-                  "description": "책뒷면 이미지 URL",
-                  "nullable": true
-                },
-                "status": {
-                  "type": "string",
-                  "description": "서재 소유자의 읽기 상태. 독서 기록이 초기화된 항목이면 null"
-                },
-                "authors": {
-                  "type": "array",
-                  "description": "저자 이름 목록",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "api-v1-members-me-anonymity481569895": {
         "required": [
           "displayAnonymous"
@@ -17031,7 +17496,7 @@
           }
         }
       },
-      "api-v1-library-bookId-170754554": {
+      "api-v1-libraries-libraryId-170754554": {
         "required": [
           "addedAt",
           "authors",
@@ -17134,7 +17599,194 @@
           }
         }
       },
-      "api-v1-libraries-libraryId-571918913": {
+      "api-v1-books-bookId-reviews2041661927": {
+        "required": [
+          "author",
+          "content",
+          "createdAt",
+          "deleted",
+          "isSpoiler",
+          "likeCount",
+          "likedByMe",
+          "recentReplies",
+          "replyCount",
+          "reviewId"
+        ],
+        "type": "object",
+        "properties": {
+          "chapter": {
+            "type": "string",
+            "description": "챕터",
+            "nullable": true
+          },
+          "author": {
+            "required": [
+              "actorType",
+              "anonymous",
+              "displayName",
+              "mine",
+              "profileStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "mine": {
+                "type": "boolean",
+                "description": "내가 작성한 감상인지 여부"
+              },
+              "actorType": {
+                "type": "string",
+                "description": "작성자 유형(MEMBER, GUEST)"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "작성자 표시 이름"
+              },
+              "profileStatus": {
+                "type": "string",
+                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+              },
+              "anonymous": {
+                "type": "boolean",
+                "description": "익명 작성 여부"
+              },
+              "profileImageUrl": {
+                "type": "string",
+                "description": "작성자 프로필 이미지 URL",
+                "nullable": true
+              },
+              "memberId": {
+                "type": "number",
+                "description": "공개 서재 조회용 회원 ID",
+                "nullable": true
+              }
+            },
+            "description": "작성자 정보"
+          },
+          "likeCount": {
+            "type": "number",
+            "description": "좋아요 수"
+          },
+          "content": {
+            "type": "string",
+            "description": "감상 내용"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "작성 시각(UTC)"
+          },
+          "recentReplies": {
+            "type": "array",
+            "description": "최근 답글 최대 3개",
+            "items": {
+              "required": [
+                "author",
+                "content",
+                "createdAt",
+                "likeCount",
+                "likedByMe",
+                "replyId"
+              ],
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "description": "작성 시각(UTC)"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부"
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 답글인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "replyId": {
+                  "type": "number",
+                  "description": "답글 ID"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "답글 내용"
+                }
+              }
+            }
+          },
+          "replyCount": {
+            "type": "number",
+            "description": "삭제되지 않은 답글 수"
+          },
+          "isSpoiler": {
+            "type": "boolean",
+            "description": "스포일러 여부"
+          },
+          "likedByMe": {
+            "type": "boolean",
+            "description": "내가 좋아요를 눌렀는지 여부"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "soft delete 여부"
+          },
+          "quote": {
+            "type": "string",
+            "description": "인용문",
+            "nullable": true
+          },
+          "currentPage": {
+            "type": "number",
+            "description": "감상을 남긴 현재 페이지",
+            "nullable": true
+          },
+          "reviewId": {
+            "type": "number",
+            "description": "감상 ID"
+          }
+        }
+      },
+      "api-v1-libraries-571918913": {
         "required": [
           "name"
         ],
@@ -17326,6 +17978,132 @@
           }
         }
       },
+      "LibraryDetailResponse": {
+        "title": "LibraryDetailResponse",
+        "required": [
+          "isDefault",
+          "items",
+          "libraryId",
+          "maxSize",
+          "memberId",
+          "name",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "isDefault": {
+            "type": "boolean",
+            "description": "기본 책장 여부"
+          },
+          "libraryId": {
+            "type": "integer",
+            "description": "책장 ID",
+            "format": "int64",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "책장 이름"
+          },
+          "maxSize": {
+            "type": "number",
+            "description": "책장에 등록 가능한 최대 도서 수"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "책장 전체 권수",
+            "format": "int64",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "description": "설정한 순서의 도서 목록",
+            "items": {
+              "required": [
+                "authors",
+                "bookId",
+                "coverImageUrl",
+                "currentPage",
+                "isbn13",
+                "readingUpdatedAt",
+                "status",
+                "title",
+                "spineImageUrl",
+                "totalPages"
+              ],
+              "type": "object",
+              "properties": {
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "도서 표지 이미지 URL",
+                  "format": "uri"
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13",
+                  "pattern": "^[0-9]{13}$"
+                },
+                "totalPages": {
+                  "type": "integer",
+                  "description": "전체 페이지, 모르면 null",
+                  "nullable": true,
+                  "format": "int32",
+                  "minimum": 1
+                },
+                "spineImageUrl": {
+                  "type": "string",
+                  "description": "책등 이미지 URL, 없으면 null",
+                  "nullable": true,
+                  "format": "uri"
+                },
+                "currentPage": {
+                  "type": "integer",
+                  "description": "소유자의 공유 현재 페이지",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "title": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "readingUpdatedAt": {
+                  "type": "string",
+                  "description": "소유자의 독서 갱신 시각",
+                  "format": "date-time"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "소유자의 공유 독서 상태",
+                  "enum": [
+                    "WANT_TO_READ",
+                    "READING",
+                    "FINISHED"
+                  ]
+                },
+                "authors": {
+                  "type": "array",
+                  "description": "저자 이름 목록, 없으면 빈 배열",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "bookId": {
+                  "type": "integer",
+                  "description": "도서 ID",
+                  "format": "int64",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "memberId": {
+            "type": "integer",
+            "description": "책장 소유 회원 ID",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
       "api-v1-libraries-order262032579": {
         "required": [
           "libraryIds"
@@ -17345,17 +18123,32 @@
           }
         }
       },
-      "api-v1-members-me-nickname-1280909959": {
+      "api-v1-library-bulk-status1159375813": {
         "required": [
-          "nickname"
+          "bookIds",
+          "status"
         ],
         "type": "object",
         "properties": {
-          "nickname": {
+          "bookIds": {
+            "type": "array",
+            "description": "상태를 변경할 도서 ID 목록. 최대 10개",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true
+          },
+          "status": {
             "type": "string",
-            "description": "공개 닉네임, 공백뿐이 아닌 1~10자",
-            "minLength": 1,
-            "maxLength": 10
+            "description": "변경할 읽기 상태",
+            "enum": [
+              "WANT_TO_READ",
+              "READING",
+              "FINISHED"
+            ]
           }
         }
       },
@@ -17505,7 +18298,220 @@
           }
         }
       },
-      "api-v1-auth-mobile-google1675364789": {
+      "api-v1-books-bookId-reviews-713176166": {
+        "required": [
+          "items",
+          "totalCount",
+          "nextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "전체 항목 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "페이지 항목 목록",
+            "items": {
+              "required": [
+                "author",
+                "content",
+                "createdAt",
+                "deleted",
+                "isSpoiler",
+                "likeCount",
+                "likedByMe",
+                "recentReplies",
+                "replyCount",
+                "reviewId",
+                "quote",
+                "chapter",
+                "currentPage"
+              ],
+              "type": "object",
+              "properties": {
+                "chapter": {
+                  "type": "string",
+                  "description": "챕터",
+                  "nullable": true
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 감상인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "감상 내용"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "description": "작성 시각(UTC)"
+                },
+                "recentReplies": {
+                  "type": "array",
+                  "description": "최근 답글 최대 3개",
+                  "items": {
+                    "required": [
+                      "author",
+                      "content",
+                      "createdAt",
+                      "likeCount",
+                      "likedByMe",
+                      "replyId"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "createdAt": {
+                        "type": "string",
+                        "description": "작성 시각(UTC)"
+                      },
+                      "likedByMe": {
+                        "type": "boolean",
+                        "description": "내가 좋아요를 눌렀는지 여부"
+                      },
+                      "author": {
+                        "required": [
+                          "actorType",
+                          "anonymous",
+                          "displayName",
+                          "mine",
+                          "profileStatus"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "mine": {
+                            "type": "boolean",
+                            "description": "내가 작성한 답글인지 여부"
+                          },
+                          "actorType": {
+                            "type": "string",
+                            "description": "작성자 유형(MEMBER, GUEST)"
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "description": "작성자 표시 이름"
+                          },
+                          "profileStatus": {
+                            "type": "string",
+                            "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                          },
+                          "anonymous": {
+                            "type": "boolean",
+                            "description": "익명 작성 여부"
+                          },
+                          "profileImageUrl": {
+                            "type": "string",
+                            "description": "작성자 프로필 이미지 URL",
+                            "nullable": true
+                          },
+                          "memberId": {
+                            "type": "number",
+                            "description": "공개 서재 조회용 회원 ID",
+                            "nullable": true
+                          }
+                        },
+                        "description": "작성자 정보"
+                      },
+                      "replyId": {
+                        "type": "number",
+                        "description": "답글 ID"
+                      },
+                      "likeCount": {
+                        "type": "number",
+                        "description": "좋아요 수"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "답글 내용"
+                      }
+                    }
+                  }
+                },
+                "replyCount": {
+                  "type": "number",
+                  "description": "삭제되지 않은 답글 수"
+                },
+                "isSpoiler": {
+                  "type": "boolean",
+                  "description": "스포일러 여부"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부"
+                },
+                "deleted": {
+                  "type": "boolean",
+                  "description": "soft delete 여부"
+                },
+                "quote": {
+                  "type": "string",
+                  "description": "인용문",
+                  "nullable": true
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "감상을 남긴 현재 페이지",
+                  "nullable": true
+                },
+                "reviewId": {
+                  "type": "number",
+                  "description": "감상 ID"
+                }
+              }
+            }
+          }
+        }
+      },
+      "api-v1-auth-mobile-reissue1675364789": {
         "required": [
           "accessToken",
           "accessTokenExpiresIn",
@@ -17537,198 +18543,6 @@
           }
         }
       },
-      "api-v1-books-bookId-reviews-2143746222": {
-        "required": [
-          "author",
-          "content",
-          "createdAt",
-          "deleted",
-          "isSpoiler",
-          "likeCount",
-          "likedByMe",
-          "recentReplies",
-          "replyCount",
-          "reviewId"
-        ],
-        "type": "object",
-        "properties": {
-          "chapter": {
-            "type": "string",
-            "description": "챕터",
-            "nullable": true
-          },
-          "author": {
-            "required": [
-              "actorType",
-              "anonymous",
-              "displayName",
-              "mine",
-              "profileStatus"
-            ],
-            "type": "object",
-            "properties": {
-              "mine": {
-                "type": "boolean",
-                "description": "내가 작성한 감상인지 여부"
-              },
-              "actorType": {
-                "type": "string",
-                "description": "작성자 유형(MEMBER, GUEST)"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "작성자 표시 이름"
-              },
-              "profileStatus": {
-                "type": "string",
-                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-              },
-              "anonymous": {
-                "type": "boolean",
-                "description": "익명 작성 여부"
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "description": "작성자 프로필 이미지 URL",
-                "nullable": true
-              },
-              "memberId": {
-                "type": "number",
-                "description": "공개 서재 조회용 회원 ID",
-                "nullable": true
-              }
-            },
-            "description": "작성자 정보"
-          },
-          "likeCount": {
-            "type": "number",
-            "description": "좋아요 수"
-          },
-          "content": {
-            "type": "string",
-            "description": "감상 내용"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "작성 시각(UTC)"
-          },
-          "recentReplies": {
-            "type": "array",
-            "description": "최근 답글 최대 3개",
-            "items": {
-              "required": [
-                "author",
-                "content",
-                "createdAt",
-                "deleted",
-                "likeCount",
-                "likedByMe",
-                "replyId"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "작성 시각(UTC)"
-                },
-                "likedByMe": {
-                  "type": "boolean",
-                  "description": "내가 좋아요를 눌렀는지 여부"
-                },
-                "deleted": {
-                  "type": "boolean",
-                  "description": "soft delete 여부"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine",
-                    "profileStatus"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 답글인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "profileStatus": {
-                      "type": "string",
-                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    },
-                    "memberId": {
-                      "type": "number",
-                      "description": "공개 서재 조회용 회원 ID",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "replyId": {
-                  "type": "number",
-                  "description": "답글 ID"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "답글 내용"
-                }
-              }
-            }
-          },
-          "replyCount": {
-            "type": "number",
-            "description": "삭제되지 않은 답글 수"
-          },
-          "isSpoiler": {
-            "type": "boolean",
-            "description": "스포일러 여부"
-          },
-          "likedByMe": {
-            "type": "boolean",
-            "description": "내가 좋아요를 눌렀는지 여부"
-          },
-          "deleted": {
-            "type": "boolean",
-            "description": "soft delete 여부"
-          },
-          "quote": {
-            "type": "string",
-            "description": "인용문",
-            "nullable": true
-          },
-          "currentPage": {
-            "type": "number",
-            "description": "감상을 남긴 현재 페이지",
-            "nullable": true
-          },
-          "reviewId": {
-            "type": "number",
-            "description": "감상 ID"
-          }
-        }
-      },
       "api-v1-library-bookId-559088573": {
         "type": "object",
         "properties": {
@@ -17753,127 +18567,6 @@
               "READING",
               "FINISHED"
             ]
-          }
-        }
-      },
-      "LibraryDetailResponse": {
-        "title": "LibraryDetailResponse",
-        "required": [
-          "isDefault",
-          "items",
-          "libraryId",
-          "memberId",
-          "name",
-          "totalCount"
-        ],
-        "type": "object",
-        "properties": {
-          "isDefault": {
-            "type": "boolean",
-            "description": "기본 책장 여부"
-          },
-          "libraryId": {
-            "type": "integer",
-            "description": "책장 ID",
-            "format": "int64",
-            "minimum": 1
-          },
-          "name": {
-            "type": "string",
-            "description": "책장 이름"
-          },
-          "totalCount": {
-            "type": "integer",
-            "description": "책장 전체 권수",
-            "format": "int64",
-            "minimum": 0
-          },
-          "items": {
-            "type": "array",
-            "description": "설정한 순서의 도서 목록",
-            "items": {
-              "required": [
-                "authors",
-                "bookId",
-                "coverImageUrl",
-                "currentPage",
-                "isbn13",
-                "readingUpdatedAt",
-                "status",
-                "title",
-                "spineImageUrl",
-                "totalPages"
-              ],
-              "type": "object",
-              "properties": {
-                "coverImageUrl": {
-                  "type": "string",
-                  "description": "도서 표지 이미지 URL",
-                  "format": "uri"
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13",
-                  "pattern": "^[0-9]{13}$"
-                },
-                "totalPages": {
-                  "type": "integer",
-                  "description": "전체 페이지, 모르면 null",
-                  "nullable": true,
-                  "format": "int32",
-                  "minimum": 1
-                },
-                "spineImageUrl": {
-                  "type": "string",
-                  "description": "책등 이미지 URL, 없으면 null",
-                  "nullable": true,
-                  "format": "uri"
-                },
-                "currentPage": {
-                  "type": "integer",
-                  "description": "소유자의 공유 현재 페이지",
-                  "format": "int32",
-                  "minimum": 0
-                },
-                "title": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "readingUpdatedAt": {
-                  "type": "string",
-                  "description": "소유자의 독서 갱신 시각",
-                  "format": "date-time"
-                },
-                "status": {
-                  "type": "string",
-                  "description": "소유자의 공유 독서 상태",
-                  "enum": [
-                    "WANT_TO_READ",
-                    "READING",
-                    "FINISHED"
-                  ]
-                },
-                "authors": {
-                  "type": "array",
-                  "description": "저자 이름 목록, 없으면 빈 배열",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "bookId": {
-                  "type": "integer",
-                  "description": "도서 ID",
-                  "format": "int64",
-                  "minimum": 1
-                }
-              }
-            }
-          },
-          "memberId": {
-            "type": "integer",
-            "description": "책장 소유 회원 ID",
-            "format": "int64",
-            "minimum": 1
           }
         }
       },
@@ -17975,7 +18668,7 @@
           }
         }
       },
-      "api-v1-libraries-libraryId923669369": {
+      "api-v1-library923669369": {
         "required": [
           "isbn13",
           "status"
@@ -18000,6 +18693,21 @@
               "READING",
               "FINISHED"
             ]
+          }
+        }
+      },
+      "RenameLibraryRequest": {
+        "title": "RenameLibraryRequest",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
+            "minLength": 1,
+            "maxLength": 10
           }
         }
       },
