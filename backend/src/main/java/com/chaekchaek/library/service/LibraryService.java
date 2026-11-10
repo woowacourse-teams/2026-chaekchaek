@@ -92,9 +92,6 @@ public class LibraryService {
         if (member.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-        if (member.getNickname() == null) {
-            throw new BusinessException(ErrorCode.NICKNAME_REQUIRED);
-        }
         Library library = Library.create(memberId, name, now());
         long displayOrder = libraryRepository.findMaxDisplayOrderByMemberId(memberId) + 1;
         library.changeDisplayOrder(displayOrder);

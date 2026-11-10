@@ -96,6 +96,11 @@ openapi3 {
 - `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.
 - 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.
 
+## 회원가입과 기본 책장
+- Google, Apple 신규 가입과 탈퇴 후 재가입 시 회원과 `기본 책장`을 같은 트랜잭션에서 생성합니다.
+- 공개 닉네임은 가입 후 선택적으로 설정합니다. 닉네임 설정 전에는 자동 생성된 익명 닉네임을 사용하며 책장 생성과 도서 등록을 이용할 수 있습니다.
+- 닉네임을 설정하거나 변경해도 가입 시 생성한 기본 책장의 이름은 유지됩니다.
+
 ## 게스트 인증
 - `POST /api/v1/auth/guest-token`으로 90일간 유효한 게스트 토큰과 작성자 닉네임을 발급받습니다.
 - 토큰 만료까지 14일 이하로 남으면 `POST /api/v1/auth/guest-token/refresh`에 현재 `X-Guest-Token`을 전달해 같은 Actor의 토큰을 갱신합니다.
@@ -284,7 +289,6 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			'401': '회원 인증 실패. `UNAUTHORIZED`.',
 			'403': '인증된 비활성 회원의 쓰기 요청. `FORBIDDEN`.',
 			'409': '같은 회원의 책장 이름 중복. `LIBRARY_NAME_ALREADY_EXISTS`.',
-			'422': '닉네임이 없는 회원의 책장 생성 요청. `NICKNAME_REQUIRED`.',
 			'500': '예상하지 못한 서버 오류. `INTERNAL_SERVER_ERROR`.'
 		]
 		libraryCreationResponseDescriptions.each { status, description ->
@@ -716,7 +720,7 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '422', '500']],
+			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '500']],
 			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '404', '409', '422', '502'],
 					'patch': ['204', '400', '401', '403', '404', '409', '500'],
 					'delete': ['204', '400', '401', '403', '404', '409']],
@@ -895,7 +899,7 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
-			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '422', '500']],
+			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '500']],
 			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'post': ['400', '401', '403', '404', '409', '422', '502'],
 					'patch': ['400', '401', '403', '404', '409', '500'],
 					'delete': ['400', '401', '403', '404', '409']],
@@ -941,7 +945,6 @@ tasks.register('verifyOpenApi') {
 					'401': ['UNAUTHORIZED'],
 					'403': ['FORBIDDEN'],
 					'409': ['LIBRARY_NAME_ALREADY_EXISTS'],
-					'422': ['NICKNAME_REQUIRED'],
 					'500': ['INTERNAL_SERVER_ERROR']
 				]
 			],
