@@ -9,23 +9,35 @@ from urllib.parse import urlsplit
 
 COUNTS = Counter()
 LOCK = Lock()
+MODE = "normal"
 VALID = "9788937460449"
 MISSING = "9791172376215"
 RETRY = "9788936433598"
 
 
 def response(path):
+    global MODE
     if path == "/__692/reset":
         COUNTS.clear()
-        return 200, {"fixture": "692"}
+        MODE = "normal"
+        return 200, {"fixture": "692", "mode": MODE}
+    if path == "/__692/mode/missing":
+        MODE = "missing"
+        return 200, {"fixture": "692", "mode": MODE}
+    if path == "/__692/mode/retry":
+        MODE = "retry"
+        return 200, {"fixture": "692", "mode": MODE}
+    if path == "/__692/mode/normal":
+        MODE = "normal"
+        return 200, {"fixture": "692", "mode": MODE}
     if path == "/__692":
-        return 200, {"fixture": "692", "counts": dict(COUNTS)}
+        return 200, {"fixture": "692", "counts": dict(COUNTS), "mode": MODE}
     COUNTS[path] += 1
     if path.startswith("/api/v1/books/by-isbn/"):
         isbn = path.rsplit("/", 1)[-1]
-        if isbn == MISSING:
+        if MODE == "missing" or isbn == MISSING:
             return 404, {"code": "BOOK_NOT_FOUND"}
-        if isbn == RETRY and COUNTS[path] == 1:
+        if (MODE == "retry" and COUNTS[path] == 1) or (isbn == RETRY and COUNTS[path] == 1):
             return 503, {"code": "UNAVAILABLE"}
         if isbn not in (VALID, RETRY):
             return 400, {"code": "INVALID_ISBN"}
