@@ -122,11 +122,12 @@ internal fun AppNavigation(
     uiTestingMyPage: Boolean = false,
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
+    bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox,
 ) {
     val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     ErrorRecoveryHost(authViewModel) {
-        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
+        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel, bookDeepLinks)
     }
 }
 
@@ -140,7 +141,16 @@ private fun AppNavigationContent(
     homeHeaderAction: @Composable () -> Unit,
     onExitRequested: () -> Unit,
     authViewModel: AuthViewModel,
+    bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox,
 ) {
+    val linkRepository = remember { BookDetailRemoteRepository() }
+    val linkViewModel: com.chaekchaek.app.deeplink.BookDeepLinkViewModel = viewModel {
+        com.chaekchaek.app.deeplink.BookDeepLinkViewModel(createSavedStateHandle(), { linkRepository.detail(it) }, analytics.errors)
+    }
+    val delivery by bookDeepLinks.pending.collectAsState()
+    LaunchedEffect(delivery) {
+        delivery?.let { linkViewModel.accept(it); bookDeepLinks.acknowledge(it.id) }
+    }
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
@@ -340,6 +350,19 @@ private fun AppNavigationContent(
         memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
+    val pendingLink by linkViewModel.pending.collectAsState()
+    val linkLoading by linkViewModel.showLoading.collectAsState()
+    ErrorRecoveryEffect(linkViewModel.errors)
+    LaunchedEffect(pendingLink, restoringAuthentication) {
+        if (!restoringAuthentication) {
+            val source = backStack.last()
+            linkViewModel.openPending(
+                currentIsbn = (source as? BookDetailKey)?.book?.isbn13,
+                sourceIsCurrent = { backStack.isCurrentDestination(source) },
+                openBook = { backStack.openExternalBookFromCurrent(source, it) },
+            )
+        }
+    }
     val publicLibraryRepository = remember { PublicLibraryRemoteRepository() }
     val profileErrors = remember { ErrorRecoveryState() }
     ErrorRecoveryEffect(profileErrors)
@@ -642,6 +665,7 @@ private fun AppNavigationContent(
         )
         com.chaekchaek.app.ui.archive.ShelfChoiceSheet(librarySaveViewModel)
     }
+    if (linkLoading) com.chaekchaek.app.ui.bookdetail.RequestLoadingOverlay(Modifier.fillMaxSize())
 }
 
 @Composable

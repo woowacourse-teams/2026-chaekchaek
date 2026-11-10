@@ -8,16 +8,22 @@ import PostHog
 
 struct ContentView: View {
     @State private var onboardingEligible: Bool?
+    @State private var bookDeepLinks = BookDeepLinkInbox()
 
     var body: some View {
         Group {
             if let onboardingEligible {
-                ComposeViewController(onboardingEligible: onboardingEligible)
+                ComposeViewController(onboardingEligible: onboardingEligible, bookDeepLinks: bookDeepLinks)
             } else {
                 Color.white
             }
         }
         .ignoresSafeArea()
+        .onOpenURL { url in
+            if !GIDSignIn.sharedInstance.handle(url), url.scheme?.lowercased() == "chaekchaek" {
+                bookDeepLinks.submit(uri: url.absoluteString)
+            }
+        }
         .task {
             if onboardingEligible == nil {
                 onboardingEligible = await FirstLibraryInstallationPolicy.isEligible()
@@ -61,6 +67,7 @@ private enum FirstLibraryInstallationPolicy {
 
 private struct ComposeViewController: UIViewControllerRepresentable {
     let onboardingEligible: Bool
+    let bookDeepLinks: BookDeepLinkInbox
     func makeCoordinator() -> IOSRemotePolicy { IOSRemotePolicy() }
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
@@ -203,7 +210,12 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             policyController: context.coordinator.controller,
             onUpdate: { context.coordinator.openStore() },
             showPolicyDeveloperTools: policyDeveloperToolsEnabled,
-            onPolicyRefresh: { context.coordinator.refresh(force: true) }
+            onPolicyRefresh: { context.coordinator.refresh(force: true) },
+            bookDeepLinks: bookDeepLinks,
+            openBookDeepLink: { uri in
+                guard let url = URL(string: uri), url.scheme?.lowercased() == "chaekchaek" else { return }
+                UIApplication.shared.open(url)
+            }
         )
     }
 

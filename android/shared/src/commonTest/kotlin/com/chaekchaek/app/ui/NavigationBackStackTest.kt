@@ -11,6 +11,20 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 
 class NavigationBackStackTest {
+    @Test fun externalLinkPreservesPreviousEntryAndRoot() {
+        val previous = BookDetailKey(BookDetailArgs(id = "previous", isbn13 = "9791172376215", title = "이전 책"))
+        val stack = mutableListOf<androidx.navigation3.runtime.NavKey>(previous)
+        val next = BookDetailArgs(id = "linked", isbn13 = "9788937460449", title = "링크 책")
+        assertTrue(stack.openExternalBookFromCurrent(previous, next))
+        val linked = stack.last()
+        assertFalse(stack.openExternalBookFromCurrent(linked, next))
+        assertFalse(stack.openExternalBookFromCurrent(previous, next))
+        assertTrue(stack.popDestinationIfCurrent(linked))
+        assertTrue(stack.last() === previous)
+        assertFalse(stack.popDestinationIfCurrent(linked))
+        assertFalse(stack.popTopDestination())
+    }
+
     @Test
     fun sameBookOpenedFromAnotherShelfHasIndependentSerializableEntry() {
         val book = BookDetailArgs(id = "9780000000001", title = "같은 책")

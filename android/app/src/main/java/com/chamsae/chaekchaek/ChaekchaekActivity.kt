@@ -1,6 +1,8 @@
 package com.chamsae.chaekchaek
 
 import android.os.Bundle
+import android.content.Intent
+import com.chaekchaek.app.deeplink.BookDeepLinkInbox
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import kotlinx.coroutines.CancellationException
 import androidx.activity.ComponentActivity
@@ -25,6 +27,32 @@ import kotlinx.coroutines.launch
 
 abstract class ChaekchaekActivity : ComponentActivity() {
     protected abstract val analyticsEnvironment: String
+    private val bookDeepLinks = BookDeepLinkInbox()
+    private var lastLinkReceipt: String? = null
+
+    private fun receiveBookLink(intent: Intent) {
+        if (intent.action != Intent.ACTION_VIEW) return
+        val uri = intent.dataString ?: return
+        val receipt = intent.getStringExtra(BookDeepLinkActivity.RECEIPT) ?: java.util.UUID.randomUUID().toString()
+        if (lastLinkReceipt == receipt) return
+        lastLinkReceipt = receipt
+        bookDeepLinks.receive(uri, receipt)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        receiveBookLink(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("book_link_last_receipt", lastLinkReceipt)
+        bookDeepLinks.pending.value?.let {
+            outState.putString("book_link_pending_id", it.id)
+            outState.putString("book_link_pending_uri", it.restorableUri)
+        }
+        super.onSaveInstanceState(outState)
+    }
     private lateinit var remotePolicy: AndroidRemotePolicy
     private lateinit var updates: AndroidAppUpdates
     private val realUpdateManager by lazy { com.google.android.play.core.appupdate.AppUpdateManagerFactory.create(this) }
@@ -35,6 +63,12 @@ abstract class ChaekchaekActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lastLinkReceipt = savedInstanceState?.getString("book_link_last_receipt")
+        val pendingUri = savedInstanceState?.getString("book_link_pending_uri")
+        val pendingId = savedInstanceState?.getString("book_link_pending_id")
+        if (pendingUri != null && pendingId != null) bookDeepLinks.receive(pendingUri, pendingId)
+        // Relay가 수신 ID를 부여하므로 재생성과 새로운 동일 URI 실행을 구분한다.
+        if (savedInstanceState == null || intent.getStringExtra(BookDeepLinkActivity.RECEIPT) != lastLinkReceipt) receiveBookLink(intent)
         remotePolicy = AndroidRemotePolicy.get(this)
         updates = AndroidAppUpdates(this, createAppUpdateManager(), remotePolicy.controller, remotePolicy.controller::storeFailed)
 
@@ -103,6 +137,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 )
             }
             App(
+                bookDeepLinks = bookDeepLinks,
                 policyController = remotePolicy.controller,
                 onUpdate = updates::update,
                 authPlatform = authPlatform,
