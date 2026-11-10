@@ -184,20 +184,25 @@ class LibraryServiceTest {
     }
 
     @Test
-    @DisplayName("닉네임이 없으면 책장을 조회하거나 저장하지 않는다")
-    void should_RequireNickname_BeforeCreatingLibrary() {
+    @DisplayName("공개 닉네임이 없는 활성 회원도 일반 책장을 생성한다")
+    void should_CreateLibrary_When_NicknameIsNotSet() {
         // given
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(libraryRepository.create(any(Library.class))).thenAnswer(invocation -> {
+            Library library = invocation.getArgument(0);
+            ReflectionTestUtils.setField(library, "id", 7L);
+            return library;
+        });
         LibraryService service = service();
 
-        // when & then
-        assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
-                .isInstanceOfSatisfying(
-                        BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.NICKNAME_REQUIRED)
-                );
-        verifyNoInteractions(libraryRepository);
-        assertThat(appender.list).isEmpty();
+        // when
+        LibraryResponse response = service.create(1L, "올해읽을책");
+
+        // then
+        assertThat(response.libraryId()).isEqualTo(7L);
+        assertThat(response.name()).isEqualTo("올해읽을책");
+        assertThat(response.isDefault()).isFalse();
+        verify(libraryRepository).create(any(Library.class));
     }
 
     @Test

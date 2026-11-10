@@ -8,6 +8,8 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -15,6 +17,7 @@ import com.chaekchaek.member.service.NicknameGenerator;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SocialLoginService {
 
+    private static final String DEFAULT_LIBRARY_NAME = "기본 책장";
     private static final Logger log = LoggerFactory.getLogger(SocialLoginService.class);
 
     private final MemberRepository memberRepository;
@@ -32,6 +36,8 @@ public class SocialLoginService {
     private final ActorRepository actorRepository;
     private final CurrentActorProvider currentActorProvider;
     private final GuestActorMigrationService guestActorMigrationService;
+    private final LibraryRepository libraryRepository;
+    private final Clock clock;
 
     public SocialLoginService(
             MemberRepository memberRepository,
@@ -39,7 +45,9 @@ public class SocialLoginService {
             NicknameGenerator nicknameGenerator,
             ActorRepository actorRepository,
             CurrentActorProvider currentActorProvider,
-            GuestActorMigrationService guestActorMigrationService
+            GuestActorMigrationService guestActorMigrationService,
+            LibraryRepository libraryRepository,
+            Clock clock
     ) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
@@ -47,6 +55,8 @@ public class SocialLoginService {
         this.actorRepository = actorRepository;
         this.currentActorProvider = currentActorProvider;
         this.guestActorMigrationService = guestActorMigrationService;
+        this.libraryRepository = libraryRepository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -126,9 +136,10 @@ public class SocialLoginService {
     }
 
     private Member rejoin(SocialAccount account, String profileImageUrl, Long guestActorId) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Member newMember = Member.create(nicknameGenerator.generate(), profileImageUrl, now);
         memberRepository.save(newMember);
+        createDefaultLibrary(newMember);
         actorRepository.save(Actor.member(newMember, now));
         if (guestActorId != null) {
             guestActorMigrationService.migrate(guestActorId, newMember);
@@ -160,7 +171,7 @@ public class SocialLoginService {
             String profileImageUrl,
             Long guestActorId
     ) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Actor guestActor = guestActorId == null
                 ? null
                 : actorRepository.findByIdForUpdate(guestActorId)
@@ -185,6 +196,7 @@ public class SocialLoginService {
                 now
         );
         socialAccountRepository.save(socialAccount);
+        createDefaultLibrary(member);
 
         log.atInfo()
                 .addKeyValue("type", "event")
@@ -194,6 +206,15 @@ public class SocialLoginService {
                 .addKeyValue("fromGuest", guestActor != null)
                 .log("Social sign up");
         return member;
+    }
+
+    private void createDefaultLibrary(Member member) {
+        libraryRepository.create(Library.createDefault(
+                member.getId(),
+                DEFAULT_LIBRARY_NAME,
+                1L,
+                clock.instant()
+        ));
     }
 
     @Transactional

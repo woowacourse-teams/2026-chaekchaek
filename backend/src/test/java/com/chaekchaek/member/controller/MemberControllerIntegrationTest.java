@@ -56,9 +56,10 @@ public class MemberControllerIntegrationTest {
     private static final String MEMBER_TAG = "회원";
     private static final String NICKNAME_UPDATE_DESCRIPTION = """
             중복되지 않은 공개 닉네임을 설정한다. 닉네임은 공백뿐이 아닌 1~10자를 허용한다.
-            첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
-            있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을
-            변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.
+            공개 닉네임은 가입 후 선택적으로 설정한다. 가입 시 생성된 기본 책장이 있거나 이후 닉네임을
+            변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 기본 책장이 없는 기존 회원은 첫 저장과
+            기본 책장 생성을 함께 완료하며 같은 이름의 내 책장이 있으면 이름과 순서를 유지해 기본으로
+            승격한다. 익명 표시 여부는 유지한다.
             별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.
             """;
     private static final FieldDescriptor[] MEMBER_RESPONSE_FIELDS = {

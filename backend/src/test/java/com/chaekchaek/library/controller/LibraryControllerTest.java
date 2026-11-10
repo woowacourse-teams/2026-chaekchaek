@@ -93,7 +93,7 @@ class LibraryControllerTest {
 
             - `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.
             - 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
-            - 닉네임을 설정하지 않은 회원은 `422`, `NICKNAME_REQUIRED`를 반환한다.
+            - 공개 닉네임을 설정하지 않은 활성 회원도 책장을 추가할 수 있다.
             - `SUSPENDED`, `WITHDRAWN` 회원은 `403`, `FORBIDDEN`을 반환한다.
             - 회원당 책장 수 제한은 없으며 새 책장은 맨 뒤에 추가한다.
             - 성공 응답에는 `isDefault: false`, `totalCount: 0`, `items: []`가 포함된다.
@@ -552,31 +552,6 @@ class LibraryControllerTest {
                 ErrorCode.LIBRARY_NAME_ALREADY_EXISTS,
                 "/api/v1/libraries",
                 "library-create-name-already-exists",
-                LIBRARY_CREATE_SUMMARY,
-                LIBRARY_CREATE_DESCRIPTION,
-                noPathParameters(),
-                noQueryParameters()
-        );
-    }
-
-    @Test
-    @DisplayName("닉네임이 없으면 책장을 생성하지 않고 닉네임 설정 오류를 반환한다")
-    void should_ReturnUnprocessableEntity_When_MemberHasNoNickname() throws Exception {
-        // given
-        when(libraryService.create(MEMBER_ID, "올해읽을책"))
-                .thenThrow(new BusinessException(ErrorCode.NICKNAME_REQUIRED));
-
-        // when & then
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"올해읽을책"}
-                                """)),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                ErrorCode.NICKNAME_REQUIRED,
-                "/api/v1/libraries",
-                "library-create-nickname-required",
                 LIBRARY_CREATE_SUMMARY,
                 LIBRARY_CREATE_DESCRIPTION,
                 noPathParameters(),
