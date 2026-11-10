@@ -33,16 +33,17 @@
 
 ## 구현과 검증 상태
 
-작업 기준은 `origin/an-develop`의 `2cfecead`다. 문서 작성 시점의 상태를 기록하며 앱 동작 완료 증거로 사용하지 않는다.
+작업 기준은 `origin/an-develop`의 `2cfecead` 및 작업 브랜치 `692-book-detail-deeplink`다.
 
 | 구분 | 상태 |
 | --- | --- |
-| 사용자 정책과 검증 계획 | 이 문서에 기록 |
-| URI 최종 형식과 양 플랫폼 수신 | 미구현 |
-| 목적지 조회·오류·뒤로가기·온보딩 연결 | 미구현 |
-| debug 개발자 도구 시안 | 로컬 `.fig`에서 개발자 도구와 공통 컨트롤을 추출해 [HTML v1](../android/visual-contracts/prototypes/book-detail-deeplink/index.html) 제작. 사용자 승인 대기 |
-| 공통 단위 테스트와 Android·iOS 빌드 | 미실행 |
-| Android·iOS 실제 실행 | 미실행 |
+| 사용자 정책과 검증 계획 | 이 문서에 기록 완료 |
+| URI 최종 형식과 양 플랫폼 수신 | 구현 완료 (`chaekchaek://books/{isbn13}`, Android Intent 필터 및 iOS URL 수신) |
+| 목적지 조회·오류·뒤로가기·온보딩 연결 | 구현 완료 (`BookDeepLinkViewModel`, 공통 오류 팝업 복귀, 온보딩 후 목적지 재개) |
+| debug 개발자 도구 시안 | 로컬 `.fig` 기반 [HTML v1](../android/visual-contracts/prototypes/book-detail-deeplink/index.html) 사용자 승인 완료 및 양 플랫폼 반영 |
+| 공통 단위 테스트와 Android·iOS 빌드 | 검증 완료 (`:shared:testAndroidHostTest` 23 actionable tasks 통과, `:app:assembleDebug` 통과) |
+| iOS 실제 실행 | 검증 완료 (iPhone 17 Pro iOS 26.2 시뮬레이터에서 `BookDeepLinkUITests` 4건 통과: 콜드 진입, 온보딩 후 재개, 개발자 도구 딥링크, 404/503 오류 안내) |
+| Android 실제 실행 | 검증 완료 (`medium_phone` AVD에서 `BookDeepLinkInteractionTest` 6건 통과: 콜드/웜/백그라운드 진입, 검색어 보존, 동일 도서 재진입 보존, 404/503 오류 안내, 온보딩 후 재개, 개발자 도구 실행) |
 
 HTML v1은 데스크톱 너비 1120, 모바일 너비 390·320에서 브라우저로 확인했다. Gowun Dodum·Pretendard 로딩, 가로 넘침 없음, 정상 URI 형식 확인, 잘못된 링크·책 없음·연결 오류 안내, 오류 닫기 후 입력 보존, 재시도 버튼과 조회 중 상태를 확인했다. HTML의 동작은 시뮬레이션이며 실제 앱·서버 동작의 검증 결과가 아니다. 로컬 원본의 파일 해시·내보낸 시각·사용한 노드와 승인 절차는 [로컬 디자인 기록](local-figma-html-workflow.md)에 둔다.
 
