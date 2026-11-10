@@ -49,6 +49,7 @@ import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 
 export type LibraryPageDialogType =
   | ManageLibraryDialogType
@@ -281,6 +282,8 @@ export const LibraryPage = () => {
             />
           )
         );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
