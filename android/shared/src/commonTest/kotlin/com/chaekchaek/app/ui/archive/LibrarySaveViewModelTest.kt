@@ -40,13 +40,13 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibrarySaveViewModelTest {
     private val book = BookDetailArgs(id = "42", bookId = 42, isbn13 = "9780000000042", title = "책")
-    private val record = LibraryRecord("READING", 0, null, 42)
+    private val record = LibraryRecord(null, 42)
 
     @Test
     fun newDetailObserversReceiveOnlySavesCompletedAfterTheirOwnEntry() = runSaveTest {
         val requestedIsbns = mutableListOf<String>()
         val vm = LibrarySaveViewModel(
-            addBook = { isbn, _, _ -> requestedIsbns += isbn; record },
+            addBook = { isbn, _ -> requestedIsbns += isbn; record },
             onSaved = { _, _ -> },
         )
         vm.authenticate("member")
@@ -86,7 +86,7 @@ class LibrarySaveViewModelTest {
     fun observingDetailReceivesEachSaveEvenWhenTheCompletedBookAndRecordAreIdentical() = runSaveTest {
         var requests = 0
         val vm = LibrarySaveViewModel(
-            addBook = { _, _, _ -> requests += 1; record },
+            addBook = { _, _ -> requests += 1; record },
             onSaved = { _, _ -> },
         )
         vm.authenticate("member")
@@ -109,7 +109,7 @@ class LibrarySaveViewModelTest {
     fun observingDetailReceivesSamePayloadAfterLogoutAndLoginResetTheSaveCount() = runSaveTest {
         val requestTokens = mutableListOf<String>()
         val vm = LibrarySaveViewModel(
-            addBook = { _, _, token -> requestTokens += token; record },
+            addBook = { _, token -> requestTokens += token; record },
             onSaved = { _, _ -> },
         )
         vm.authenticate("old-member")
@@ -142,7 +142,7 @@ class LibrarySaveViewModelTest {
     fun immediateReloginAndSameBookSaveDoNotLoseCompletionWhenStateEndsWithTheSameValues() = runSaveTest {
         val requestTokens = mutableListOf<String>()
         val vm = LibrarySaveViewModel(
-            addBook = { _, _, token -> requestTokens += token; record },
+            addBook = { _, token -> requestTokens += token; record },
             onSaved = { _, _ -> },
         )
         vm.authenticate("old-member")
@@ -206,7 +206,7 @@ class LibrarySaveViewModelTest {
             }
             advanceUntilIdle()
 
-            assertEquals(LibraryRecord("FINISHED", 308, 4.5, 42), saved[book.isbn13])
+            assertEquals(LibraryRecord(4.5, 42), saved[book.isbn13])
             assertEquals(1, vm.uiState.value.savedCount)
             assertNull(vm.uiState.value.pendingBook)
             assertNull(vm.uiState.value.errorMessage)
@@ -227,7 +227,7 @@ class LibrarySaveViewModelTest {
         var requests = 0
         val saved = mutableSetOf<String>()
         val vm = LibrarySaveViewModel(
-            addBook = { _, pages, _ -> assertNull(pages); requests++; response.await() },
+            addBook = { _, _ -> requests++; response.await() },
             onSaved = { b, _ -> saved += b.isbn13 },
             isSaved = saved::contains,
         )
@@ -258,7 +258,7 @@ class LibrarySaveViewModelTest {
     @Test
     fun loginResumesOnlyTheSelectedBookAndCancellationDiscardsIt() = runSaveTest {
         val calls = mutableListOf<String>()
-        val vm = LibrarySaveViewModel({ isbn, _, token -> calls += "$isbn:$token"; record }, { _, _ -> })
+        val vm = LibrarySaveViewModel({ isbn, token -> calls += "$isbn:$token"; record }, { _, _ -> })
         vm.save(book)
         assertEquals(book, vm.uiState.value.pendingBook)
         vm.cancelPendingSave()
@@ -278,7 +278,7 @@ class LibrarySaveViewModelTest {
         var calls = 0
         var saved = 0
         val vm = LibrarySaveViewModel(
-            { _, _, _ -> if (++calls == 1) error("offline") else record },
+            { _, _ -> if (++calls == 1) error("offline") else record },
             { _, _ -> saved++ },
         )
         vm.authenticate("member")
@@ -300,7 +300,7 @@ class LibrarySaveViewModelTest {
         val tokens = mutableListOf<String>()
         var saved = 0
         val vm = LibrarySaveViewModel(
-            { _, _, token -> tokens += token; response.await() },
+            { _, token -> tokens += token; response.await() },
             { _, _ -> saved++ },
         )
         vm.authenticate("member-old-token")
@@ -323,7 +323,7 @@ class LibrarySaveViewModelTest {
         val response = CompletableDeferred<LibraryRecord>()
         var saved = 0
         val vm = LibrarySaveViewModel(
-            { _, _, _ -> withContext(NonCancellable) { response.await() } },
+            { _, _ -> withContext(NonCancellable) { response.await() } },
             { _, _ -> saved++ },
         )
         vm.authenticate("old-member")

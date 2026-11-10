@@ -69,7 +69,7 @@ class LibraryRemoteRepositoryTest {
         else -> "\"publishedDate\":\"\","
       }
       respond(
-        """{"nextPage":${if (page < 4) page + 1 else null},"items":[{"bookId":$page,"isbn13":"978000000000$page","title":"책 $page","coverImageUrl":"cover","authors":[],"publisher":"출판사","category":"소설",${dateField}"status":"READING","currentPage":10,"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",
+        """{"nextPage":${if (page < 4) page + 1 else null},"items":[{"bookId":$page,"isbn13":"978000000000$page","title":"책 $page","coverImageUrl":"cover","authors":[],"publisher":"출판사","category":"소설",${dateField}"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",
         headers = headersOf(HttpHeaders.ContentType, "application/json"),
       )
     }) { install(ContentNegotiation) { json() } }
@@ -83,7 +83,7 @@ class LibraryRemoteRepositoryTest {
 
   private fun libraryClient(optionalImageFields: String = "") = HttpClient(MockEngine {
     respond(
-      """{"nextPage":null,"items":[{"bookId":1,"isbn13":"9780000000001","title":"책","coverImageUrl":"cover",$optionalImageFields"authors":[],"publisher":"출판사","category":"소설","publishedDate":"2026-01-01","totalPages":100,"status":"READING","currentPage":10,"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",
+      """{"nextPage":null,"items":[{"bookId":1,"isbn13":"9780000000001","title":"책","coverImageUrl":"cover",$optionalImageFields"authors":[],"publisher":"출판사","category":"소설","publishedDate":"2026-01-01","readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",
       headers = headersOf(HttpHeaders.ContentType, "application/json"),
     )
   }) {

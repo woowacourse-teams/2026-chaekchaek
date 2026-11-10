@@ -118,7 +118,6 @@ data class BookDetailTarget(
     val publisher: String = "",
     val year: String = "",
     val category: String = "",
-    val totalPages: Int = 0,
     val coverUrl: String = "",
     val coverId: String = "",
 )
@@ -303,155 +302,7 @@ private fun HomeContent(
     }
 }
 
-@Composable
-private fun ReadingStatusSection(
-    readingBook: ReadingBookUiModel?,
-    onSearchBook: () -> Unit,
-    onBookClick: (BookDetailTarget) -> Unit,
-) {
-    if (readingBook == null) {
-        EmptyReadingSection(onSearchBook)
-    } else {
-        CurrentReadingSection(readingBook, onBookClick)
-    }
-}
 
-@Composable
-private fun CurrentReadingSection(book: ReadingBookUiModel, onBookClick: (BookDetailTarget) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 12.dp),
-    ) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground, thickness = 1.dp)
-        Spacer(Modifier.height(22.dp))
-        Text(
-            "이어서 읽기",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
-        )
-        Spacer(Modifier.height(12.dp))
-        Surface(
-            onClick = { onBookClick(book.toBookDetailTarget()) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Cover(
-                    coverId = book.coverId,
-                    title = book.title,
-                    modifier = Modifier.size(width = 52.dp, height = 78.dp),
-                )
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(78.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            book.title,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            "›",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 17.sp,
-                            lineHeight = 18.sp,
-                        )
-                    }
-                    Text(
-                        "${book.currentPage} / ${book.totalPages}쪽",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(ChaekBand),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(readingProgress(book.currentPage, book.totalPages))
-                                .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.onSurface),
-                        )
-                    }
-                    Text(
-                        "이어서 기록하기  ↗",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyReadingSection(onSearchBook: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, bottom = 17.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                "지금 읽고 있는 책이 있으세요?",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            )
-            Text(
-                "책을 등록하면 읽은 쪽수와 감상을 남길 수 있어요.",
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
-                    .clickable(role = Role.Button, onClick = onSearchBook)
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_search),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    "책 제목으로 찾기",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-internal fun readingProgress(currentPage: Int, totalPages: Int): Float =
-    if (totalPages <= 0) 0f else currentPage.toFloat().div(totalPages).coerceIn(0f, 1f)
 
 @Composable
 private fun HomeHeader(displayName: String) {
@@ -1111,6 +962,5 @@ private fun ReadingBookUiModel.toBookDetailTarget() = BookDetailTarget(
     isbn13 = isbn13,
     bookId = bookId.value.toLongOrNull(),
     title = title,
-    totalPages = totalPages,
     coverId = coverId,
 )

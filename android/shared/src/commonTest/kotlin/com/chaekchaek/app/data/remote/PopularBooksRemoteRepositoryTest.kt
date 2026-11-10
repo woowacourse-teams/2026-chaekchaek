@@ -52,14 +52,6 @@ class PopularBooksRemoteRepositoryTest {
                     ),
                 ),
             ),
-            readingBook = ReadingBookDto(
-                bookId = 7,
-                isbn13 = "9780000000007",
-                title = "역병",
-                coverImageUrl = "cover-7",
-                totalPages = 320,
-                currentPage = 132,
-            ),
         )
 
         val review = assertIs<FeedSection.RecentQuotes>(feed.visibleSections().single()).cards.single()
@@ -72,8 +64,6 @@ class PopularBooksRemoteRepositoryTest {
         assertEquals("페스트균은 결코 죽거나 사라지지 않는다.", review.quote)
         assertEquals(2, review.likeCount)
         assertEquals(true, review.likedByMe)
-        assertEquals("7", feed.readingBook?.bookId?.value)
-        assertEquals(132, feed.readingBook?.currentPage)
     }
 
     @Test

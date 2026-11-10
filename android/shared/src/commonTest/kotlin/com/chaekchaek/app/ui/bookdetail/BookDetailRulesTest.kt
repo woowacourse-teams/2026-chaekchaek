@@ -18,18 +18,15 @@ class BookDetailRulesTest {
     fun averageRatingAndReviewMetadataPreserveExactValues() {
         assertEquals(43, averageRatingInTenths(4.3))
         assertEquals(50, averageRatingInTenths(5.1))
-        assertEquals(ReviewMetadata("2026.08.27", "p.80까지"), reviewMetadata("2026-08-27T21:44:19", 80))
-        assertEquals(ReviewMetadata("2026.08.27", null), reviewMetadata("2026-08-27T21:44:19", null))
+        assertEquals(ReviewMetadata("2026.08.27"), reviewMetadata("2026-08-27T21:44:19"))
     }
 
     @Test
     fun reviewValidationAndSpoilerMaskKeepAndroidBehavior() {
-        assertTrue(BookDetailInputRules.canSubmitReview("좋았다", "80", 308))
-        assertFalse(BookDetailInputRules.canSubmitReview("  ", "80", 308))
-        assertFalse(BookDetailInputRules.canSubmitReview("좋았다", "309", 308))
-        assertNull(BookDetailInputRules.validPage("-1", 308))
-        assertFalse(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, false))
-        assertTrue(BookDetailInputRules.hasReviewDraft("초안", "", "", "80", 80, false))
+        assertTrue(BookDetailInputRules.canSubmitReview("좋았다"))
+        assertFalse(BookDetailInputRules.canSubmitReview("  "))
+        assertFalse(BookDetailInputRules.hasReviewDraft("", "", "", false))
+        assertTrue(BookDetailInputRules.hasReviewDraft("초안", "", "", false))
         assertTrue(shouldLockReview(reviewId = 1, isSpoiler = true, revealedReviewIds = emptySet()))
         assertFalse(shouldLockReview(reviewId = 1, isSpoiler = false, revealedReviewIds = emptySet()))
         assertEquals("짹짹 짹짹짹!\n짹짹?", maskAsChirps("감상 42쪽!\n좋다?"))
@@ -42,8 +39,6 @@ class BookDetailRulesTest {
         assertFalse(shouldLockReview(reviewId = 1, isSpoiler = true, revealedReviewIds = revealedReviewIds))
         assertTrue(shouldLockReview(reviewId = 2, isSpoiler = true, revealedReviewIds = revealedReviewIds))
         assertFalse(shouldLockReview(reviewId = 3, isSpoiler = false, revealedReviewIds = revealedReviewIds))
-        assertFalse(BookDetailInputRules.canSubmitPage(null))
-        assertTrue(BookDetailInputRules.canSubmitPage(80))
     }
 
     @Test

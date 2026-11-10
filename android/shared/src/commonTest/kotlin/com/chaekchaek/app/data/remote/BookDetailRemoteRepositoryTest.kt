@@ -32,8 +32,6 @@ class BookDetailRemoteRepositoryTest {
     try {
       val result = BookDetailRemoteRepository(client).rate(10, 4.5, "member")
       assertEquals(4.5, result.rating)
-      assertNull(result.status)
-      assertNull(result.currentPage)
     } finally { client.close() }
   }
 
@@ -41,13 +39,13 @@ class BookDetailRemoteRepositoryTest {
   fun `상세 별점과 책장 등록 여부는 독서 기록과 독립적으로 보존한다`() = runTest {
     for (membership in listOf("false", "true", "null")) {
       val client = testClient(MockEngine {
-        respond("""{"bookId":10,"isbn13":"9788936433598","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":null,"currentPage":null,"myRating":4.5},"isRegisteredInMyLibrary":$membership}""",
+        respond("""{"bookId":10,"isbn13":"9788936433598","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"myRating":4.5},"isRegisteredInMyLibrary":$membership}""",
           headers = headersOf(HttpHeaders.ContentType, "application/json"))
       })
       try {
         val detail = BookDetailRemoteRepository(client).detail("9788936433598")
         assertEquals(4.5, detail.myRating)
-        assertNull(detail.myRecord)
+        assertEquals(4.5, detail.myRecord?.rating)
         assertEquals(membership == "true", detail.isRegisteredInMyLibrary)
       } finally { client.close() }
     }
@@ -65,7 +63,7 @@ class BookDetailRemoteRepositoryTest {
           headersOf(HttpHeaders.ContentType, "application/problem+json"),
         )
         else -> respond(
-          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"FINISHED","currentPage":308,"myRating":4.5}}""",
+          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"myRating":4.5}}""",
           headers = headersOf(HttpHeaders.ContentType, "application/json"),
         )
       }
@@ -73,9 +71,9 @@ class BookDetailRemoteRepositoryTest {
     try {
       val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
 
-      val record = repository.addToLibrary("9780000000042", 308, "member")
+      val record = repository.addToLibrary("9780000000042", "member")
 
-      assertEquals(LibraryRecord("FINISHED", 308, 4.5, 42), record)
+      assertEquals(LibraryRecord(4.5, 42), record)
       assertEquals(
         listOf<Triple<HttpMethod, String, String?>>(
           Triple(HttpMethod.Post, "/api/v1/library", "Bearer member"),
@@ -107,7 +105,7 @@ class BookDetailRemoteRepositoryTest {
         val repository = BookDetailRemoteRepository(client)
 
         val error = assertFailsWith<ClientRequestException> {
-          repository.addToLibrary("9780000000042", 308, "member")
+          repository.addToLibrary("9780000000042", "member")
         }
 
         assertEquals(status, error.response.status)
@@ -138,7 +136,7 @@ class BookDetailRemoteRepositoryTest {
       val repository = BookDetailRemoteRepository(client)
 
       val error = assertFailsWith<ClientRequestException> {
-        repository.addToLibrary("9780000000042", 308, "member")
+        repository.addToLibrary("9780000000042", "member")
       }
 
       assertEquals(HttpStatusCode.Conflict, error.response.status)
@@ -158,8 +156,7 @@ class BookDetailRemoteRepositoryTest {
       publisher = "알에이치코리아",
       category = "국내도서>소설>과학소설",
       coverImageUrl = "https://example.com/martian.jpg",
-      totalPages = 308,
-      myRecord = BookDetailRecordDto(status = "READING", currentPage = 120, myRating = 4.5),
+      myRecord = BookDetailRecordDto(myRating = 4.5),
     ).toBookDetail()
     val reviews = ReviewPageDto(
       totalCount = 1,
@@ -203,7 +200,6 @@ class BookDetailRemoteRepositoryTest {
 
     assertEquals("과학소설", detail.category)
     assertEquals(42, detail.bookId)
-    assertEquals(120, detail.myRecord?.currentPage)
     assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
     assertEquals("https://example.com/reviewer.jpg", reviews.items.single().authorProfileImageUrl)
@@ -316,13 +312,13 @@ class BookDetailRemoteRepositoryTest {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
     )
-    val request = ReviewCreateRequest("감상", currentPage = 10, totalPages = 100)
+    val request = ReviewCreateRequest("감상")
 
     repository.createReview(42, request, WriteCredential.Member("member"))
     repository.createReview(42, request, WriteCredential.Guest("guest"))
 
-    assertEquals(true, bodies.first().contains("\"currentPage\":10"))
-    assertEquals(true, bodies.first().contains("\"totalPages\":100"))
+    assertEquals(false, bodies.first().contains("currentPage"))
+    assertEquals(false, bodies.first().contains("totalPages"))
     assertEquals(false, bodies.last().contains("currentPage"))
     assertEquals(false, bodies.last().contains("totalPages"))
   }
@@ -409,7 +405,7 @@ class BookDetailRemoteRepositoryTest {
 
     repository.updateReview(
       7,
-      ReviewCreateRequest("수정 감상", quote = null, chapter = null, currentPage = 10, totalPages = 100),
+      ReviewCreateRequest("수정 감상", quote = null, chapter = null),
       guest,
     )
     repository.deleteReview(7, guest)
@@ -452,11 +448,10 @@ class BookDetailRemoteRepositoryTest {
         val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
         val review = repository.updateReviewContent(
           7,
-          ReviewCreateRequest("수정 감상", quote = null, chapter = "보내면 안 되는 장", currentPage = 999, totalPages = 100, isSpoiler = true),
+          ReviewCreateRequest("수정 감상", quote = null, chapter = "보내면 안 되는 장", isSpoiler = true),
           credential,
         )
         assertEquals("기존 장", review.chapter)
-        assertEquals(80, review.currentPage)
       } finally {
         client.close()
       }
@@ -464,17 +459,17 @@ class BookDetailRemoteRepositoryTest {
   }
 
   @Test
-  fun `기존 회원 감상 수정은 읽기 메타데이터와 선택 입력 삭제를 계속 전송한다`() = runTest {
+  fun `기존 회원 감상 수정은 선택 입력 삭제를 계속 전송한다`() = runTest {
     val client = testClient(MockEngine { request ->
       assertEquals(HttpMethod.Patch, request.method)
       assertEquals("/api/v1/reviews/7", request.url.encodedPath)
       assertEquals("Bearer member", request.headers[HttpHeaders.Authorization])
       assertEquals(
-        Json.parseToJsonElement("""{"content":"수정 감상","quote":null,"chapter":null,"currentPage":80,"totalPages":100,"isSpoiler":false}"""),
+        Json.parseToJsonElement("""{"content":"수정 감상","quote":null,"chapter":null,"isSpoiler":false}"""),
         Json.parseToJsonElement((request.body as TextContent).text),
       )
       respond(
-        """{"reviewId":7,"content":"수정 감상","currentPage":80,"createdAt":"2026-10-21T00:00:00Z","author":{"displayName":"작성자","anonymous":false,"mine":true,"actorType":"MEMBER"},"replyCount":0,"likeCount":0,"deleted":false}""",
+        """{"reviewId":7,"content":"수정 감상","createdAt":"2026-10-21T00:00:00Z","author":{"displayName":"작성자","anonymous":false,"mine":true,"actorType":"MEMBER"},"replyCount":0,"likeCount":0,"deleted":false}""",
         headers = headersOf(HttpHeaders.ContentType, "application/json"),
       )
     })
@@ -482,7 +477,7 @@ class BookDetailRemoteRepositoryTest {
       val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
       repository.updateReview(
         7,
-        ReviewCreateRequest("수정 감상", quote = null, chapter = null, currentPage = 80, totalPages = 100),
+        ReviewCreateRequest("수정 감상", quote = null, chapter = null),
         WriteCredential.Member("member"),
       )
     } finally {
@@ -491,17 +486,16 @@ class BookDetailRemoteRepositoryTest {
   }
 
   @Test
-  fun `상세 서재 기록의 비어 있는 현재 페이지는 0으로 변환한다`() {
-    val record = BookDetailRecordDto(status = "WANT_TO_READ", currentPage = null, myRating = null)
+  fun `상세 서재 기록의 별점을 변환한다`() {
+    val record = BookDetailRecordDto(myRating = 4.5)
       .toLibraryRecord()
 
-    assertEquals("WANT_TO_READ", record?.status)
-    assertEquals(0, record?.currentPage)
+    assertEquals(4.5, record.rating)
   }
 
   @Test
   fun `서재 변경 응답의 도서 ID를 유지한다`() {
-    val record = LibraryRecordDto(bookId = 10, status = "READING", currentPage = 0)
+    val record = LibraryRecordDto(bookId = 10, rating = 4.0)
       .toLibraryRecord()
 
     assertEquals(10, record.bookId)

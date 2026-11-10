@@ -65,7 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
@@ -106,7 +105,6 @@ fun ArchiveRoute(
         scrollTopRequest = scrollTopRequest,
         onEditingChange = onEditingChange,
         onRemove = viewModel::remove,
-        onChangeStatus = viewModel::changeStatus,
         onRetry = viewModel::retry,
         onProfileClick = onProfileClick,
         onBookClick = onBookClick,
@@ -124,7 +122,6 @@ fun ArchiveScreen(
     scrollTopRequest: Int = 0,
     onEditingChange: (Boolean) -> Unit,
     onRemove: (Set<String>) -> Unit,
-    onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
     onRetry: () -> Unit,
     onProfileClick: () -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
@@ -135,17 +132,15 @@ fun ArchiveScreen(
     bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
         { _, _, _, _ -> },
 ) {
-    var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
     var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
     var onlySpineImages by rememberSaveable { mutableStateOf(false) }
     var failedSpineUrls by remember { mutableStateOf(emptySet<String>()) }
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
-    var showStatusDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val visibleItems = remember(uiState.items, filter, sort) {
-        sortArchiveBooks(uiState.items.filter { filter == null || it.status == filter }, sort)
+    val visibleItems = remember(uiState.items, sort) {
+        sortArchiveBooks(uiState.items, sort)
     }
     val spineBooks = booksForSpineShelf(visibleItems, onlySpineImages, failedSpineUrls)
     val density = LocalDensity.current
@@ -194,8 +189,6 @@ fun ArchiveScreen(
                 }
                 item {
                     LibraryControls(
-                        selected = filter,
-                        onSelected = { filter = it },
                         onEdit = if (editing) null else ({ onEditingChange(true) }),
                     )
                     if (!editing && visibleItems.isNotEmpty()) {
@@ -208,7 +201,7 @@ fun ArchiveScreen(
                         )
                     }
                     SortRow(
-                        countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
+                        countLabel = "전체 ${visibleItems.size}",
                         sort = sort,
                         onSortChange = { sort = it },
                     )
@@ -259,7 +252,6 @@ fun ArchiveScreen(
         if (editing) {
             EditActionBar(
                 enabled = selectedIds.isNotEmpty(),
-                onStatusChange = { showStatusDialog = true },
                 onDelete = { pendingDeletionIds = selectedIds },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
@@ -274,16 +266,6 @@ fun ArchiveScreen(
         }
     }
 
-    if (showStatusDialog) {
-        StatusChangeDialog(
-            selectedCount = selectedIds.size,
-            onDismiss = { showStatusDialog = false },
-            onChange = { status ->
-                onChangeStatus(selectedIds, status)
-                showStatusDialog = false
-            },
-        )
-    }
     if (pendingDeletionIds.isNotEmpty()) {
         DeleteConfirmationDialog(
             selectedCount = pendingDeletionIds.size,
@@ -309,38 +291,27 @@ private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> U
 
 @Composable
 private fun LibraryControls(
-    selected: ReadingStatus?,
-    onSelected: (ReadingStatus?) -> Unit,
     onEdit: (() -> Unit)?,
 ) {
+    if (onEdit == null) return
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 18.dp),
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        Box(
+            modifier = Modifier.size(44.dp).clickable(
+                onClickLabel = "서재 편집",
+                role = Role.Button,
+                onClick = onEdit,
+            ),
+            contentAlignment = Alignment.Center,
         ) {
-            ChaekFilterChip("전체", selected == null, onClick = { onSelected(null) })
-            listOf(ReadingStatus.READING, ReadingStatus.FINISHED, ReadingStatus.WANT_TO_READ).forEach { status ->
-                ChaekFilterChip(status.label, selected == status, onClick = { onSelected(status) })
-            }
-        }
-        if (onEdit != null) {
-            Box(
-                modifier = Modifier.size(44.dp).clickable(
-                    onClickLabel = "서재 편집",
-                    role = Role.Button,
-                    onClick = onEdit,
-                ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "편집",
-                    color = Color(0xFF555555),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                )
-            }
+            Text(
+                "편집",
+                color = Color(0xFF555555),
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+            )
         }
     }
 }
@@ -484,10 +455,8 @@ private fun LibraryBookRow(
             Box(contentAlignment = Alignment.Center) { bookCover(book) }
         }
         Column(modifier = Modifier.weight(1f)) {
-            ReadingStatusTag(book.status)
             Text(
                 book.title,
-                modifier = Modifier.padding(top = 6.dp),
                 style = MaterialTheme.typography.titleSmall.copy(fontSize = 17.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -507,33 +476,6 @@ private fun LibraryBookRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 13.dp)) {
-                Text(
-                    if (book.totalPages > 0) "${book.currentPage} / ${book.totalPages}쪽" else "쪽수 정보 없음",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "${(book.progressRatio.coerceIn(0f, 1f) * 100).toInt()}%",
-                    color = Color(0xFF555555),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
-                )
-            }
-            Box(modifier = Modifier.fillMaxWidth().padding(top = 7.dp)) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(3.dp)
-                        .background(Color(0xFFECECEE), RoundedCornerShape(4.dp)),
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(book.progressRatio.coerceIn(0f, 1f)).height(3.dp)
-                            .background(
-                                if (book.status == ReadingStatus.READING) ChaekAccent else Color(0xFFB1B1B7),
-                                RoundedCornerShape(4.dp),
-                            ),
-                    )
-                }
             }
         }
         if (editing) {
@@ -591,31 +533,6 @@ private fun SelectionBox(selected: Boolean) {
     }
 }
 
-@Composable
-private fun ReadingStatusTag(status: ReadingStatus) {
-    if (status == ReadingStatus.READING) {
-        Row(
-            modifier = Modifier.height(20.dp).background(Color(0xFF242424), RoundedCornerShape(5.dp))
-                .padding(horizontal = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(5.dp).background(Color(0xFFFF9500), RoundedCornerShape(2.5.dp)))
-            Text(
-                status.label,
-                color = Color.White,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
-            )
-        }
-    } else {
-        Text(
-            status.label,
-            modifier = Modifier.height(20.dp),
-            color = Color(0xFF777777),
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
-        )
-    }
-}
 
 @Composable
 private fun EmptyLibrary() {
@@ -658,7 +575,6 @@ private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
 @Composable
 private fun EditActionBar(
     enabled: Boolean,
-    onStatusChange: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -671,7 +587,6 @@ private fun EditActionBar(
             modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ChaekOverlayButton("상태 변경", onStatusChange, enabled = enabled, secondary = true)
             ChaekOverlayButton("서재에서 삭제", onDelete, enabled = enabled)
         }
     }

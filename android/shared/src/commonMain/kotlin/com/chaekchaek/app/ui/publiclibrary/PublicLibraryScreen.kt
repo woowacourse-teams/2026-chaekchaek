@@ -51,7 +51,7 @@ internal fun PublicLibraryScreen(
                         if (shelf.items.isEmpty()) Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
                             Text("아직 담은 책이 없어요", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else BookshelfSpineRow(shelf.items.map { book ->
-                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, ReadingStatus.WANT_TO_READ, 0, 0, 0)
+                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, 0L)
                         }, onBook = { onBookshelf(shelf) })
                         HorizontalDivider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline)
                     }
@@ -66,12 +66,10 @@ internal fun PublicBookshelfScreen(
     ownerName: String, state: PublicReadState<PublicBookshelfDetail>, onBack: () -> Unit,
     onBook: (BookDetailArgs) -> Unit, modifier: Modifier = Modifier,
 ) {
-    var filter by rememberSaveable { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     PublicLibraryLayout("책장", state.showLoading, onBack, modifier) {
         state.content?.let { shelf ->
-            val books = shelf.items.filter { filter == null || it.status == filter }
+            val books = shelf.items
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp)) {
                 item(key = "intro") {
                     Text(shelf.name, style = MaterialTheme.typography.headlineSmall)
@@ -79,22 +77,15 @@ internal fun PublicBookshelfScreen(
                     Spacer(Modifier.height(24.dp))
                     if (shelf.items.isNotEmpty()) {
                         BookshelfSpineRow(shelf.items.map { book ->
-                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, ReadingStatus.WANT_TO_READ, book.currentPage, book.totalPages ?: 0, 0)
+                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, 0L)
                         }, onBook = { book -> shelf.items.firstOrNull { it.bookId == book.bookId }?.let { onBook(it.toDetailArgs()) } })
                         HorizontalDivider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline)
                     }
                     Spacer(Modifier.height(16.dp))
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf(null to "전체", "WANT_TO_READ" to "읽고 싶어요", "READING" to "읽는 중", "FINISHED" to "다 읽음").forEach { (value, label) ->
-                            ChaekFilterChip(label, filter == value, onClick = {
-                                if (filter != value) { filter = value; scope.launch { listState.scrollToItem(0) } }
-                            })
-                        }
-                    }
                 }
                 if (books.isEmpty()) item(key = "empty") {
                     Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-                        Text(if (shelf.items.isEmpty()) "아직 담은 책이 없어요" else "이 독서 상태의 책이 없어요", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("아직 담은 책이 없어요", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 items(books, key = { it.bookId }) { book ->
@@ -104,7 +95,6 @@ internal fun PublicBookshelfScreen(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(book.title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             if (book.authors.isNotEmpty()) Text(book.authors.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(book.readingLabel(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -136,9 +126,5 @@ private fun EmptyLibrary(message: String) {
 
 internal fun PublicLibraryBook.toDetailArgs() = BookDetailArgs(
     id = isbn13, isbn13 = isbn13, bookId = bookId, title = title, creator = authors.joinToString(", "),
-    totalPages = totalPages ?: 0, coverUrl = coverImageUrl,
+    coverUrl = coverImageUrl,
 )
-internal fun PublicLibraryBook.readingLabel(): String {
-    val label = when (status) { "WANT_TO_READ" -> "읽고 싶어요"; "READING" -> "읽는 중"; "FINISHED" -> "다 읽음"; else -> "독서 상태 없음" }
-    return "$label  ${currentPage}쪽" + (totalPages?.let { " / ${it}쪽" } ?: "")
-}

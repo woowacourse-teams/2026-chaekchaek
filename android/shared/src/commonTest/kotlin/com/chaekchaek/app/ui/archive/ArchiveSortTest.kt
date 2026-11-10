@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.archive
 
-import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,9 +22,6 @@ class ArchiveSortTest {
         category = "",
         coverUrl = "",
         spineUrl = null,
-        status = ReadingStatus.READING,
-        currentPage = 0,
-        totalPages = 0,
         lastRecordedAt = recordedAt,
     )
 }

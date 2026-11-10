@@ -42,10 +42,10 @@ class ApiEnvironmentRoutingTest {
                     MemberRemoteRepository(client, configuration).withdraw("test-member")
                     BookDetailRemoteRepository(client, configuration).unlikeReview(7, WriteCredential.Guest("test-guest"))
                     MobileAuthRemoteRepository(client, configuration).issueGuest()
-                    assertEquals(8, requestedUrls.size)
+                    assertEquals(7, requestedUrls.size)
                     assertEquals(listOf(
                         "$origin/api/v1/books", "$origin/api/v1/home/popular-books",
-                        "$origin/api/v1/home/latest-reviews", "$origin/api/v1/library",
+                        "$origin/api/v1/home/latest-reviews",
                         "$origin/api/v1/library", "$origin/api/v1/members/me",
                         "$origin/api/v1/reviews/7/reactions", "$origin/api/v1/auth/guest-token",
                     ), requestedUrls.map { it.substringBefore('?') })

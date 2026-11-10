@@ -27,8 +27,8 @@ class BookshelfRemoteRepositoryTest {
                     assertEquals("9", request.url.parameters["memberId"])
                     """{"memberId":9,"libraries":[{"libraryId":2,"name":"기존의 긴 책장 이름","isDefault":true,"totalCount":35,"items":[{"bookId":42,"isbn13":"isbn","title":"책","coverImageUrl":"cover","authors":["저자"],"spineImageUrl":null}]}]}"""
                 }
-                request.method == HttpMethod.Get -> """{"libraryId":2,"memberId":9,"name":"책장","isDefault":true,"totalCount":1,"items":[{"bookId":42,"isbn13":"isbn","title":"책","coverImageUrl":"cover","authors":[],"totalPages":null,"status":"READING","currentPage":23}]}"""
-                request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/2") -> """{"bookId":42,"status":"FINISHED","currentPage":100,"rating":4.5}"""
+                request.method == HttpMethod.Get -> """{"libraryId":2,"memberId":9,"name":"책장","isDefault":true,"totalCount":1,"items":[{"bookId":42,"isbn13":"isbn","title":"책","coverImageUrl":"cover","authors":[]}]}"""
+                request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/2") -> """{"bookId":42,"rating":4.5}"""
                 request.method == HttpMethod.Post -> """{"libraryId":3,"name":"새 책장","isDefault":false,"totalCount":0,"items":[]}"""
                 else -> ""
             }
@@ -41,8 +41,7 @@ class BookshelfRemoteRepositoryTest {
         assertEquals(listOf("저자"), shelf.items.single().authors)
         val detail = repo.detail(2)
         assertTrue(detail.items.single().authors.isEmpty())
-        assertNull(detail.items.single().totalPages)
-        assertEquals(LibraryRecord("FINISHED", 100, 4.5, 42), repo.add(2, "isbn", null, "member"))
+        assertEquals(LibraryRecord(4.5, 42), repo.add(2, "isbn", "member"))
         assertEquals(3L, repo.create("새 책장", "member").libraryId)
         repo.rename(2, "이름", "member")
         repo.orderShelves(listOf(3, 2), "member")
@@ -50,7 +49,6 @@ class BookshelfRemoteRepositoryTest {
         repo.remove(2, 42, "member")
         repo.delete(3, "member")
         assertEquals(listOf("GET" to "/api/v1/libraries", "GET" to "/api/v1/libraries/2", "POST" to "/api/v1/libraries/2", "POST" to "/api/v1/libraries", "PATCH" to "/api/v1/libraries/2", "PATCH" to "/api/v1/libraries/order", "PATCH" to "/api/v1/libraries/2/books/order", "DELETE" to "/api/v1/libraries/2/books/42", "DELETE" to "/api/v1/libraries/3"), calls)
-        assertEquals("READING", bodies[0].jsonObject["status"]?.jsonPrimitive?.content)
         assertEquals(Json.parseToJsonElement("""{"libraryIds":[3,2]}"""), bodies[3])
         assertEquals(35, bodies[4].jsonObject["bookIds"]!!.jsonArray.size)
     }
@@ -59,6 +57,6 @@ class BookshelfRemoteRepositoryTest {
         val client = HttpClient(MockEngine { respond("""{"code":"LIBRARY_ITEM_LIMIT_EXCEEDED"}""", HttpStatusCode.Conflict, headersOf(HttpHeaders.ContentType, "application/problem+json")) }) {
             expectSuccess = true; install(ContentNegotiation) { json() }
         }
-        assertFailsWith<ClientRequestException> { BookshelfRemoteRepository(client).add(2, "isbn", null, "member") }
+        assertFailsWith<ClientRequestException> { BookshelfRemoteRepository(client).add(2, "isbn", "member") }
     }
 }

@@ -57,7 +57,7 @@ internal fun ShelfAddSheet(shelves: List<Bookshelf>, onDismiss: () -> Unit, onAd
             LazyColumn(Modifier.heightIn(max = 360.dp)) {
                 items(results, key = { it.isbn13 }) { book ->
                     BookShelfRow(book.title, book.creator, book.coverUrl) {
-                        onAdd(BookDetailArgs(book.isbn13, book.isbn13, title = book.title, creator = book.creator, publisher = book.publisher, year = book.year, category = book.category, coverUrl = book.coverUrl, totalPages = book.totalPages))
+                        onAdd(BookDetailArgs(book.isbn13, book.isbn13, title = book.title, creator = book.creator, publisher = book.publisher, year = book.year, category = book.category, coverUrl = book.coverUrl))
                     }
                 }
                 if (submitted.isNotEmpty() && results.isEmpty() && !loading) item { Text("검색 결과가 없어요") }

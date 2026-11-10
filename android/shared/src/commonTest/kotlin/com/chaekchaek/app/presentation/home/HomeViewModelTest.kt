@@ -350,8 +350,6 @@ class HomeViewModelTest {
                     isbn13 = "9780000000042",
                     title = "역병",
                     coverId = "cover-42",
-                    currentPage = 132,
-                    totalPages = 320,
                 ),
             ),
         )
@@ -368,8 +366,6 @@ class HomeViewModelTest {
                 isbn13 = "9780000000042",
                 title = "역병",
                 coverId = "cover-42",
-                currentPage = 132,
-                totalPages = 320,
             )
     }
 
@@ -437,8 +433,6 @@ class HomeViewModelTest {
                     isbn13 = "9780000000042",
                     title = "역병",
                     coverId = "cover-42",
-                    currentPage = 132,
-                    totalPages = 320,
                 ),
             ),
         )

@@ -12,7 +12,7 @@ interface BookshelfRepository {
     suspend fun create(name: String, token: String): Bookshelf
     suspend fun rename(libraryId: Long, name: String, token: String)
     suspend fun delete(libraryId: Long, token: String)
-    suspend fun add(libraryId: Long, isbn13: String, totalPages: Int?, token: String): LibraryRecord
+    suspend fun add(libraryId: Long, isbn13: String, token: String): LibraryRecord
     suspend fun remove(libraryId: Long, bookId: Long, token: String)
     suspend fun orderShelves(ids: List<Long>, token: String)
     suspend fun orderBooks(libraryId: Long, ids: List<Long>, token: String)
@@ -47,11 +47,11 @@ class BookshelfRemoteRepository(
         client.delete(url("/api/v1/libraries/$libraryId")) { bearerAuth(token) }
     }
 
-    override suspend fun add(libraryId: Long, isbn13: String, totalPages: Int?, token: String): LibraryRecord {
+    override suspend fun add(libraryId: Long, isbn13: String, token: String): LibraryRecord {
         val record = client.post(url("/api/v1/libraries/$libraryId")) {
-            authenticated(token, BookshelfBookRequest(isbn13, totalPages, "READING"))
+            authenticated(token, BookshelfBookRequest(isbn13))
         }.body<BookshelfSavedRecord>()
-        return LibraryRecord(record.status, record.currentPage ?: 0, record.rating, record.bookId)
+        return LibraryRecord(record.rating, record.bookId)
     }
 
     override suspend fun remove(libraryId: Long, bookId: Long, token: String) {
@@ -114,19 +114,13 @@ data class BookshelfBook(
     val coverImageUrl: String,
     val spineImageUrl: String? = null,
     val authors: List<String> = emptyList(),
-    val currentPage: Int = 0,
-    val totalPages: Int? = null,
-    val status: String? = null,
-    val readingUpdatedAt: String? = null,
 )
 
 @Serializable private data class BookshelfNameRequest(val name: String)
-@Serializable private data class BookshelfBookRequest(val isbn13: String, val totalPages: Int?, val status: String)
+@Serializable private data class BookshelfBookRequest(val isbn13: String)
 @Serializable private data class BookshelfOrderRequest(val libraryIds: List<Long>)
 @Serializable private data class BookshelfBookOrderRequest(val bookIds: List<Long>)
 @Serializable private data class BookshelfSavedRecord(
     val bookId: Long,
-    val status: String? = null,
-    val currentPage: Int? = null,
     val rating: Double? = null,
 )

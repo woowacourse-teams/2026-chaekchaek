@@ -143,12 +143,9 @@ internal fun PageInputDialog(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun ReviewInputSheet(
-    initialPage: Int,
-    totalPages: Int,
     anonymous: Boolean,
     nickname: String,
     initialReview: BookReview? = null,
-    allowReadingProgress: Boolean = true,
     isSaving: Boolean = false,
     showLoading: Boolean = false,
     snackbarHostState: SnackbarHostState? = null,
@@ -161,8 +158,6 @@ internal fun ReviewInputSheet(
     val initialContent = initialReview?.content.orEmpty()
     val initialQuote = initialReview?.quote.orEmpty()
     val initialChapter = initialReview?.chapter.orEmpty()
-    val initialPageValue = (initialReview?.currentPage ?: initialPage.takeIf { initialReview == null })
-        ?.takeIf { allowReadingProgress && it > 0 }?.toString().orEmpty()
     val initialSpoiler = initialReview?.isSpoiler == true
     val displayedAnonymously = initialReview?.anonymous ?: anonymous
     val displayedNickname = initialReview?.authorName ?: nickname
@@ -172,8 +167,6 @@ internal fun ReviewInputSheet(
     val quote = quoteState.text.toString()
     val chapterState = rememberLimitedTextFieldState(BookDetailInputRules.ChapterPolicy, initialChapter, initialReview?.reviewId)
     val chapter = chapterState.text.toString()
-    val pageValueState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPageValue, initialReview?.reviewId)
-    val pageValue = pageValueState.text.toString()
     var isSpoiler by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialSpoiler) }
     var showDiscardConfirmation by rememberSaveable { mutableStateOf(false) }
     val saving by rememberUpdatedState(isSaving)
@@ -182,13 +175,12 @@ internal fun ReviewInputSheet(
         confirmValueChange = { value -> value != SheetValue.Hidden || !saving },
     )
     val coroutineScope = rememberCoroutineScope()
-    val page = if (allowReadingProgress) BookDetailInputRules.validPage(pageValue, totalPages) else null
-    val canSubmit = BookDetailInputRules.canSubmitReview(content, pageValue, totalPages)
+    val canSubmit = BookDetailInputRules.canSubmitReview(content)
     val hasDraft = if (initialReview == null) {
-        BookDetailInputRules.hasReviewDraft(content, quote, chapter, pageValue, initialPage, isSpoiler)
+        BookDetailInputRules.hasReviewDraft(content, quote, chapter, isSpoiler)
     } else {
         content != initialContent || quote != initialQuote || chapter != initialChapter ||
-            pageValue != initialPageValue || isSpoiler != initialSpoiler
+            isSpoiler != initialSpoiler
     }
     val requestDismiss = {
         if (!isSaving) {
@@ -273,36 +265,18 @@ internal fun ReviewInputSheet(
                         height = 54,
                     )
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (allowReadingProgress) {
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FormLabel("쪽수")
-                            ChaekTextInput(
-                                state = pageValueState,
-                                policy = BookDetailInputRules.PagePolicy,
-                                placeholder = "80",
-                                accessibilityLabel = "쪽수",
-                                readOnly = isSaving,
-                                modifier = Modifier.fillMaxWidth(),
-                                height = 54,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                suffix = "쪽",
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FormLabel("목차 / 챕터 (선택)")
-                        ChaekTextInput(
-                            state = chapterState,
-                            policy = BookDetailInputRules.ChapterPolicy,
-                            placeholder = "Chapter 1",
-                            accessibilityLabel = "목차 또는 챕터",
-                            readOnly = isSaving,
-                            modifier = Modifier.fillMaxWidth(),
-                            height = 54,
-                            singleLine = true,
-                        )
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FormLabel("목차 / 챕터 (선택)")
+                    ChaekTextInput(
+                        state = chapterState,
+                        policy = BookDetailInputRules.ChapterPolicy,
+                        placeholder = "Chapter 1",
+                        accessibilityLabel = "목차 또는 챕터",
+                        readOnly = isSaving,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 54,
+                        singleLine = true,
+                    )
                 }
                 Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
                     Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -330,8 +304,7 @@ internal fun ReviewInputSheet(
                 SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = !isSaving) {
                     if (isSaving) return@SheetPrimaryButton
                     if (!canSubmit) {
-                        errors.confirm(if (content.isBlank()) "감상을 입력해 주세요." else
-                            if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
+                        errors.confirm(if (content.isBlank()) "감상을 입력해 주세요." else "입력 내용을 확인해 주세요.")
                         return@SheetPrimaryButton
                     }
                     onSave(
@@ -339,8 +312,6 @@ internal fun ReviewInputSheet(
                             content = content.trim(),
                             quote = quote.trim().ifEmpty { null },
                             chapter = chapter.trim().ifEmpty { null },
-                            currentPage = page,
-                            totalPages = totalPages.takeIf { allowReadingProgress && page != null && it > 0 },
                             isSpoiler = isSpoiler,
                         ),
                     )

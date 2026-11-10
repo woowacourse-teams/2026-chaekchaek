@@ -64,8 +64,6 @@ data class ReadingBookUiModel(
     val isbn13: String = "",
     val title: String,
     val coverId: String,
-    val currentPage: Int,
-    val totalPages: Int,
 )
 
 internal object HomeLabels {

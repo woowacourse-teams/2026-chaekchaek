@@ -283,7 +283,7 @@ class BookDetailViewModel(
             state.detail?.takeIf { it.isRegisteredInMyLibrary }?.myRecord?.let { return@mutate it }
             requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
-            repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
+            repository.addToLibrary(book.isbn13, requireToken())
         }
     }
 
@@ -311,22 +311,6 @@ class BookDetailViewModel(
         _uiState.value = _uiState.value.copy(libraryMessage = null)
     }
 
-    fun updateStatus(
-        status: ReadingStatus,
-        onLibraryAdded: () -> Unit = {},
-        onSuccess: () -> Unit = {},
-    ) = mutateLibraryRecord("reading_status_change", onSuccess, onLibraryAdded) { bookId, token ->
-        repository.updateReadingStatus(bookId, status.apiValue, token)
-    }
-
-    fun savePage(
-        page: Int,
-        onLibraryAdded: () -> Unit = {},
-        onSuccess: () -> Unit = {},
-    ) = mutateLibraryRecord("reading_page_save", onSuccess, onLibraryAdded) { bookId, token ->
-        val totalPages = _uiState.value.detail?.totalPages ?: _uiState.value.displayBook?.totalPages
-        repository.updateCurrentPage(bookId, page, totalPages, token)
-    }
 
     fun saveRating(
         rating: Rating,
@@ -962,14 +946,13 @@ class BookDetailViewModel(
         causedByAction: String,
     ): Long {
         val detail = requireNotNull(_uiState.value.detail)
-        if (detail.myRecord?.status != null) {
+        if (detail.myRecord != null) {
             detail.myRecord.bookId?.let { return it }
             return requireNotNull(detail.bookId)
         }
         val book = requireNotNull(_uiState.value.displayBook)
         val record = repository.addToLibrary(
             book.isbn13,
-            book.totalPages.takeIf { it > 0 },
             token,
         )
         if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
@@ -1110,13 +1093,10 @@ private fun BookDetailArgs.resolvableBookId(): Long? =
 internal val BookDetailAuthenticatedAction.analyticsName: String
     get() = when (this) {
         BookDetailAuthenticatedAction.AddToLibrary -> "library_add"
-        BookDetailAuthenticatedAction.OpenPageInput -> "reading_page_save"
         BookDetailAuthenticatedAction.OpenRating -> "rating_save"
         BookDetailAuthenticatedAction.OpenReviewRating -> "rating_save"
         BookDetailAuthenticatedAction.OpenReview -> "review_create"
         BookDetailAuthenticatedAction.OpenMineFeed -> "mine_feed"
-        is BookDetailAuthenticatedAction.ChangeStatus -> "reading_status_change"
-        is BookDetailAuthenticatedAction.SavePage -> "reading_page_save"
         is BookDetailAuthenticatedAction.LikeReview -> "review_like"
         is BookDetailAuthenticatedAction.CreateReply -> "reply_create"
         is BookDetailAuthenticatedAction.LikeReply -> "reply_like"

@@ -15,7 +15,7 @@ class BookshelfFlowTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val repo = FakeShelves(listOf(shelf(1), shelf(2)))
-            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            val vm = LibrarySaveViewModel({ _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
             vm.authenticate("a", 9); vm.save(book); advanceUntilIdle()
             vm.selectShelf(2); vm.beginShelfCreation(); vm.cancelShelfCreation()
             assertEquals(book, vm.uiState.value.choosingBook)
@@ -42,7 +42,7 @@ class BookshelfFlowTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val repo = FakeShelves(listOf(shelf(1)))
-            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            val vm = LibrarySaveViewModel({ _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
             vm.authenticate("a", 9); vm.save(book); advanceUntilIdle(); vm.beginShelfCreation()
             val gate = CompletableDeferred<Unit>(); repo.createGate = gate
             vm.createShelf("이전 책장"); runCurrent()
@@ -60,7 +60,7 @@ class BookshelfFlowTest {
         try {
             val repo = FakeShelves(listOf(shelf(1), shelf(2)))
             val recent = mutableMapOf(9L to 2L)
-            val vm = LibrarySaveViewModel({ _, _, _ -> error("기본 저장 경로 호출 금지") }, { _, _ -> }, shelves = repo,
+            val vm = LibrarySaveViewModel({ _, _ -> error("기본 저장 경로 호출 금지") }, { _, _ -> }, shelves = repo,
                 readRecentShelf = { recent[it] }, writeRecentShelf = { member, shelf -> recent[member] = shelf }, isSaved = { true })
             vm.authenticate("token")
             vm.save(book)
@@ -86,7 +86,7 @@ class BookshelfFlowTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val repo = FakeShelves(listOf(shelf(1, listOf(BookshelfBookSummary(42, "isbn", "책", "cover"))), shelf(2), shelf(3, count = 35)))
-            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            val vm = LibrarySaveViewModel({ _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
             vm.authenticate("token"); vm.save(book); advanceUntilIdle()
             vm.confirmShelf(); advanceUntilIdle()
             assertTrue(repo.added.isEmpty())
@@ -101,7 +101,7 @@ class BookshelfFlowTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val repo = FakeShelves(listOf(shelf(2), shelf(1)))
-            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo, readRecentShelf = { 99 })
+            val vm = LibrarySaveViewModel({ _, _ -> error("legacy") }, { _, _ -> }, shelves = repo, readRecentShelf = { 99 })
             vm.save(book); assertEquals(book, vm.uiState.value.pendingBook)
             vm.cancelPendingSave(); vm.authenticate("token"); advanceUntilIdle()
             assertTrue(repo.added.isEmpty()); assertNull(vm.uiState.value.choosingBook)
@@ -173,7 +173,7 @@ class BookshelfFlowTest {
         try {
             val repo = FakeShelves(listOf(shelf(1), shelf(2)))
             val vm = BookshelfViewModel(repo)
-            val save = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            val save = LibrarySaveViewModel({ _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
             vm.authenticate("a", 9); save.authenticate("a", 9); advanceUntilIdle()
             vm.open(1); save.save(book); advanceUntilIdle(); save.selectShelf(2)
             vm.authenticate("a-fresh", 9); save.authenticate("a-fresh", 9)
@@ -357,10 +357,10 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
         if (mineFails) error("offline")
         return BookshelfCollection(memberId, shelves)
     }
-    override suspend fun add(libraryId: Long, isbn13: String, totalPages: Int?, token: String): LibraryRecord {
+    override suspend fun add(libraryId: Long, isbn13: String, token: String): LibraryRecord {
         if (fail) error("offline")
         added += libraryId
-        return LibraryRecord("FINISHED", 100, 4.5, 42)
+        return LibraryRecord(4.5, 42)
     }
     override suspend fun detail(libraryId: Long): BookshelfDetail {
         detailGate?.await()

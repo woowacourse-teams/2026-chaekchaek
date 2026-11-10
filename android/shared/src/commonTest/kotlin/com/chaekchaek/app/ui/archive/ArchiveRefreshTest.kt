@@ -121,6 +121,6 @@ class ArchiveRefreshTest {
     }
 
     private companion object {
-        const val BOOKS = """{"nextPage":null,"items":[{"bookId":1,"isbn13":"isbn-1","title":"책","coverImageUrl":"","authors":[],"publisher":"출판사","category":"소설","publishedDate":"2026-01-01","totalPages":100,"status":"READING","currentPage":10,"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}"""
+        const val BOOKS = """{"nextPage":null,"items":[{"bookId":1,"isbn13":"isbn-1","title":"책","coverImageUrl":"","authors":[],"publisher":"출판사","category":"소설","publishedDate":"2026-01-01","readingUpdatedAt":"2026-01-01T00:00:00Z"}]}"""
     }
 }

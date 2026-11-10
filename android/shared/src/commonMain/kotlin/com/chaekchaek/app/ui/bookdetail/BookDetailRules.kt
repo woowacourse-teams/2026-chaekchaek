@@ -18,13 +18,11 @@ internal fun averageRatingInTenths(averageRating: Double): Int =
 
 internal data class ReviewMetadata(
     val dateLabel: String,
-    val progressLabel: String?,
 )
 
-internal fun reviewMetadata(createdAt: String, currentPage: Int?): ReviewMetadata =
+internal fun reviewMetadata(createdAt: String): ReviewMetadata =
     ReviewMetadata(
         dateLabel = createdAt.take(10).replace('-', '.'),
-        progressLabel = currentPage?.let { "p.${it}까지" },
     )
 
 internal object BookDetailInputRules {
@@ -40,22 +38,16 @@ internal object BookDetailInputRules {
     fun validPage(value: String, totalPages: Int): Int? =
         value.toIntOrNull()?.takeIf { it >= 0 && (totalPages <= 0 || it <= totalPages) }
 
-    fun canSubmitPage(page: Int?): Boolean = page != null
-
-    fun canSubmitReview(content: String, pageValue: String, totalPages: Int): Boolean =
-        content.isNotBlank() && content.length <= MAX_CONTENT_LENGTH &&
-            (pageValue.isBlank() || validPage(pageValue, totalPages) != null)
+    fun canSubmitReview(content: String): Boolean =
+        content.isNotBlank() && content.length <= MAX_CONTENT_LENGTH
 
     fun hasReviewDraft(
         content: String,
         quote: String,
         chapter: String,
-        pageValue: String,
-        initialPage: Int,
         isSpoiler: Boolean,
     ): Boolean =
-        content.isNotEmpty() || quote.isNotEmpty() || chapter.isNotEmpty() || isSpoiler ||
-            pageValue != initialPage.takeIf { it > 0 }?.toString().orEmpty()
+        content.isNotEmpty() || quote.isNotEmpty() || chapter.isNotEmpty() || isSpoiler
 }
 
 internal object ReplyInputRules {
