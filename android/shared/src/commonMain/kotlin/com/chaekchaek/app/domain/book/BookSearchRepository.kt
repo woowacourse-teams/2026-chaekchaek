@@ -26,6 +26,5 @@ data class BookSearchResult(
     val description: String = "",
     val isbn13: String = "",
     val category: String = "",
-    val totalPages: Int = 0,
     val bookId: Long? = null,
 )

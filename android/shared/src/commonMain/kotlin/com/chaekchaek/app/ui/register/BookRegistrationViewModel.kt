@@ -31,12 +31,12 @@ data class BookRegistrationUiState(
 }
 
 class BookRegistrationViewModel private constructor(
-    private val addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
+    private val addBook: suspend (isbn13: String, accessToken: String) -> Unit,
     private val analytics: AnalyticsTracker,
 ) : ViewModel() {
     val errors = ErrorRecoveryState(analytics.errors)
     internal constructor(
-        addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
+        addBook: suspend (isbn13: String, accessToken: String) -> Unit,
     ) : this(addBook, AnalyticsTracker.None)
 
     constructor(
@@ -106,7 +106,7 @@ class BookRegistrationViewModel private constructor(
         _uiState.value = _uiState.value.copy(isBusy = true, errorMessage = null)
         registrationJob = viewModelScope.launch {
             withDelayedLoading(::setLoading) {
-                addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+                addBook(book.isbn13, token)
             }.onSuccess {
                 if (accessToken == token) {
                     analytics.finishAction(action, "success", strings = mapOf("effect" to "created"))
@@ -151,6 +151,5 @@ internal fun BookSearchResult.registrationValidationError(): String? = when {
     isbn13.isBlank() -> "ISBN 정보가 없는 책은 등록할 수 없어요"
     title.isBlank() -> "책 제목을 입력해 주세요"
     creator.isBlank() -> "저자를 입력해 주세요"
-    totalPages < 0 -> "전체 쪽수는 0보다 작을 수 없어요"
     else -> null
 }

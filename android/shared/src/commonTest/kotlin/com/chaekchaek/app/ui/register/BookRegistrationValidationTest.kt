@@ -25,13 +25,11 @@ class BookRegistrationValidationTest {
             year = "2026",
             coverUrl = "",
             isbn13 = "9780000000000",
-            totalPages = 308,
         )
 
         assertNull(valid.registrationValidationError())
         assertEquals("ISBN 정보가 없는 책은 등록할 수 없어요", valid.copy(isbn13 = "").registrationValidationError())
         assertEquals("책 제목을 입력해 주세요", valid.copy(title = " ").registrationValidationError())
         assertEquals("저자를 입력해 주세요", valid.copy(creator = " ").registrationValidationError())
-        assertEquals("전체 쪽수는 0보다 작을 수 없어요", valid.copy(totalPages = -1).registrationValidationError())
     }
 }

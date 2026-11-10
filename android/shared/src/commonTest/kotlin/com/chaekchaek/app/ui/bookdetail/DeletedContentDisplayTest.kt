@@ -110,7 +110,6 @@ class DeletedContentDisplayTest {
         content = "감상",
         quote = null,
         chapter = null,
-        currentPage = null,
         createdAt = "2026-10-06T06:03:22Z",
         authorName = "작성자",
         anonymous = false,

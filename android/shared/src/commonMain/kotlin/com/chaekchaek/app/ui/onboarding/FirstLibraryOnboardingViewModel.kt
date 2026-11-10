@@ -56,7 +56,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
         initiallyVisible = initiallyVisible,
         errorReporter = errorReporter,
         addBook = { book, token ->
-            libraryRepository.add(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+            libraryRepository.add(book.isbn13, token)
         },
     )
 

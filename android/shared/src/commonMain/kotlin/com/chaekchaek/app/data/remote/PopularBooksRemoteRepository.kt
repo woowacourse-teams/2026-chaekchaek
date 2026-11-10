@@ -32,26 +32,7 @@ class PopularBooksRemoteRepository(
         val detailedLatestReviews = latestReviews.withReviewDetails(
             reviewDetailsByBook = loadLatestReviewDetails(latestReviews, accessToken),
         )
-        val readingBook = accessToken?.let { loadReadingBook(it) }
-        return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
-    }
-
-    private suspend fun loadReadingBook(token: String): ReadingBookDto? {
-        var page = 1
-        while (true) {
-            val response = client.get("${apiConfiguration.baseUrl}/api/v1/library") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-                url {
-                    parameters.append("page", page.toString())
-                    parameters.append("status", "READING")
-                    parameters.append("sort", "RECENT")
-                }
-            }.body<LibraryResponseDto>()
-            response.items.firstOrNull { it.bookId != null }?.let { return it }
-            val nextPage = response.nextPage ?: return null
-            check(nextPage > page) { "서재의 다음 페이지가 현재 페이지보다 커야 합니다" }
-            page = nextPage
-        }
+        return popularBooks.toHomeFeed(detailedLatestReviews)
     }
 
     private suspend fun loadLatestReviewDetails(
@@ -152,25 +133,8 @@ internal fun LatestReviewsResponseDto.withReviewDetails(
     },
 )
 
-@Serializable
-internal data class LibraryResponseDto(
-    val items: List<ReadingBookDto>,
-    val nextPage: Int? = null,
-)
-
-@Serializable
-internal data class ReadingBookDto(
-    val bookId: Long? = null,
-    val isbn13: String,
-    val title: String,
-    val coverImageUrl: String,
-    val totalPages: Int? = null,
-    val currentPage: Int,
-)
-
 internal fun PopularBooksResponseDto.toHomeFeed(
     latestReviews: LatestReviewsResponseDto = LatestReviewsResponseDto(emptyList()),
-    readingBook: ReadingBookDto? = null,
 ): HomeFeed = HomeFeed(
     sections = listOf(
         FeedSection.TrendingBooks(
@@ -210,14 +174,5 @@ internal fun PopularBooksResponseDto.toHomeFeed(
             },
         ),
     ),
-    readingBook = readingBook?.takeIf { it.bookId != null }?.let { book ->
-        ReadingBook(
-            bookId = BookId(book.bookId.toString()),
-            isbn13 = book.isbn13,
-            title = book.title,
-            coverId = book.coverImageUrl,
-            currentPage = book.currentPage,
-            totalPages = book.totalPages ?: 0,
-        )
-    },
+    readingBook = null,
 )

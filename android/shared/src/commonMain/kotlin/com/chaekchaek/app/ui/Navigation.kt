@@ -393,7 +393,7 @@ private fun AppNavigationContent(
                     val searchViewModel = viewModel<SearchViewModel> {
                         SearchViewModel(
                             bookSearchRepository = BookSearchRemoteRepository(),
-                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl)) },
                             isSignedIn = { authViewModel.tokens.value != null },
                             recentSearchStorage = recentSearchStorage,
                             analytics = analytics,
@@ -401,7 +401,7 @@ private fun AppNavigationContent(
                         )
                     }
                     searchViewModel.attachRegistration(
-                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl)) },
                         isSignedIn = { authViewModel.tokens.value != null },
                     )
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
@@ -547,23 +547,6 @@ private fun AppNavigationContent(
                             onLoginRequired = viewModel::requestAuthentication,
                             onAddToLibrary = { librarySaveViewModel.save(displayBook) },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
-                            onStatusChange = { status ->
-                                viewModel.updateStatus(
-                                    status,
-                                    onSuccess = bookshelfViewModel::refresh,
-                                    onLibraryAdded = bookshelfViewModel::refresh,
-                                )
-                            },
-                            onPageSave = { page, onSaved ->
-                                viewModel.savePage(
-                                    page,
-                                    onSuccess = {
-                                        bookshelfViewModel.refresh()
-                                        onSaved()
-                                    },
-                                    onLibraryAdded = bookshelfViewModel::refresh,
-                                )
-                            },
                             onRatingCriterionChange = viewModel::loadRatingComparison,
                             onRatingSave = { rating, onSaved ->
                                 viewModel.saveRating(

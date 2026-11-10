@@ -13,8 +13,7 @@ data class PublicBookshelfDetail(
 )
 data class PublicLibraryBook(
     val bookId: Long, val isbn13: String, val title: String, val coverImageUrl: String,
-    val spineImageUrl: String?, val authors: List<String>, val totalPages: Int?,
-    val status: String, val currentPage: Int,
+    val spineImageUrl: String?, val authors: List<String>,
 )
 interface PublicLibraryRepository {
     suspend fun library(memberId: Long): PublicLibrary

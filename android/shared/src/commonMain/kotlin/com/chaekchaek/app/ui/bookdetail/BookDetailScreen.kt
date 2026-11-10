@@ -165,8 +165,6 @@ fun BookDetailScreen(
     onAddToLibrary: () -> Unit = {},
     onRemoveFromLibrary: () -> Unit = {},
     onLibraryMessageShown: () -> Unit = {},
-    onStatusChange: (ReadingStatus) -> Unit = {},
-    onPageSave: (Int, () -> Unit) -> Unit = { _, _ -> },
     onRatingCriterionChange: (Rating) -> Unit = {},
     onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
@@ -206,7 +204,6 @@ fun BookDetailScreen(
         derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold }
     }
     val reachedBottom by remember(listState) { derivedStateOf { !listState.canScrollForward } }
-    val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
     var composeBarHeight by remember { mutableStateOf(0.dp) }
     var reviewViewport by remember { mutableStateOf(Rect.Zero) }
@@ -214,7 +211,6 @@ fun BookDetailScreen(
 
     var showLibraryDeleteConfirmation by rememberSaveable(book.id) { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
-    var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
     var showQuestionReference by rememberSaveable(book.id, question?.id) { mutableStateOf(false) }
     val hasQuestionReference = question?.referenceTabs?.isNotEmpty() == true
@@ -273,13 +269,10 @@ fun BookDetailScreen(
     LaunchedEffect(resumedAuthenticatedAction) {
         when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
             BookDetailAuthenticatedAction.AddToLibrary -> onAddToLibrary()
-            BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
             BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
             BookDetailAuthenticatedAction.OpenReviewRating -> Unit // 로그인 전부터 열려 있던 초안을 유지한다.
             BookDetailAuthenticatedAction.OpenReview -> onReviewOpen { showReviewSheet = true }
             BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
-            is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
-            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page) { showPageDialog = false }
             is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId, action.likedByMe)
             is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content) {}
             is BookDetailAuthenticatedAction.LikeReply -> onReplyLike(action.replyId, action.likedByMe)
@@ -439,14 +432,6 @@ fun BookDetailScreen(
             },
         )
     }
-    if (showPageDialog) {
-        PageInputDialog(
-            initialPage = currentPage,
-            totalPages = book.totalPages,
-            onDismiss = { showPageDialog = false },
-            onSave = { page, onSaved -> onPageSave(page, onSaved) },
-        )
-    }
     if (showReviewSheet) {
         QuestionAReviewInputSheet(
             signedIn = state.signedIn,
@@ -520,11 +505,8 @@ fun BookDetailScreen(
                 submittedReviewDraft = null
             },
             onSave = { draft ->
-                // 새 UI에서 숨긴 기존 읽기 메타데이터는 수정 요청에서 보존한다.
                 val request = draft.toReviewRequest().copy(
                     chapter = review.chapter,
-                    currentPage = review.currentPage,
-                    totalPages = book.totalPages.takeIf { review.currentPage != null && it > 0 },
                 )
                 val submit = {
                     onQuestionAReviewUpdate?.invoke(review.reviewId, draft, request)
@@ -545,8 +527,7 @@ fun BookDetailScreen(
             if (id == null) ({ onQuestionAReviewCreate?.invoke(draft) ?: onReviewCreate(draft.toReviewRequest()) })
             else visibleBookReviews.firstOrNull { it.reviewId == id }?.let { review ->
                 val request = draft.toReviewRequest().copy(
-                    chapter = review.chapter, currentPage = review.currentPage,
-                    totalPages = book.totalPages.takeIf { review.currentPage != null && it > 0 },
+                    chapter = review.chapter,
                 )
                 ({ onQuestionAReviewUpdate?.invoke(id, draft, request) ?: onReviewUpdate(id, request) {} })
             }
@@ -692,8 +673,7 @@ private fun BookHero(
                     overflow = TextOverflow.Ellipsis,
                 )
                 val primaryMetadata = listOf(book.publisher, book.category).filter(String::isNotBlank)
-                val secondaryMetadata = listOf(book.year, book.totalPages.takeIf { it > 0 }?.let { "${it}쪽" }.orEmpty())
-                    .filter(String::isNotBlank)
+                val secondaryMetadata = listOf(book.year).filter(String::isNotBlank)
                 Column(modifier = Modifier.padding(top = 5.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     BookMetadataRow(primaryMetadata)
                     BookMetadataRow(secondaryMetadata, secondary = true)
@@ -892,7 +872,6 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
             listOf(
                 book.category,
                 book.year.takeIf(String::isNotBlank)?.let { "${it} 초판" }.orEmpty(),
-                book.totalPages.takeIf { it > 0 }?.let { "${it}쪽" }.orEmpty(),
             ).filter(String::isNotBlank).forEach { MetaChip(it) }
         }
         AverageRatingChip(averageRating)
@@ -1103,21 +1082,12 @@ private fun ReviewCard(
                 com.chaekchaek.app.ui.common.AuthorProfileAvatar(review.authorProfile, 30.dp)
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
                     Text(review.authorName, modifier = Modifier.authorProfileLink(review.authorProfile), style = MaterialTheme.typography.titleSmall)
-                    val metadata = reviewMetadata(review.createdAt, review.currentPage)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            metadata.dateLabel,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        metadata.progressLabel?.let { progressLabel ->
-                            Text(
-                                progressLabel,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
+                    val metadata = reviewMetadata(review.createdAt)
+                    Text(
+                        metadata.dateLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
                 if (canManageContent(review.writtenByMe, review.deleted)) {
                     Box(

@@ -17,16 +17,9 @@ data class BookDetailArgs(
     val publisher: String = "",
     val year: String = "",
     val category: String = "",
-    val totalPages: Int = 0,
     val coverUrl: String = "",
     val coverId: String = "",
 )
-
-enum class ReadingStatus(val label: String, val apiValue: String) {
-    WantToRead("읽고 싶어요", "WANT_TO_READ"),
-    Reading("읽는 중", "READING"),
-    Finished("다 읽음", "FINISHED"),
-}
 
 data class RatingComparisonBookUiModel(
     val bookId: Long,
@@ -39,15 +32,12 @@ sealed interface BookDetailAuthenticatedAction {
     val requiresMember: Boolean get() = true
 
     data object AddToLibrary : BookDetailAuthenticatedAction
-    data object OpenPageInput : BookDetailAuthenticatedAction
     data object OpenRating : BookDetailAuthenticatedAction
     data object OpenReviewRating : BookDetailAuthenticatedAction
     data object OpenReview : BookDetailAuthenticatedAction {
         override val requiresMember = false
     }
     data object OpenMineFeed : BookDetailAuthenticatedAction
-    data class ChangeStatus(val status: ReadingStatus) : BookDetailAuthenticatedAction
-    data class SavePage(val page: Int) : BookDetailAuthenticatedAction
     data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction {
         override val requiresMember = false
     }
@@ -128,6 +118,5 @@ private fun BookDetail.toBookDetailArgs(fallback: BookDetailArgs) =
         publisher = publisher,
         year = publishedDate?.take(4).orEmpty(),
         category = category,
-        totalPages = totalPages ?: 0,
         coverUrl = coverImageUrl,
     )

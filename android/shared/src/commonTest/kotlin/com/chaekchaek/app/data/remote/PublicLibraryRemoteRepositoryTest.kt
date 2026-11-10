@@ -45,9 +45,6 @@ class PublicLibraryRemoteRepositoryTest {
         assertNull(captured?.headers?.get(HttpHeaders.Authorization))
         assertEquals(31, result.items.size)
         assertEquals((31L downTo 1L).toList(), result.items.map { it.bookId })
-        assertEquals("READING", result.items.first().status)
-        assertEquals(23, result.items.first().currentPage)
-        assertNull(result.items.first().totalPages)
         assertTrue(result.items.first().authors.isEmpty())
     }
     @Test fun responseForAnotherOwnerIsRejected() = runTest {
