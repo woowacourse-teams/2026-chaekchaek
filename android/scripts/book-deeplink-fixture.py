@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 COUNTS = Counter()
 LOCK = Lock()
 MODE = "normal"
+RETRY_SEEN = set()
 VALID = "9788937460449"
 MISSING = "9791172376215"
 RETRY = "9788936433598"
@@ -20,12 +21,14 @@ def response(path):
     if path == "/__692/reset":
         COUNTS.clear()
         MODE = "normal"
+        RETRY_SEEN.clear()
         return 200, {"fixture": "692", "mode": MODE}
     if path == "/__692/mode/missing":
         MODE = "missing"
         return 200, {"fixture": "692", "mode": MODE}
     if path == "/__692/mode/retry":
         MODE = "retry"
+        RETRY_SEEN.clear()
         return 200, {"fixture": "692", "mode": MODE}
     if path == "/__692/mode/normal":
         MODE = "normal"
@@ -37,7 +40,8 @@ def response(path):
         isbn = path.rsplit("/", 1)[-1]
         if MODE == "missing" or isbn == MISSING:
             return 404, {"code": "BOOK_NOT_FOUND"}
-        if (MODE == "retry" and COUNTS[path] == 1) or (isbn == RETRY and COUNTS[path] == 1):
+        if (MODE == "retry" and path not in RETRY_SEEN) or (isbn == RETRY and COUNTS[path] == 1):
+            RETRY_SEEN.add(path)
             return 503, {"code": "UNAVAILABLE"}
         if isbn not in (VALID, RETRY):
             return 400, {"code": "INVALID_ISBN"}
