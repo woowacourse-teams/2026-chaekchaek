@@ -47,11 +47,19 @@ class BookDeepLinkInteractionTest {
         val edit = context.getSharedPreferences("onboarding", Context.MODE_PRIVATE).edit()
         priorOnboarding?.let { edit.putBoolean("first_library_shown", it) } ?: edit.remove("first_library_shown")
         edit.commit()
+        instrumentation.waitForIdleSync()
     }
     private fun link(uri: String = valid) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
-    private fun waitText(text: String) = compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitCondition(timeoutMs: Long = 15_000, condition: () -> Boolean) = compose.waitUntil(timeoutMs) {
+        try {
+            condition()
+        } catch (_: IllegalStateException) {
+            false
+        }
+    }
+    private fun waitText(text: String) = waitCondition { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun detail() { waitText("딥링크 검증 도서") }
     private fun back() { instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK); compose.waitForIdle() }
     private fun main() = instrumentation.runOnMainSync {
@@ -79,7 +87,7 @@ class BookDeepLinkInteractionTest {
         pfd.close()
         Thread.sleep(1000)
         link(); detail(); back()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("search-query-field").fetchSemanticsNodes().isNotEmpty() }
+        waitCondition(10_000) { compose.onAllNodesWithTag("search-query-field").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("search-query-field").assertTextEquals("보존할 검색어")
     }
 
