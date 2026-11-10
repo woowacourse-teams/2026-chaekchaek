@@ -4,7 +4,6 @@ final class BookDeepLinkUITests: XCTestCase {
     private let base = URL(string: "http://127.0.0.1:19092")!
     private let valid = URL(string: "chaekchaek://books/9788937460449")!
     override func setUpWithError() throws { continueAfterFailure = false }
-    @MainActor override func tearDownWithError() throws { XCUIApplication().terminate() }
 
     @MainActor
     private func prepared(onboarding: Bool = false) async throws -> XCUIApplication {
