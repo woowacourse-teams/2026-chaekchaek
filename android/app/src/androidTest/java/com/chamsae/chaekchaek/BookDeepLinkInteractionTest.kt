@@ -15,6 +15,7 @@ import com.chaekchaek.app.data.remote.ApiConfiguration
 import java.net.URI
 import org.json.JSONObject
 import org.junit.*
+import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
 
 /** local 빌드 + book-deeplink-fixture.py. 기존 인증 데이터가 있으면 실행하지 않는다. */
