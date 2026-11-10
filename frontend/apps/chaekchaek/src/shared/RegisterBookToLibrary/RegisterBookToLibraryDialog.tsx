@@ -136,9 +136,7 @@ export const RegisterBookToLibraryDialog = ({
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header subTitle={`최근 담은 책장이 선택되어 있어요.`}>
-          책장 선택하기
-        </Dialog.Header>
+        <Dialog.Header subTitle={`최근 담은 책장이 선택되어 있어요.`}>책장 선택하기</Dialog.Header>
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {

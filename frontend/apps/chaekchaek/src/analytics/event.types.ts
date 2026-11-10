@@ -23,6 +23,19 @@ export type AnalyticsEventMap = {
   library_add_open: {
     source: 'search' | 'detail_info' | 'library';
   };
+  library_management_open: undefined;
+  library_register: undefined;
+  library_register_open: undefined;
+  library_delete: undefined;
+  library_delete_open: undefined;
+  library_rename: undefined;
+  library_rename_open: undefined;
+  library_save_image: undefined;
+  library_save_image_open: undefined;
+  library_start_edit: undefined;
+  library_end_edit: undefined;
+  library_reorder: undefined;
+  library_reorder_book: undefined;
   review_write_open: {
     actor_type: 'MEMBER' | 'GUEST';
     actor_id: number;
