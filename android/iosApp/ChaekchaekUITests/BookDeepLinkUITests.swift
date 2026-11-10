@@ -73,7 +73,7 @@ final class BookDeepLinkUITests: XCTestCase {
         app.buttons["확인"].tap()
 
         // 2. 정상 링크 실행 -> 책 상세 이동 -> 뒤로가기 시 홈 복귀
-        // 오류 다이얼로그를 닫았으므로 여전히 개발자 도구 화면이다.
+        // 잘못된 링크 검증은 자체 에러 다이얼로그였으므로 개발자 도구가 닫히지 않고 열려 있다.
         app.buttons["정상 링크"].tap()
         app.buttons["링크 실행"].tap()
         detail(app)
@@ -88,16 +88,18 @@ final class BookDeepLinkUITests: XCTestCase {
         app.buttons["개발"].tap()
         XCTAssertTrue(app.staticTexts["책 상세 딥링크"].waitForExistence(timeout: 5))
 
-        // 1. 없는 책 (404) -> "책을 찾을 수 없어요" 다이얼로그
+        // 1. 없는 책 (404) -> "책을 찾을 수 없어요" 다이얼로그 -> 확인 후 홈 화면 복귀
         _ = try await URLSession.shared.data(from: base.appendingPathComponent("__692/mode/missing"))
         app.buttons["정상 링크"].tap()
         app.buttons["링크 실행"].tap()
         XCTAssertTrue(app.staticTexts["책을 찾을 수 없어요"].waitForExistence(timeout: 10))
         capture(app, "책 없음 오류")
         app.buttons["확인"].tap()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
 
-        // 2. 일시 장애 (503 -> 200 재시도)
+        // 2. 일시 장애 (503 -> 200 재시도) -> 다시 개발자 도구 열고 실행
         _ = try await URLSession.shared.data(from: base.appendingPathComponent("__692/mode/retry"))
+        app.buttons["개발"].tap()
         app.buttons["정상 링크"].tap()
         app.buttons["링크 실행"].tap()
         XCTAssertTrue(app.buttons["다시 시도"].waitForExistence(timeout: 10))
