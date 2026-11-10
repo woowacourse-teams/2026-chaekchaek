@@ -74,8 +74,12 @@ class BookDeepLinkInteractionTest {
         link(); detail(); back()
         compose.onNodeWithTag("search-query-field").assertTextEquals("보존할 검색어")
         // 다른 Activity를 열어 앱을 백그라운드로 보낸 뒤 같은 암시적 URI를 수신한다.
-        instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_HOME").close()
+        val pfd = instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_HOME")
+        java.io.FileInputStream(pfd.fileDescriptor).use { it.readBytes() }
+        pfd.close()
+        Thread.sleep(1000)
         link(); detail(); back()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("search-query-field").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("search-query-field").assertTextEquals("보존할 검색어")
     }
 
