@@ -43,6 +43,28 @@ export const Example: Story = {
   },
 };
 
+export const FallbackWithoutImage: Story = {
+  args: {
+    fallback: <div>이미지가 없습니다.</div>,
+    width: '240px',
+    height: '320px',
+  },
+};
+
+export const FallbackWithEmptyImage: Story = {
+  args: {
+    ...FallbackWithoutImage.args,
+    img: '',
+  },
+};
+
+export const ImageWithFallback: Story = {
+  args: {
+    ...FallbackWithoutImage.args,
+    img: DummyImg1,
+  },
+};
+
 export const Examples: Story = {
   args: {
     img: DummyImg1,
