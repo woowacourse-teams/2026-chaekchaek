@@ -24,6 +24,7 @@ export const Dialog = <T extends ElementType>(props: Props<T>) => {
     children,
     size = 'medium',
     onClose,
+    dismissible = false,
     sx,
     style,
     ...restProps
@@ -50,6 +51,7 @@ export const Dialog = <T extends ElementType>(props: Props<T>) => {
       {children &&
         cloneElement(children, {
           onClose,
+          dismissible,
         })}
     </View>
   );

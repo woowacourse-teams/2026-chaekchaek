@@ -12,7 +12,7 @@ import type { ContainerProps } from './Dialog.types';
 const classnameDefault = 'ui-Dialog-Container';
 
 export const Container = <T extends ElementType>(props: ContainerProps<T>) => {
-  const { as = 'div', className, children, onClose, ...restProps } = props;
+  const { as = 'div', className, children, onClose, dismissible, ...restProps } = props;
 
   const modifiers = {};
 
@@ -25,7 +25,7 @@ export const Container = <T extends ElementType>(props: ContainerProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      {onClose && <Close onClose={onClose} />}
+      {!dismissible && onClose && <Close onClose={onClose} />}
       {children}
     </View>
   );
