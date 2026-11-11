@@ -29,14 +29,13 @@ import {
 import type { PostBooksBookIdReviews } from './repository.types';
 
 export const postBooksBookIdReviews: PostBooksBookIdReviews = async (model, context) => {
-  const { bookId, isSpoiler, quote, totalPages, content } =
-    mapPostBooksBookIdReviewsModelToRequestDTO(model);
+  const { bookId, isSpoiler, quote, content } = mapPostBooksBookIdReviewsModelToRequestDTO(model);
 
   const guestToken = context?.guestToken;
 
   const responseDTO = await fetcher.postBooksBookIdReviews({
     pathParams: [{ name: 'bookId', value: bookId }],
-    data: { isSpoiler, quote, totalPages, content },
+    data: { isSpoiler, quote, content },
     ...(guestToken && {
       headers: {
         'X-Guest-Token': guestToken,

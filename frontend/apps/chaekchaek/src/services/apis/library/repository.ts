@@ -8,10 +8,10 @@ import type { GetLibrary } from './repository.types';
 // Repository <-> DTO 변환 대상 필드를 메타데이터 객체로 관리하고,
 // 이를 기반으로 mapper 및 관련 API 코드를 생성하도록 generator 개선 필요.
 export const getLibrary: GetLibrary = async (model) => {
-  const { page, status, sort } = mapGetLibraryModelToRequestDTO(model);
+  const { page, sort } = mapGetLibraryModelToRequestDTO(model);
 
   const responseDTO = await fetcher.getLibrary({
-    query: { page, status, sort },
+    query: { page, sort },
   });
 
   return mapGetLibraryResponseDTOToModel(responseDTO);
@@ -21,10 +21,10 @@ import { mapPostLibraryModelToRequestDTO, mapPostLibraryResponseDTOToModel } fro
 import type { PostLibrary } from './repository.types';
 
 export const postLibrary: PostLibrary = async (model) => {
-  const { isbn13, totalPages, status } = mapPostLibraryModelToRequestDTO(model);
+  const { isbn13 } = mapPostLibraryModelToRequestDTO(model);
 
   const responseDTO = await fetcher.postLibrary({
-    data: { isbn13, totalPages, status },
+    data: { isbn13 },
   });
 
   return mapPostLibraryResponseDTOToModel(responseDTO);

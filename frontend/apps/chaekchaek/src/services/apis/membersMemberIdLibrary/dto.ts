@@ -4,7 +4,6 @@ export interface GetMembersMemberIdLibraryRequestDto {
   pathParams: [{ name: 'memberId'; value: number }];
   query: {
     page: number;
-    status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
     sort: string;
   };
 }
@@ -28,11 +27,9 @@ export type GetMembersMemberIdLibraryResponseDto = ResponseDto<{
     bookId: number;
     translators: string[];
     isbn13: string;
-    totalPages: number;
     publisher: string;
     publishedDate: string;
     category: string;
-    status: string;
     authors: string[];
   }[];
 }>;

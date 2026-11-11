@@ -13,7 +13,6 @@ export interface PatchReviewsReviewIdRequestDto {
   data: {
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
-    totalPages?: number | undefined;
     content: string;
   };
   headers?: RequestHeaders;
