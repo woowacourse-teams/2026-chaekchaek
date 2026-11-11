@@ -21,6 +21,9 @@ export type { Props as ImgBoxProps } from './components/ImgBox';
 export { ConstrainedImgBox } from './components/ConstrainedImgBox';
 export type { Props as ConstrainedImgBoxProps } from './components/ConstrainedImgBox';
 
+export { ImageGradientBackground } from './components/ImageGradientBackground';
+export type { Props as ImageGradientBackgroundProps } from './components/ImageGradientBackground';
+
 export { Media } from './components/Media';
 export type { Props as MediaProps } from './components/Media';
 
