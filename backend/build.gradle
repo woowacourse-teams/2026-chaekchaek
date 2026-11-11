@@ -696,7 +696,7 @@ tasks.register('verifyOpenApi') {
 
 		def requiredLibraryOperations = [
 			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '404', '409', '422', '502'],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '404', '409', '502'],
 					'patch': ['204', '400', '401', '403', '404', '409', '500'],
 					'delete': ['204', '400', '401', '403', '404', '409']],
 			'/api/v1/libraries/order'                 : ['patch': ['204', '400', '401', '403', '409']],
@@ -874,7 +874,7 @@ tasks.register('verifyOpenApi') {
 
 		def problemResponseCodes = [
 			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'post': ['400', '401', '403', '404', '409', '422', '502'],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'post': ['400', '401', '403', '404', '409', '502'],
 					'patch': ['400', '401', '403', '404', '409', '500'],
 					'delete': ['400', '401', '403', '404', '409']],
 			'/api/v1/libraries/order'                 : ['patch': ['400', '401', '403', '409']],
@@ -1401,9 +1401,11 @@ tasks.register('verifyOpenApi') {
 				|| ((isbnRemoveRatingOperation?.get('responses') as Map)?.get('204') as Map)?.get('content') != null) {
 			throw new GradleException('OpenAPI ISBN rating deletion must require a member and ISBN string without request or success bodies')
 		}
-		if (((legacyRatingResponse?.get('properties') as Map)?.keySet() as Set) != (['rating'] as Set)
-				|| ((legacyRatingResponse?.get('properties') as Map)?.get('rating') as Map)?.get('nullable') == true) {
-			throw new GradleException('OpenAPI specification must describe a rating-only response')
+		def legacyRatingProperties = legacyRatingResponse?.get('properties') as Map
+		def legacyRating = legacyRatingProperties?.get('rating') as Map
+		if (legacyRating?.get('type') != 'number'
+				|| ['totalPages', 'status', 'currentPage', 'readingUpdatedAt'].any { legacyRatingProperties.containsKey(it) }) {
+			throw new GradleException('OpenAPI rating response must omit reading state and page fields')
 		}
 		def legacyRatingExamples = ((((((paths.get('/api/v1/library/{bookId}/rating') as Map).get('put') as Map)
 				.get('responses') as Map).get('200') as Map).get('content') as Map).get('application/json') as Map)?.get('examples') as Map
