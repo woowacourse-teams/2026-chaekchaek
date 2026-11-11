@@ -13,7 +13,7 @@ export type GetLibrary = (params: GetLibraryParams) => Promise<{
     isbn13: string;
     title: string;
     coverImageUrl: string;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     backImageUrl: string;
     authors: string[];
     translators: string[];
