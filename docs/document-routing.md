@@ -13,6 +13,7 @@
 | 홈 PMF 설문 바·문항 이동·제출·24시간 숨김 변경 | [모바일 PMF 설문](mobile-pmf-survey.md) | 승인 시안, 서버 대상 판정, 환경별 계약 차이와 플랫폼별 검증 상태. |
 | 공유 모듈, 레이어, DI, ViewModel, 내비게이션 구조 변경 | [앱 아키텍처](../android/docs/app-architecture.md) | Android와 iOS의 공유 경계와 설계 근거. 실제 구조는 현재 코드와 대조한다. |
 | 오류 안내, 입력 검증, 로그인 실패와 만료, 조회와 저장 실패 변경 | [모바일 공통 오류 정책](mobile-error-policy.md) | 온보딩을 포함한 양 플랫폼의 단일 오류 다이얼로그, 상태 보존과 재시도 기준. Figma 수정과 앱 구현 상태를 구분한다. |
+| Access 만료, Refresh 만료·폐기, 동시 갱신 중복 제거, 토큰 만료 개발자 도구 변경 | [모바일 인증 만료와 세션 복구 정책](mobile-auth-expiry-policy.md) | Silent Refresh, 다중 401 단일 재발급, Refresh 폐기 시 세션 정리와 작업 보존, 개발자 도구 디버그 기능. |
 | 책, 서재, 별점, 감상, 스포일러의 의미와 검증 규칙 변경 | [도메인 모델](../android/docs/domain-model.md) | 초기 설계와 미결정 항목을 구분하고 이후 확정된 정책을 우선한다. |
 | API 설계 배경이나 앱 도메인 매핑 확인 | [API 계약 초안](api-contract.md) | 서버 구현 전 초안이다. 실제 연동에는 최신 서버 OpenAPI를 확인하고 로컬 `android/openapi3.yaml`과 대조한다. |
 | 열람자 인증, 작성자 MEMBER/GUEST, 익명 표시, 소유권·로그인 유도 변경 | [인증·작성자·익명 상태표](identity-permission-matrix.md) | 세 축과 mine을 구분한다. 기준 커밋·API 확인일, 정책·정적 구현·기기 미검증을 따로 읽는다. |
