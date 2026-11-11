@@ -42,3 +42,9 @@ JPA_DDL_AUTO=validate
 Flyway는 설정에서 기본 비활성화되어 있어 적용할 환경에서 `FLYWAY_ENABLED=true`를
 명시해야 합니다. 운영에서는 적용 후 `JPA_DDL_AUTO=validate`를 유지하고 Hibernate의
 `ddl-auto:update`로 스키마 변경을 관리하지 않습니다.
+
+## V10 피드 인덱스 변경 실패 시 복구
+
+인덱스 변경 후 마이그레이션이 실패하면 변경된 인덱스가 남을 수 있습니다.
+[V10 복구 절차](review-feed-index-recovery.md)에 따라 실제 인덱스와 적용 이력을 확인한 뒤
+필요한 경우에만 기존 인덱스를 복구하고 재시도합니다.
