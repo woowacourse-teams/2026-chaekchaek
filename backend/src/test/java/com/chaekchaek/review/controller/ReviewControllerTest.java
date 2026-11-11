@@ -75,12 +75,10 @@ class ReviewControllerTest {
 
     private static final String REVIEW_TAG = "감상";
     private static final String REVIEW_CREATE_DESCRIPTION =
-            "도서에 감상을 작성하고 필요한 경우 독서 기록을 갱신한다. "
-                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
+            "도서에 감상을 작성한다. 감상 작성은 책장에 도서를 추가하지 않는다.";
     private static final String REVIEW_CREATE_BY_ISBN_DESCRIPTION =
             "ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
-                    + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다. "
-                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
+                    + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다. 감상 작성은 책장에 도서를 추가하지 않는다.";
     private static final AuthorResponse AUTHOR = new AuthorResponse(
             1L,
             "닉네임",
@@ -106,8 +104,6 @@ class ReviewControllerTest {
             fieldWithPath("content").type(JsonFieldType.STRING).description("감상 내용. 공백 불가, 최대 1,000자"),
             fieldWithPath("quote").type(JsonFieldType.STRING).description("인용문. 공백 불가, 최대 500자").optional(),
             fieldWithPath("chapter").type(JsonFieldType.STRING).description("챕터. 공백 불가, 최대 255자").optional(),
-            fieldWithPath("currentPage").type(JsonFieldType.NUMBER).description("감상을 남긴 현재 페이지").optional(),
-            fieldWithPath("totalPages").type(JsonFieldType.NUMBER).description("페이지 검증에 사용할 전체 페이지 수").optional(),
             fieldWithPath("isSpoiler").type(JsonFieldType.BOOLEAN).description("스포일러 여부. 기본값 false").optional()
     };
 
@@ -115,8 +111,6 @@ class ReviewControllerTest {
             fieldWithPath("content").type(JsonFieldType.STRING).description("변경할 감상 내용").optional(),
             fieldWithPath("quote").type(JsonFieldType.STRING).description("변경할 인용문. null이면 삭제").optional(),
             fieldWithPath("chapter").type(JsonFieldType.STRING).description("변경할 챕터. null이면 삭제").optional(),
-            fieldWithPath("currentPage").type(JsonFieldType.NUMBER).description("변경할 현재 페이지. null이면 삭제").optional(),
-            fieldWithPath("totalPages").type(JsonFieldType.NUMBER).description("페이지 검증에 사용할 전체 페이지 수").optional(),
             fieldWithPath("isSpoiler").type(JsonFieldType.BOOLEAN).description("변경할 스포일러 여부").optional()
     };
 
@@ -197,7 +191,7 @@ class ReviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"content":"인상 깊었다.","quote":"화성에서 살아남아야 한다.","chapter":"3장",
-                                "currentPage":120,"totalPages":308,"isSpoiler":false}
+                                "isSpoiler":false}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/reviews/101"))
@@ -624,10 +618,6 @@ class ReviewControllerTest {
         // given
         when(reviewService.createReview(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReview(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
-                .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReview(ArgumentMatchers.eq(422L), ArgumentMatchers.any()))
-                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
         documentProblemDetail(
@@ -654,30 +644,6 @@ class ReviewControllerTest {
                 "bookId",
                 "도서 ID"
         );
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 409L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.CONFLICT,
-                "TOTAL_PAGES_CONFLICT",
-                "/api/v1/books/409/reviews",
-                "review-create-total-pages-conflict",
-                "감상 작성",
-                REVIEW_CREATE_DESCRIPTION,
-                "bookId",
-                "도서 ID"
-        );
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 422L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE",
-                "/api/v1/books/422/reviews",
-                "review-create-invalid-reading-state",
-                "감상 작성",
-                REVIEW_CREATE_DESCRIPTION,
-                "bookId",
-                "도서 ID"
-        );
     }
 
     @Test
@@ -696,14 +662,6 @@ class ReviewControllerTest {
                 ArgumentMatchers.eq(new Isbn13("9781234567897")),
                 ArgumentMatchers.any()
         )).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReviewByIsbn13(
-                ArgumentMatchers.eq(new Isbn13("9780000000002")),
-                ArgumentMatchers.any()
-        )).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReviewByIsbn13(
-                ArgumentMatchers.eq(new Isbn13("9780000000019")),
-                ArgumentMatchers.any()
-        )).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
         when(reviewService.createReviewByIsbn13(
                 ArgumentMatchers.eq(new Isbn13("9780000000026")),
                 ArgumentMatchers.any()
@@ -747,24 +705,6 @@ class ReviewControllerTest {
                 "ISBN13으로 감상 작성"
         );
         documentProblemDetailByIsbn(
-                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000002")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.CONFLICT,
-                "TOTAL_PAGES_CONFLICT",
-                "/api/v1/books/by-isbn/9780000000002/reviews",
-                "review-create-by-isbn-total-pages-conflict",
-                "ISBN13으로 감상 작성"
-        );
-        documentProblemDetailByIsbn(
-                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000019")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE",
-                "/api/v1/books/by-isbn/9780000000019/reviews",
-                "review-create-by-isbn-invalid-reading-state",
-                "ISBN13으로 감상 작성"
-        );
-        documentProblemDetailByIsbn(
                 mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000026")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
                 HttpStatus.BAD_GATEWAY,
@@ -783,12 +723,8 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.INVALID_REQUEST));
         when(reviewService.updateReview(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
-        when(reviewService.updateReview(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
-                .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
         when(reviewService.updateReview(ArgumentMatchers.eq(410L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
-        when(reviewService.updateReview(ArgumentMatchers.eq(422L), ArgumentMatchers.any()))
-                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
         documentProblemDetail(
@@ -816,36 +752,12 @@ class ReviewControllerTest {
                 "감상 ID"
         );
         documentProblemDetail(
-                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 409L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
-                HttpStatus.CONFLICT,
-                "TOTAL_PAGES_CONFLICT",
-                "/api/v1/reviews/409",
-                "review-update-total-pages-conflict",
-                "감상 수정",
-                "작성자가 감상의 지정된 필드만 수정한다",
-                "reviewId",
-                "감상 ID"
-        );
-        documentProblemDetail(
                 mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 410L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
                 HttpStatus.CONFLICT,
                 "DELETED_RESOURCE",
                 "/api/v1/reviews/410",
                 "review-update-deleted-resource",
-                "감상 수정",
-                "작성자가 감상의 지정된 필드만 수정한다",
-                "reviewId",
-                "감상 ID"
-        );
-        documentProblemDetail(
-                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 422L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE",
-                "/api/v1/reviews/422",
-                "review-update-invalid-reading-state",
                 "감상 수정",
                 "작성자가 감상의 지정된 필드만 수정한다",
                 "reviewId",
@@ -1453,7 +1365,6 @@ class ReviewControllerTest {
                 field(prefix, "content", JsonFieldType.STRING, "감상 내용"),
                 field(prefix, "quote", JsonFieldType.STRING, "인용문").optional(),
                 field(prefix, "chapter", JsonFieldType.STRING, "챕터").optional(),
-                field(prefix, "currentPage", JsonFieldType.NUMBER, "감상을 남긴 현재 페이지").optional(),
                 field(prefix, "isSpoiler", JsonFieldType.BOOLEAN, "스포일러 여부"),
                 field(prefix, "deleted", JsonFieldType.BOOLEAN, "soft delete 여부"),
                 field(prefix, "createdAt", JsonFieldType.STRING, "작성 시각(UTC)"),
@@ -1547,7 +1458,6 @@ class ReviewControllerTest {
                 "인상 깊었다.",
                 "화성에서 살아남아야 한다.",
                 "3장",
-                120,
                 false,
                 false,
                 Instant.parse("2026-08-13T15:00:00Z"),

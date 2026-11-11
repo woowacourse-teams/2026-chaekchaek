@@ -1,6 +1,5 @@
 package com.chaekchaek.library.dto;
 
-import com.chaekchaek.library.domain.ReadingStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,10 +16,7 @@ public record PublicLibraryItemResponse(
         String publisher,
         String category,
         LocalDate publishedDate,
-        Integer totalPages,
         long commentCount,
-        ReadingStatus status,
-        Integer currentPage,
         BigDecimal rating
 ) {
     public static PublicLibraryItemResponse from(LibraryItemResponse item) {
@@ -36,10 +32,7 @@ public record PublicLibraryItemResponse(
                 item.publisher(),
                 item.category(),
                 item.publishedDate(),
-                item.totalPages(),
                 item.commentCount(),
-                item.status(),
-                item.currentPage(),
                 item.rating()
         );
     }

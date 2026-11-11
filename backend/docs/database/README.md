@@ -34,10 +34,10 @@ JPA_DDL_AUTO=validate
 
 ## 이후 스키마 변경
 
-현재 기준 스키마는 V8까지입니다. 이후 버전 migration은
-`src/main/resources/db/migration-next`에 `V9__...sql`부터 추가합니다. 기존 DB와 빈 DB가
-모두 이 경로를 함께 읽으므로, 새 변경은 두 환경에 같은 순서로 적용됩니다. 이미 배포된
-`V1`–`V8` 파일은 수정하지 않습니다.
+빈 DB는 V8 기준 스키마를 만든 뒤 `migration-next`의 후속 버전을 적용합니다. 현재 후속
+migration은 V9부터 V11까지이며, 새 변경은 `src/main/resources/db/migration-next`에
+다음 버전 번호로 추가합니다. 기존 DB와 빈 DB가 이 경로를 함께 읽으므로, 새 변경은 두
+환경에 같은 순서로 적용됩니다. 이미 배포된 `V1`–`V8` 파일은 수정하지 않습니다.
 
 Flyway는 설정에서 기본 비활성화되어 있어 적용할 환경에서 `FLYWAY_ENABLED=true`를
 명시해야 합니다. 운영에서는 적용 후 `JPA_DDL_AUTO=validate`를 유지하고 Hibernate의

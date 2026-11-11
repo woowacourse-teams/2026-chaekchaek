@@ -8,7 +8,6 @@ public record ReviewResponse(
         String content,
         String quote,
         String chapter,
-        Integer currentPage,
         boolean isSpoiler,
         boolean deleted,
         Instant createdAt,

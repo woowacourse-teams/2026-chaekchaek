@@ -1,7 +1,5 @@
 package com.chaekchaek.book.domain;
 
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -79,8 +77,6 @@ public class Book {
 
     private LocalDate publishedDate;
 
-    private Integer totalPages;
-
     @Column(length = 1_000)
     private String purchaseUrl;
 
@@ -103,7 +99,6 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages,
             String purchaseUrl,
             String source
     ) {
@@ -118,7 +113,6 @@ public class Book {
         this.publisher = publisher;
         this.category = category;
         this.publishedDate = publishedDate;
-        this.totalPages = totalPages;
         this.purchaseUrl = purchaseUrl;
         this.source = source;
     }
@@ -135,11 +129,9 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages,
             String purchaseUrl,
             String source
     ) {
-        validateTotalPages(totalPages);
         return new Book(
                 isbn13,
                 title,
@@ -152,36 +144,15 @@ public class Book {
                 publisher,
                 category,
                 publishedDate,
-                totalPages,
                 purchaseUrl,
                 source
         );
-    }
-
-    public void rememberTotalPages(Integer requestedTotalPages) {
-        if (requestedTotalPages == null) {
-            return;
-        }
-        validateTotalPages(requestedTotalPages);
-        if (totalPages == null) {
-            totalPages = requestedTotalPages;
-            return;
-        }
-        if (!totalPages.equals(requestedTotalPages)) {
-            throw new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT);
-        }
     }
 
     public void updateQuestionContent(String question, String plot, String extract) {
         this.question = question;
         this.plot = plot;
         this.extract = extract;
-    }
-
-    private static void validateTotalPages(Integer totalPages) {
-        if (totalPages != null && totalPages <= 0) {
-            throw new IllegalArgumentException("Total pages must be positive");
-        }
     }
 
     public Long getId() {
@@ -242,10 +213,6 @@ public class Book {
 
     public LocalDate getPublishedDate() {
         return publishedDate;
-    }
-
-    public Integer getTotalPages() {
-        return totalPages;
     }
 
     public String getPurchaseUrl() {

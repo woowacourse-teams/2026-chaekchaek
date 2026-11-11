@@ -109,15 +109,9 @@ public enum ErrorCode {
     REACTION_ALREADY_EXISTS(
             "REACTION_ALREADY_EXISTS",
             "이미 좋아요를 남겼습니다."),
-    TOTAL_PAGES_CONFLICT(
-            "TOTAL_PAGES_CONFLICT",
-            "전체 페이지 수가 기존 정보와 다릅니다."),
     DELETED_RESOURCE(
             "DELETED_RESOURCE",
             "삭제된 리소스입니다."),
-    INVALID_READING_STATE(
-            "INVALID_READING_STATE",
-            "현재 읽기 상태에서는 요청을 처리할 수 없습니다."),
     EXTERNAL_API_ERROR(
             "EXTERNAL_API_ERROR",
             "외부 서비스 호출에 실패했습니다."),

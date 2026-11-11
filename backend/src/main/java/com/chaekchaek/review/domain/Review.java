@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "review", indexes = {
         @Index(name = "idx_review_book_created", columnList = "book_id,created_at"),
-        @Index(name = "idx_review_book_page", columnList = "book_id,current_page"),
         @Index(name = "idx_review_actor_book", columnList = "actor_id,book_id"),
         @Index(name = "idx_review_feed_book", columnList = "deleted_at,created_at,review_id,book_id")
 })
@@ -47,9 +46,6 @@ public class Review {
     @Column(length = 255)
     private String chapter;
 
-    @Column(name = "current_page")
-    private Integer currentPage;
-
     @Column(name = "is_spoiler", nullable = false)
     private boolean spoiler;
 
@@ -71,7 +67,6 @@ public class Review {
             String content,
             String quote,
             String chapter,
-            Integer currentPage,
             boolean spoiler,
             boolean anonymous
     ) {
@@ -80,7 +75,6 @@ public class Review {
         this.content = content;
         this.quote = quote;
         this.chapter = chapter;
-        this.currentPage = currentPage;
         this.spoiler = spoiler;
         this.anonymous = anonymous;
     }
@@ -91,24 +85,21 @@ public class Review {
             String content,
             String quote,
             String chapter,
-            Integer currentPage,
             boolean spoiler,
             boolean anonymous
     ) {
-        return new Review(bookId, actorId, content, quote, chapter, currentPage, spoiler, anonymous);
+        return new Review(bookId, actorId, content, quote, chapter, spoiler, anonymous);
     }
 
     public void update(
             String content,
             String quote,
             String chapter,
-            Integer currentPage,
             boolean spoiler
     ) {
         this.content = content;
         this.quote = quote;
         this.chapter = chapter;
-        this.currentPage = currentPage;
         this.spoiler = spoiler;
     }
 

@@ -10,7 +10,6 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
@@ -19,10 +18,8 @@ import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -70,14 +67,12 @@ public class LibraryBookService {
     public LibraryItemResponse addByIsbn13(
             long memberId,
             long libraryId,
-            Isbn13 isbn13,
-            ReadingStatus status,
-            Integer totalPages
+            Isbn13 isbn13
     ) {
         readTransaction.executeWithoutResult(transactionStatus -> requireOwnedLibrary(memberId, libraryId));
         Book resolvedBook = bookResolver.findOrCreate(isbn13);
         return Objects.requireNonNull(writeTransaction.execute(transactionStatus ->
-                add(memberId, libraryId, resolvedBook.getId(), status, totalPages)));
+                add(memberId, libraryId, resolvedBook.getId())));
     }
 
     public void delete(long memberId, long libraryId, long bookId) {
@@ -88,17 +83,8 @@ public class LibraryBookService {
         lockActiveMember(memberId);
         requireOwnedLibrary(memberId, libraryId);
 
-        libraryBookRepository.findByLibraryIdAndBookId(libraryId, bookId).ifPresent(placement -> {
-            libraryBookRepository.delete(placement);
-            libraryBookRepository.flush();
-            if (libraryBookRepository.countByMemberIdAndBookId(memberId, bookId) == 0) {
-                LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                        .orElseThrow(() -> new IllegalStateException(
-                                "A placed book must have a shared library item"
-                        ));
-                item.clearReadingState();
-            }
-        });
+        libraryBookRepository.findByLibraryIdAndBookId(libraryId, bookId)
+                .ifPresent(libraryBookRepository::delete);
     }
 
     public void deleteLibrary(long memberId, long libraryId) {
@@ -106,64 +92,35 @@ public class LibraryBookService {
             lockActiveMember(memberId);
             Library library = requireOwnedLibrary(memberId, libraryId);
             library.assertDeletable();
-            deleteLibraryPlacements(memberId, libraryId);
+            deleteLibraryPlacements(libraryId);
             libraryRepository.delete(library);
         });
     }
 
-    private void deleteLibraryPlacements(long memberId, long libraryId) {
+    private void deleteLibraryPlacements(long libraryId) {
         List<LibraryBook> placements = libraryBookRepository.findAllByLibraryId(libraryId);
         if (placements.isEmpty()) {
             return;
         }
-        List<Long> bookIds = placements
-                .stream()
-                .map(LibraryBook::getBookId)
-                .toList();
         libraryBookRepository.deleteAll(placements);
-        libraryBookRepository.flush();
-        clearLastReadingStates(memberId, bookIds);
-    }
-
-    private void clearLastReadingStates(long memberId, List<Long> bookIds) {
-        Set<Long> placedBookIds = Set.copyOf(
-                libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(memberId, bookIds)
-        );
-        List<Long> lastBookIds = bookIds
-                .stream()
-                .filter(bookId -> !placedBookIds.contains(bookId))
-                .toList();
-        if (lastBookIds.isEmpty()) {
-            return;
-        }
-        List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(memberId, lastBookIds);
-        if (items.size() != lastBookIds.size()) {
-            throw new IllegalStateException("A placed book must have a shared library item");
-        }
-        items.forEach(LibraryItem::clearReadingState);
     }
 
     private LibraryItemResponse add(
             long memberId,
             long libraryId,
-            long bookId,
-            ReadingStatus status,
-            Integer totalPages
+            long bookId
     ) {
         lockActiveMember(memberId);
         Library library = requireOwnedLibrary(memberId, libraryId);
 
-        Book book = bookRepository.findByIdForUpdate(bookId).orElseThrow(BookNotFoundException::new);
+        Book book = bookRepository.findById(bookId).orElseThrow(BookNotFoundException::new);
         if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
         library.validateCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
-        book.rememberTotalPages(totalPages);
-
-        Instant now = clock.instant();
         LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                .map(existing -> startReadingIfNeeded(existing, status, book.getTotalPages(), now))
-                .orElseGet(() -> createReadingItem(memberId, bookId, status, book.getTotalPages(), now));
+                .orElseGet(() -> libraryItemRepository.saveAndFlush(
+                        LibraryItem.create(memberId, bookId, clock.instant())));
         savePlacement(libraryId, bookId);
         long commentCount = commentCountReader.getCommentCounts(List.of(bookId)).getOrDefault(bookId, 0L);
         return LibraryItemResponse.from(item, book, commentCount);
@@ -175,30 +132,6 @@ public class LibraryBookService {
         if (member.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-    }
-
-    private LibraryItem startReadingIfNeeded(
-            LibraryItem item,
-            ReadingStatus status,
-            Integer totalPages,
-            Instant now
-    ) {
-        if (!item.hasReadingState()) {
-            item.startReading(status, totalPages, now);
-        }
-        return item;
-    }
-
-    private LibraryItem createReadingItem(
-            long memberId,
-            long bookId,
-            ReadingStatus status,
-            Integer totalPages,
-            Instant now
-    ) {
-        return libraryItemRepository.saveAndFlush(
-                LibraryItem.create(memberId, bookId, status, totalPages, now)
-        );
     }
 
     private void savePlacement(long libraryId, long bookId) {

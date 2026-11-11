@@ -133,7 +133,6 @@ class ReviewFeedRepositoryTest {
                 "소설",
                 null,
                 null,
-                null,
                 null
         );
     }
@@ -143,7 +142,6 @@ class ReviewFeedRepositoryTest {
                 bookId,
                 1L,
                 content,
-                null,
                 null,
                 null,
                 spoiler,

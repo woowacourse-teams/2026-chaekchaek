@@ -128,7 +128,6 @@ class BookControllerTest {
             fieldWithPath("publisher").type(JsonFieldType.STRING).description("출판사"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("publishedDate").type(JsonFieldType.STRING).description("출간일").optional(),
-            fieldWithPath("totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
             fieldWithPath("reviewCount").type(JsonFieldType.NUMBER).description("감상 수"),
             fieldWithPath("replyCount").type(JsonFieldType.NUMBER).description("답글 수"),
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
@@ -137,13 +136,7 @@ class BookControllerTest {
                     .description("내 책장 배치가 하나 이상이면 true, 없으면 false, 비회원은 null").optional(),
             fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
             fieldWithPath("myRecord").type(JsonFieldType.OBJECT)
-                    .description("독서 기록과 별점이 모두 없으면 null")
-                    .optional().attributes(key("nullable").value(true)),
-            fieldWithPath("myRecord.status").type(JsonFieldType.STRING)
-                    .description("읽기 상태. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
-                    .optional().attributes(key("nullable").value(true)),
-            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER)
-                    .description("현재 페이지. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
+                    .description("내 별점이 없으면 null")
                     .optional().attributes(key("nullable").value(true)),
             fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER)
                     .description("내 별점. 별점이 없으면 null")
@@ -158,8 +151,7 @@ class BookControllerTest {
 
     private static final String BOOK_DETAIL_V2_DESCRIPTION =
             "도서 메타데이터와 집계를 조회하며 myRecord에는 내 별점만 제공한다. "
-                    + "별점이 없으면 독서 기록 유무와 관계없이 myRecord는 null이다. "
-                    + "독서 상태와 현재 페이지는 제공하지 않는다. 비로그인 조회를 지원한다.";
+                    + "별점이 없으면 myRecord는 null이다. 비로그인 조회를 지원한다.";
 
     private static final FieldDescriptor[] BOOK_DETAIL_V2_RESPONSE_FIELDS = Stream.concat(
             Arrays.stream(BOOK_DETAIL_RESPONSE_FIELDS)
@@ -302,8 +294,6 @@ class BookControllerTest {
             rating = new BigDecimal("4.2");
         }
         BookDetailV2Response detail = BookDetailV2Response.from(bookDetailResponse(new BookMyRecordResponse(
-                "READING",
-                120,
                 rating
         )));
         when(bookService.getDetailV2(new Isbn13("9788925568683"))).thenReturn(detail);
@@ -316,10 +306,8 @@ class BookControllerTest {
         ResultActions result = mockMvc.perform(get("/api/v2/books/by-isbn/{isbn13}", "9788925568683"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
-                .andExpect(jsonPath("$.totalPages").value(308))
                 .andExpect(jsonPath("$.myRating").doesNotExist())
-                .andExpect(jsonPath("$.myRecord.status").doesNotExist())
-                .andExpect(jsonPath("$.myRecord.currentPage").doesNotExist());
+                .andExpect(jsonPath("$.myRecord.status").doesNotExist());
         if (rated) {
             result.andExpect(jsonPath("$.myRecord.myRating").value(4.2));
         } else {
@@ -530,28 +518,8 @@ class BookControllerTest {
                 ));
     }
 
-    @Test
-    @DisplayName("읽기 상태가 유효하지 않으면 422 응답을 반환한다")
-    void should_ReturnUnprocessableEntity_When_ReadingStateIsInvalid() throws Exception {
-        // given
-        when(bookSearchService.search("마션", 1))
-                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
-
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(get("/api/v1/books")
-                        .param("query", "마션")
-                        .param("page", "1")),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE",
-                "현재 읽기 상태에서는 요청을 처리할 수 없습니다."
-        );
-    }
-
     private BookDetailResponse bookDetailResponse() {
         return bookDetailResponse(new BookMyRecordResponse(
-                "READING",
-                120,
                 new BigDecimal("4.2")
         ));
     }
@@ -568,7 +536,6 @@ class BookControllerTest {
                 "알에이치코리아(RHK)",
                 "SF",
                 "2026-01-01",
-                308,
                 22,
                 24,
                 new BigDecimal("4.3"),

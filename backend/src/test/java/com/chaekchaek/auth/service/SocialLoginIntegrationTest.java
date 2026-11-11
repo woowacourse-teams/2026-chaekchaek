@@ -76,7 +76,6 @@ public class SocialLoginIntegrationTest {
                 "기존 감상",
                 null,
                 null,
-                null,
                 false,
                 false
         ));

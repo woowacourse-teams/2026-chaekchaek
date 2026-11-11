@@ -1,7 +1,6 @@
 package com.chaekchaek.library.repository;
 
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -46,15 +45,9 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
 
     List<LibraryItem> findAllByMemberId(long memberId);
 
-    Page<LibraryItem> findAllByMemberIdAndStatus(long memberId, ReadingStatus status, Pageable pageable);
-
-    List<LibraryItem> findAllByMemberIdAndStatus(long memberId, ReadingStatus status);
-
     long countByMemberId(long memberId);
 
     long countByMemberIdAndRatingIsNotNull(long memberId);
-
-    long countByMemberIdAndStatus(long memberId, ReadingStatus status);
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
             long memberId,

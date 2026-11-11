@@ -27,7 +27,6 @@ import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
 import com.chaekchaek.review.event.BookActivityChangedEvent;
-import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyReactionRepository;
@@ -68,7 +67,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private final ReviewReactionRepository reviewReactionRepository;
     private final ReplyReactionRepository replyReactionRepository;
     private final CurrentActorProvider currentActorProvider;
-    private final ReadingRecordCoordinator readingRecordCoordinator;
     private final ReviewBookReader reviewBookReader;
     private final ReviewMemberReader reviewMemberReader;
     private final BookResolver bookResolver;
@@ -81,7 +79,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             ReviewReactionRepository reviewReactionRepository,
             ReplyReactionRepository replyReactionRepository,
             CurrentActorProvider currentActorProvider,
-            ReadingRecordCoordinator readingRecordCoordinator,
             ReviewBookReader reviewBookReader,
             ReviewMemberReader reviewMemberReader,
             BookResolver bookResolver,
@@ -93,7 +90,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         this.reviewReactionRepository = reviewReactionRepository;
         this.replyReactionRepository = replyReactionRepository;
         this.currentActorProvider = currentActorProvider;
-        this.readingRecordCoordinator = readingRecordCoordinator;
         this.reviewBookReader = reviewBookReader;
         this.reviewMemberReader = reviewMemberReader;
         this.bookResolver = bookResolver;
@@ -239,13 +235,13 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     public ReviewResponse createReview(long bookId, ReviewCreateRequest request) {
         CurrentActor actor = currentActorProvider.getCurrentActor();
         reviewBookReader.validateBookExists(bookId);
-        validateReviewCreation(actor, request);
+        validateReviewCreate(request);
         return saveReview(bookId, request, actor);
     }
 
     public ReviewCreateByIsbnResponse createReviewByIsbn13(Isbn13 isbn13, ReviewCreateRequest request) {
         CurrentActor actor = currentActorProvider.getCurrentActor();
-        validateReviewCreation(actor, request);
+        validateReviewCreate(request);
         Book book = bookResolver.findOrCreate(isbn13);
         long bookId = Objects.requireNonNull(book.getId());
         ReviewResponse review = Objects.requireNonNull(transactionTemplate.execute(status -> {
@@ -258,14 +254,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         );
     }
 
-    private void validateReviewCreation(CurrentActor actor, ReviewCreateRequest request) {
-        validateReviewCreate(request);
-        validateRequestPage(request.currentPage(), request.totalPages());
-        if (actor.isGuest() && (request.currentPage() != null || request.totalPages() != null)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
-    }
-
     private void validateReviewCreate(ReviewCreateRequest request) {
         if (request.quote() != null && request.quote().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
@@ -276,14 +264,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private ReviewResponse saveReview(long bookId, ReviewCreateRequest request, CurrentActor actor) {
-        if (actor.isMember()) {
-            readingRecordCoordinator.recordReview(
-                    actor.memberId(),
-                    bookId,
-                    request.currentPage(),
-                    request.totalPages()
-            );
-        }
         ReviewMemberProfile memberProfile = memberProfileOf(actor.actorId());
         Review review = reviewRepository.save(Review.create(
                 bookId,
@@ -291,7 +271,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.content(),
                 request.quote(),
                 request.chapter(),
-                request.currentPage(),
                 request.spoiler(),
                 memberProfile.anonymousEnabled()
         ));
@@ -317,25 +296,13 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         }
         validateReviewUpdate(request);
         CurrentActor actor = currentActorProvider.getCurrentActor();
-        if (actor.isGuest() && (request.isCurrentPagePresent() || request.isTotalPagesPresent())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
         long actorId = actor.actorId();
         Review review = getReview(reviewId);
         review.assertModifiableBy(actorId);
-        if (request.isCurrentPagePresent() && request.getCurrentPage() != null) {
-            readingRecordCoordinator.validateReviewPage(
-                    actor.memberId(),
-                    review.getBookId(),
-                    request.getCurrentPage(),
-                    request.isTotalPagesPresent() ? request.getTotalPages() : null
-            );
-        }
         review.update(
                 request.isContentPresent() ? request.getContent() : review.getContent(),
                 request.isQuotePresent() ? request.getQuote() : review.getQuote(),
                 request.isChapterPresent() ? request.getChapter() : review.getChapter(),
-                request.isCurrentPagePresent() ? request.getCurrentPage() : review.getCurrentPage(),
                 request.isSpoilerPresent() ? request.getIsSpoiler() : review.isSpoiler()
         );
         logEvent("review_updated", "Review updated", "reviewId", reviewId, actorId);
@@ -366,19 +333,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         if (request.isSpoilerPresent() && request.getIsSpoiler() == null) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        if (request.isCurrentPagePresent() && request.getCurrentPage() != null) {
-            validateRequestPage(request.getCurrentPage(),
-                    request.isTotalPagesPresent() ? request.getTotalPages() : null);
-        }
-    }
-
-    private void validateRequestPage(Integer currentPage, Integer totalPages) {
-        if (currentPage != null && currentPage < 0) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        if (totalPages != null && totalPages <= 0) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
@@ -419,7 +373,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 content,
                 quote,
                 chapter,
-                review.getCurrentPage(),
                 review.isSpoiler(),
                 review.isDeleted(),
                 review.getCreatedAt(),

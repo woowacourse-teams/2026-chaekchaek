@@ -1,7 +1,5 @@
 package com.chaekchaek.library.dto;
 
-import com.chaekchaek.library.domain.ReadingStatus;
-import java.time.Instant;
 import java.util.List;
 
 public record LibraryBookDetailResponse(
@@ -10,11 +8,7 @@ public record LibraryBookDetailResponse(
         String coverImageUrl,
         String spineImageUrl,
         String isbn13,
-        List<String> authors,
-        Integer totalPages,
-        ReadingStatus status,
-        int currentPage,
-        Instant readingUpdatedAt
+        List<String> authors
 ) {
     public LibraryBookDetailResponse {
         authors = List.copyOf(authors);
@@ -27,11 +21,7 @@ public record LibraryBookDetailResponse(
                 coverImageUrl,
                 spineImageUrl,
                 isbn13,
-                authors,
-                totalPages,
-                status,
-                currentPage,
-                readingUpdatedAt
+                authors
         );
     }
 }

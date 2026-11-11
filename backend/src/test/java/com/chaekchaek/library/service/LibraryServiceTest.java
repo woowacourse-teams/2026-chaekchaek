@@ -25,7 +25,6 @@ import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
@@ -343,56 +342,7 @@ class LibraryServiceTest {
         assertThat(appender.list).isEmpty();
     }
 
-    @Test
-    @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
-    void should_NotChangeAnyItem_When_BulkFinishContainsUnknownTotalPages() {
-        // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
-        LibraryItem knownItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
-        LibraryItem unknownItem = LibraryItem.create(1L, 3L, ReadingStatus.READING, null, CLOCK.instant());
-        when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L, 3L)))
-                .thenReturn(List.of(knownItem, unknownItem));
-        when(libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L, 3L)))
-                .thenReturn(List.of(knownItem, unknownItem));
-        when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
-        when(bookRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(book(null)));
-        LibraryService service = service();
 
-        // when & then
-        assertThatThrownBy(() -> service.bulkChangeStatus(1L, List.of(2L, 3L), ReadingStatus.FINISHED))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
-        );
-        assertThat(knownItem.getStatus()).isEqualTo(ReadingStatus.READING);
-        assertThat(unknownItem.getStatus()).isEqualTo(ReadingStatus.READING);
-    }
-
-    @Test
-    @DisplayName("일괄 완독은 책을 먼저 잠근 뒤 서재 항목을 잠근다")
-    void should_LockBooksBeforeLibraryItems_When_BulkFinishing() {
-        // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
-        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
-        when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L)))
-                .thenReturn(List.of(item));
-        when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
-        when(libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L)))
-                .thenReturn(List.of(item));
-        LibraryService service = service();
-
-        // when
-        service.bulkChangeStatus(1L, List.of(2L), ReadingStatus.FINISHED);
-
-        // then
-        InOrder lockOrder = inOrder(memberRepository, libraryItemRepository, bookRepository);
-        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
-        lockOrder.verify(libraryItemRepository).findAllByMemberIdAndBookIdIn(1L, List.of(2L));
-        lockOrder.verify(bookRepository).findByIdForUpdate(2L);
-        lockOrder.verify(libraryItemRepository).findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L));
-        assertThat(item.getStatus()).isEqualTo(ReadingStatus.FINISHED);
-    }
 
     @Test
     @DisplayName("같은 별점을 준 책이 없다면 current를 null로 반환한다")
@@ -433,8 +383,6 @@ class LibraryServiceTest {
         LibraryItem sameRatedItem = LibraryItem.create(
                 1L,
                 9L,
-                ReadingStatus.READING,
-                null,
                 CLOCK.instant()
         );
         sameRatedItem.rate(new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
@@ -487,15 +435,11 @@ class LibraryServiceTest {
         LibraryItem firstItem = LibraryItem.create(
                 1L,
                 2L,
-                ReadingStatus.WANT_TO_READ,
-                null,
                 CLOCK.instant()
         );
         LibraryItem secondItem = LibraryItem.create(
                 1L,
                 3L,
-                ReadingStatus.WANT_TO_READ,
-                null,
                 CLOCK.instant()
         );
         Book firstBook = mock(Book.class);
@@ -511,7 +455,7 @@ class LibraryServiceTest {
         LibraryService service = service();
 
         // when
-        var response = service.getLibrary(1L, 1, null, LibrarySort.COMMENT);
+        var response = service.getLibrary(1L, 1, LibrarySort.COMMENT);
 
         // then
         assertThat(response.items()).extracting("bookId", "commentCount")
@@ -519,17 +463,17 @@ class LibraryServiceTest {
     }
 
     @Test
-    @DisplayName("기본 책장에 배치된 독서 기록만 조회한다")
-    void should_ListPlacedReadingRecords_When_ListingDefaultLibrary() {
+    @DisplayName("기본 책장에 배치된 도서만 조회한다")
+    void should_ListPlacedBooks_When_ListingDefaultLibrary() {
         // given
-        LibraryItem activeItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, null, CLOCK.instant());
+        LibraryItem activeItem = LibraryItem.create(1L, 2L, CLOCK.instant());
         defaultItems(List.of(activeItem));
         Book activeBook = bookWithId(2L);
         when(bookRepository.findAllById(List.of(2L))).thenReturn(List.of(activeBook));
         when(commentCountReader.getCommentCounts(anyCollection())).thenReturn(Map.of());
 
         // when
-        var response = service().getLibrary(1L, 1, null, LibrarySort.RECENT);
+        var response = service().getLibrary(1L, 1, LibrarySort.RECENT);
 
         // then
         assertThat(response.maxSize()).isEqualTo(30);
@@ -566,7 +510,7 @@ class LibraryServiceTest {
         when(commentCountReader.getCommentCounts(Set.of())).thenReturn(Map.of());
 
         // when
-        var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
+        var response = service().getPublicLibrary(1L, 1, LibrarySort.RECENT);
 
         // then
         assertThat(response.maxSize()).isEqualTo(30);
@@ -595,13 +539,12 @@ class LibraryServiceTest {
     }
 
     @Test
-    @DisplayName("ISBN으로 내 별점만 삭제하고 독서 기록을 보존한다")
+    @DisplayName("ISBN으로 내 별점만 삭제하고 공유 항목을 보존한다")
     void should_RemoveOnlyMyRating_When_DeletingRatingByIsbn() {
         // given
-        Book book = book(240);
+        Book book = book();
         ReflectionTestUtils.setField(book, "id", 10L);
-        LibraryItem item = LibraryItem.create(1L, 10L, ReadingStatus.READING, 240, CLOCK.instant());
-        item.changeCurrentPage(23, 240, CLOCK.instant());
+        LibraryItem item = LibraryItem.create(1L, 10L, CLOCK.instant());
         item.rate(new BigDecimal("4.5"), CLOCK.instant());
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
@@ -613,9 +556,6 @@ class LibraryServiceTest {
         // then
         assertThat(item.getRating()).isNull();
         assertThat(item.getRatingUpdatedAt()).isNull();
-        assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING);
-        assertThat(item.getCurrentPage()).isEqualTo(23);
-        assertThat(item.getReadingUpdatedAt()).isEqualTo(CLOCK.instant());
         InOrder order = inOrder(memberRepository, bookRepository, libraryItemRepository);
         order.verify(memberRepository).findByIdForUpdate(1L);
         order.verify(bookRepository).findByIsbn13(ISBN13);
@@ -640,7 +580,7 @@ class LibraryServiceTest {
     @DisplayName("공유 기록이 없는 도서의 ISBN 별점 삭제는 기록을 만들지 않는다")
     void should_LeaveRecordsEmpty_When_DeletingRatingWithoutRecord() {
         // given
-        Book book = book(240);
+        Book book = book();
         ReflectionTestUtils.setField(book, "id", 10L);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
@@ -670,7 +610,7 @@ class LibraryServiceTest {
     }
 
     private void assertLibraryNotFound(long memberId) {
-        assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
+        assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, LibrarySort.RECENT))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
@@ -695,7 +635,7 @@ class LibraryServiceTest {
         );
     }
 
-    private Book book(Integer totalPages) {
+    private Book book() {
         return Book.create(
                 new Isbn13("9788925568683"),
                 "마션",
@@ -708,7 +648,6 @@ class LibraryServiceTest {
                 "알에이치코리아",
                 "SF",
                 null,
-                totalPages,
                 null,
                 null
         );

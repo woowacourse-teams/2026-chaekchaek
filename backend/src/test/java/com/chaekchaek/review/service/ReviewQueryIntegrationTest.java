@@ -21,7 +21,6 @@ import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.ReviewReaction;
 import com.chaekchaek.review.dto.PageResponse;
 import com.chaekchaek.review.dto.ReviewResponse;
-import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyReactionRepository;
@@ -105,7 +104,6 @@ class ReviewQueryIntegrationTest {
                 reactionRepository,
                 replyReactionRepository,
                 actorProvider,
-                mock(ReadingRecordCoordinator.class),
                 mock(ReviewBookReader.class),
                 memberReader,
                 mock(BookResolver.class),
@@ -379,7 +377,7 @@ class ReviewQueryIntegrationTest {
     @DisplayName("정상 답글이 남은 삭제 감상은 본문을 안내 문구로 바꾸고 인용문과 챕터를 비운다")
     void should_HideOriginalText_When_DeletedReviewHasActiveReply() {
         // given
-        Review deleted = reviewRepository.save(Review.create(BOOK_ID, ACTOR_ID, "삭제할 감상", "인용문", "3장", 30, true, false));
+        Review deleted = reviewRepository.save(Review.create(BOOK_ID, ACTOR_ID, "삭제할 감상", "인용문", "3장", true, false));
         deleted.deleteBy(ACTOR_ID);
         addReplies(deleted, 1);
         saveReview(BOOK_ID, ACTOR_ID, null);
@@ -394,7 +392,6 @@ class ReviewQueryIntegrationTest {
         assertThat(deletedResponse.content()).isEqualTo("삭제된 감상입니다.");
         assertThat(deletedResponse.quote()).isNull();
         assertThat(deletedResponse.chapter()).isNull();
-        assertThat(deletedResponse.currentPage()).isEqualTo(30);
         assertThat(deletedResponse.isSpoiler()).isTrue();
         assertThat(deletedResponse.deleted()).isTrue();
         assertThat(deletedResponse.replyCount()).isEqualTo(1);
@@ -449,7 +446,6 @@ class ReviewQueryIntegrationTest {
                 "감상",
                 null,
                 null,
-                page,
                 false,
                 false
         ));
