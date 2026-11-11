@@ -221,7 +221,10 @@ export const LibrariesPage = () => {
           library && (
             <ShareLibraryImageDialog
               libraryName={selectedLibrary.libraryName}
-              imgs={library.items.map((item) => ({ title: item.title, url: item.spineImageUrl }))}
+              imgs={library.items.map((item) => ({
+                title: item.title,
+                url: item.spineImageUrl ?? item.coverImageUrl,
+              }))}
               onClose={handleCloseDialog}
             />
           )
@@ -413,7 +416,11 @@ export const LibrariesPage = () => {
                             {library.items.map((item, index) => {
                               return (
                                 <Sortable key={item.bookId} id={item.bookId} index={index}>
-                                  <ConstrainedImgBox img={item.spineImageUrl} height="170px" />
+                                  <ConstrainedImgBox
+                                    img={item.spineImageUrl ?? item.coverImageUrl}
+                                    maxWidth="20px"
+                                    height="170px"
+                                  />
                                 </Sortable>
                               );
                             })}

@@ -74,7 +74,7 @@ export const ShareLibraryImageDialog = ({
             <Showcase>
               <ScrollArea width="100%" height="auto">
                 {imgs.map((img) => {
-                  return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
+                  return <ConstrainedImgBox img={img.url} maxWidth="15px" height={'170px'} />;
                 })}
               </ScrollArea>
             </Showcase>
