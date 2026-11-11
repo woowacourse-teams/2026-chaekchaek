@@ -27,7 +27,7 @@ export const MainApp = () => {
   const renderDialog = (dialog: MainAppDialogType | null) => {
     switch (dialog) {
       case 'UpdateNicknameDialog':
-        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
+        return <UpdateNicknameDialog dismissible onClose={handleCloseDialog} />;
 
       default:
         return null;

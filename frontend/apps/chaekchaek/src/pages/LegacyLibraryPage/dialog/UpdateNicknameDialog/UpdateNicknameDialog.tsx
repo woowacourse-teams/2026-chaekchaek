@@ -15,7 +15,7 @@ import type { NicknameFormValues } from './validator';
 
 import type { UpdateNicknameDialogProps } from './UpdateNicknameDialog.types';
 
-export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => {
+export const UpdateNicknameDialog = ({ dismissible, onClose }: UpdateNicknameDialogProps) => {
   const { user, updateAccount } = useAuthContext();
 
   const { values, errors, onChange, isValid, valids } = useFormValues<NicknameFormValues>({
@@ -41,11 +41,11 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
 
     updateAccount(userWithAnonymityDisabled);
 
-    onClose();
+    onClose?.();
   };
 
   return (
-    <Dialog size="medium" onClose={onClose}>
+    <Dialog size="medium" dismissible={dismissible} onClose={onClose}>
       <Dialog.Container>
         <form onSubmit={handleSubmit}>
           <Dialog.Header subTitle="지금부터 감상과 답글에 이 닉네임이 표시됩니다.">
@@ -79,9 +79,11 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
               <Button type="submit" variant="primary" size="large" block disabled={!isValid}>
                 확인
               </Button>
-              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
-                취소
-              </Button>
+              {!dismissible && (
+                <Button type="button" variant="ghost" size="large" block onClick={onClose}>
+                  취소
+                </Button>
+              )}
             </ButtonStack>
           </Dialog.Footer>
         </form>
