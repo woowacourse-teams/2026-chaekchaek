@@ -12,7 +12,7 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
 class MobileAuthRemoteRepository(
-  private val client: HttpClient = createHttpClient(),
+  private val client: HttpClient = createHttpClient(refreshAccessToken = null),
   private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) {
 

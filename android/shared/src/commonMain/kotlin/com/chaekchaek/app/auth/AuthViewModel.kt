@@ -119,6 +119,7 @@ class AuthViewModel private constructor(
   private var profileJob: Job? = null
 
   init {
+    com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler = session::refreshAccessTokenForRetry
     scope.launch {
       session.tokens.collectLatest { current ->
         if (current == null) {
@@ -294,6 +295,9 @@ class AuthViewModel private constructor(
   }
 
   fun close() {
+    if (com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler === session::refreshAccessTokenForRetry) {
+      com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler = null
+    }
     if (ownsScope) scope.cancel()
   }
 
