@@ -11,14 +11,12 @@ export const libraryResponse = {
       title: '데미안',
       spineImageUrl: 'https://static.example.com/books/42/spine.webp',
       isbn13: '9788937460449',
-      totalPages: 239,
     },
     {
       bookId: 43,
       title: '어린 왕자',
       spineImageUrl: 'https://static.example.com/books/43/spine.webp',
       isbn13: '9788932917245',
-      totalPages: 136,
     },
   ],
 };
@@ -48,7 +46,6 @@ export const searchedBook = {
   category: '소설',
   coverImageUrl: 'https://static.example.com/books/44/cover.webp',
   spineImageUrl: 'https://static.example.com/books/44/spine.webp',
-  totalPages: 600,
   reviewCount: 0,
   replyCount: 0,
   isRegisteredInMyLibrary: false,
@@ -65,9 +62,6 @@ export const emptyBookSearchResponse = { totalCount: 0, nextPage: null, items: [
 export const addedBookResponse = {
   ...searchedBook,
   addedAt: '2026-10-23T09:00:00',
-  readingUpdatedAt: '2026-10-23T09:00:00',
-  currentPage: 0,
-  status: 'WANT_TO_READ',
   commentCount: 0,
   rating: null,
   backImageUrl: null,
@@ -102,7 +96,6 @@ export const libraryBooks = Array.from({ length: 23 }, (_, index) => ({
   title: `책장 도서 ${index + 1}`,
   spineImageUrl: `https://static.example.com/books/${index + 100}/spine.webp`,
   isbn13: String(9780000000000 + index),
-  totalPages: 200,
 }));
 
 export const fullLibraryResponse = {

@@ -72,7 +72,6 @@ export const RegisterBookToLibraryDialog = ({
         postLibrariesLibraryId({
           libraryId,
           isbn13: book.isbn,
-          status: 'READING',
         }),
       ),
     );

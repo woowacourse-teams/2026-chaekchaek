@@ -139,7 +139,6 @@ export const BooksPage = () => {
 
     track('library_add', {
       source: 'search',
-      status: 'reading',
     });
   };
 

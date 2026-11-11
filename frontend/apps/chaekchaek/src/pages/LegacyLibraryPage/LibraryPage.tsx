@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
-  Badge,
   Button,
   Checkbox,
   ConstrainedImgBox,
@@ -11,9 +10,7 @@ import {
   ImgBox,
   List,
   Notice,
-  OptionList,
   Pagination,
-  ProgressBar,
   Select,
   Split,
   Title,
@@ -29,28 +26,11 @@ import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repo
 import { useExecute } from '@/services/core/useExecute';
 import { useLoadData } from '@/services/core/useLoadData';
 
-import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
 import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import styles from './LiraryPage.module.css';
-
-export const READING_STATUS = {
-  ALL: 'ALL',
-  WANT_TO_READ: 'WANT_TO_READ',
-  READING: 'READING',
-  FINISHED: 'FINISHED',
-} as const;
-
-export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
-
-export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
-  [READING_STATUS.ALL]: '전체',
-  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
-  [READING_STATUS.READING]: '읽는 중',
-  [READING_STATUS.FINISHED]: '다 읽음',
-};
 
 const READING_SORT = {
   RECENT: 'RECENT',
@@ -75,22 +55,12 @@ const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
   const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('page', String(defaultPage));
-      return next;
-    });
-  };
-
-  const handleChangeStatus = (status: ReadingStatus) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('status', status);
-      next.set('page', '1');
       return next;
     });
   };
@@ -108,9 +78,8 @@ export const LibraryPage = () => {
     return await getLibrary({
       page: defaultPage,
       sort,
-      status,
     });
-  }, [defaultPage, status, sort]);
+  }, [defaultPage, sort]);
   const {
     refetch: refetchGetLibrary,
     status: { data: libraryData },
@@ -136,15 +105,6 @@ export const LibraryPage = () => {
     setBookSelection([]);
   };
 
-  const handleBookStatusUpdated = () => {
-    refetchGetLibrary();
-
-    handleCloseDialog();
-    handleClickEndEdit();
-    handleResetBookSelection();
-    handleCloseDialog();
-  };
-
   const handleBooksDeleted = () => {
     refetchGetLibrary();
 
@@ -158,7 +118,6 @@ export const LibraryPage = () => {
     handleOpenDialog('DeleteBooksDialog');
   };
 
-  const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
   const { user, updateAccount } = useAuthContext();
@@ -204,30 +163,16 @@ export const LibraryPage = () => {
     setIsCopied(true);
   };
 
-  const [dialog, setDialog] = useState<
-    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
-  >(null);
-  const handleOpenDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
-  ) => {
+  const [dialog, setDialog] = useState<'DeleteBooksDialog' | 'UpdateNicknameDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'DeleteBooksDialog' | 'UpdateNicknameDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
-  ) => {
+  const renderDialog = (dialog: 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null) => {
     switch (dialog) {
-      case 'UpdateBookStatusDialog':
-        return (
-          <UpdateBookStatusDialog
-            bookSelection={bookSelection}
-            onBookStatusUpdated={handleBookStatusUpdated}
-            onClose={handleCloseDialog}
-          />
-        );
       case 'DeleteBooksDialog':
         return (
           <DeleteBooksDialog
@@ -286,14 +231,6 @@ export const LibraryPage = () => {
                     {isEditing && (
                       <>
                         <Button
-                          variant="ghost"
-                          size="small"
-                          disabled={!isAbleUpdateStatus}
-                          onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
-                        >
-                          상태 변경
-                        </Button>
-                        <Button
                           leading={<Icon.TrashIcon color="error" />}
                           variant="danger-weak"
                           size="small"
@@ -320,27 +257,6 @@ export const LibraryPage = () => {
                 </IconButton>
               </Title>
             </Split.Top>
-            <Split.Side>
-              <Title
-                level="main"
-                orientation="vertical"
-                trailing={
-                  <OptionList
-                    sx={{ mt: 3 }}
-                    value={status}
-                    options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
-                      return {
-                        value: labelKey,
-                        text: labelValue,
-                      };
-                    })}
-                    onChange={handleChangeStatus}
-                  />
-                }
-              >
-                독서 상태
-              </Title>
-            </Split.Side>
             <Split.Content>
               <div className={styles.bookShelf}>
                 {libraryData?.items.map((item, index) => {
@@ -413,36 +329,8 @@ export const LibraryPage = () => {
                       <List.Item.Content
                         as={!isEditing ? Link : 'div'}
                         {...(!isEditing && { to: `/books/${item.isbn13}` })}
-                        title={
-                          <>
-                            <Badge
-                              sx={{ mb: 1 }}
-                              variant={
-                                item.status === READING_STATUS.READING
-                                  ? 'primary'
-                                  : item.status === READING_STATUS.WANT_TO_READ
-                                    ? 'subtle'
-                                    : 'soft'
-                              }
-                            >
-                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Badge>
-                            <br />
-                            {item.title}
-                          </>
-                        }
+                        title={item.title}
                         content={item.authors.join(' · ')}
-                        description={
-                          <>
-                            {item.totalPages > 0 && (
-                              <ProgressBar
-                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
-                                value={item.currentPage}
-                                max={item.totalPages}
-                              />
-                            )}
-                          </>
-                        }
                       />
                       <List.Item.Trailing>
                         {!isEditing && <Icon.ArrowRightIcon />}

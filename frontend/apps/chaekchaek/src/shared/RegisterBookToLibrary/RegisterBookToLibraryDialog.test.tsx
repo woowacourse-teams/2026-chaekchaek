@@ -63,7 +63,6 @@ it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 
   await waitFor(() => expect(onClose).toHaveBeenCalledExactlyOnceWith());
   expect(addBook).toHaveBeenCalledExactlyOnceWith(unselectedLibraryResponse.libraryId, {
     isbn13: bookToRegister.isbn13,
-    status: 'READING',
   });
   expect(removeBook).not.toHaveBeenCalled();
 });

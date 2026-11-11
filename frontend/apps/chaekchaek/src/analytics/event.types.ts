@@ -15,7 +15,6 @@ export type AnalyticsEventMap = {
   rating_select: undefined;
   library_add: {
     source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';
-    status: 'want_to_read' | 'reading' | 'finished';
   };
   review_write_open: {
     actor_type: 'MEMBER' | 'GUEST';
@@ -37,8 +36,6 @@ export type AnalyticsEventMap = {
     actor_id: number;
     isbn: string;
   };
-  current_page_open: undefined;
-  current_page_submit: undefined;
   search: undefined;
   search_more: {
     page: number;

@@ -71,6 +71,5 @@ export const libraryToEditResponse = {
   items: librariesResponse.libraries[1]!.items.map((book) => ({
     ...book,
     isbn13: '9788925588650',
-    totalPages: 600,
   })),
 };

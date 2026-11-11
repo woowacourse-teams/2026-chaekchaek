@@ -143,7 +143,6 @@ export const BookDetailPage = () => {
   const handleBookRegistered = async () => {
     track('library_add', {
       source: 'detail_info',
-      status: 'reading',
     });
 
     refetchGetBooksIsbnLoadData();
