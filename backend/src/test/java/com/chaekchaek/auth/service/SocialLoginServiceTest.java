@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,8 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -29,9 +32,13 @@ import com.chaekchaek.member.service.NicknameGenerator;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +54,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class SocialLoginServiceTest {
+
+    @BeforeEach
+    void configureSignupPersistenceAndClock() {
+        lenient().when(clock.instant()).thenReturn(Instant.parse("2026-11-10T03:00:00Z"));
+        lenient().when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+        lenient().when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> {
+            Member member = invocation.getArgument(0);
+            ReflectionTestUtils.setField(member, "id", 7L);
+            return member;
+        });
+    }
 
     @Test
     @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
@@ -193,6 +211,12 @@ public class SocialLoginServiceTest {
     @Mock
     private GuestActorMigrationService guestActorMigrationService;
 
+    @Mock
+    private LibraryRepository libraryRepository;
+
+    @Mock
+    private Clock clock;
+
     @InjectMocks
     private SocialLoginService socialLoginService;
 
@@ -234,6 +258,7 @@ public class SocialLoginServiceTest {
         verify(actorRepository, never()).save(any(Actor.class));
         verify(socialAccountRepository, never()).save(any(SocialAccount.class));
         verify(nicknameGenerator, never()).generate();
+        Mockito.verifyNoInteractions(libraryRepository);
     }
 
     @Test
@@ -284,7 +309,14 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedAccount.getProviderUserId()).isEqualTo("google-user-123"),
                 () -> assertThat(savedAccount.getConnectedAt()).isEqualTo(savedMember.getCreatedAt())
         );
-
+        ArgumentCaptor<Library> libraryCaptor = ArgumentCaptor.forClass(Library.class);
+        verify(libraryRepository).create(libraryCaptor.capture());
+        Library library = libraryCaptor.getValue();
+        assertThat(library.isOwnedBy(savedMember.getId())).isTrue();
+        assertThat(library.isDefault()).isTrue();
+        assertThat(library.getName()).isEqualTo("기본 책장");
+        assertThat(library.getDisplayOrder()).isEqualTo(1L);
+        assertThat(library.getCreatedAt()).isEqualTo(Instant.parse("2026-11-10T03:00:00Z"));
     }
 
     @Test
@@ -296,7 +328,7 @@ public class SocialLoginServiceTest {
                 "member@example.com",
                 "exUrl"
         );
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         Actor guestActor = Actor.guest("a".repeat(64), "게스트 참새", now.minusDays(1), now.plusDays(29));
 
         when(socialAccountRepository.findForLogin(

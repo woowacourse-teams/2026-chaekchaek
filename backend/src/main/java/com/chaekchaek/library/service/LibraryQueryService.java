@@ -2,6 +2,7 @@ package com.chaekchaek.library.service;
 
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.dto.LibraryBookDetailResponse;
 import com.chaekchaek.library.dto.LibraryBookSummaryResponse;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
@@ -60,6 +61,7 @@ public class LibraryQueryService {
                 library.name(),
                 library.isDefault(),
                 books.size(),
+                Library.maxSize(),
                 books
         );
     }
@@ -74,6 +76,7 @@ public class LibraryQueryService {
                 library.name(),
                 library.isDefault(),
                 books.size(),
+                Library.maxSize(),
                 books
         );
     }

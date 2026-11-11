@@ -410,19 +410,24 @@ class AccessTokenAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("닉네임이 없는 회원은 일반 책장을 생성할 수 없다")
-    void should_RequireNickname_When_CreatingLibrary() throws Exception {
+    @DisplayName("닉네임이 없는 회원도 인증 후 일반 책장을 생성한다")
+    void should_CreateLibrary_When_MemberHasNoNickname() throws Exception {
+        // given
         String token = issueAccessToken(memberId.toString());
 
+        // when & then
         mockMvc.perform(post("/api/v1/libraries")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"올해읽을책"}
                                 """))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.code").value("NICKNAME_REQUIRED"));
-        assertThat(libraryRepository.findAll()).filteredOn(library -> library.isOwnedBy(memberId)).isEmpty();
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("올해읽을책"))
+                .andExpect(jsonPath("$.isDefault").value(false));
+        assertThat(libraryRepository.findAll()).filteredOn(library -> library.isOwnedBy(memberId))
+                .singleElement()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("올해읽을책"));
     }
 
     @Test

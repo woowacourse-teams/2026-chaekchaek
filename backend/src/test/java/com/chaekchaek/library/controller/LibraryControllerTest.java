@@ -93,7 +93,7 @@ class LibraryControllerTest {
 
             - `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.
             - 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
-            - 닉네임을 설정하지 않은 회원은 `422`, `NICKNAME_REQUIRED`를 반환한다.
+            - 공개 닉네임을 설정하지 않은 활성 회원도 책장을 추가할 수 있다.
             - `SUSPENDED`, `WITHDRAWN` 회원은 `403`, `FORBIDDEN`을 반환한다.
             - 회원당 책장 수 제한은 없으며 새 책장은 맨 뒤에 추가한다.
             - 성공 응답에는 `isDefault: false`, `totalCount: 0`, `items: []`가 포함된다.
@@ -222,6 +222,7 @@ class LibraryControllerTest {
             fieldWithPath("name").type(JsonFieldType.STRING).description("저장된 책장 이름"),
             fieldWithPath("isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부. 일반 책장은 false"),
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("책장의 전체 도서 수"),
+            fieldWithPath("maxSize").type(JsonFieldType.NUMBER).description("책장에 등록 가능한 최대 도서 수"),
             fieldWithPath("items").type(JsonFieldType.ARRAY).description("표시 순서대로 반환하는 전체 도서 목록"),
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
             fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목").optional(),
@@ -276,6 +277,7 @@ class LibraryControllerTest {
                 .andExpect(jsonPath("$.name").value("올해읽을책"))
                 .andExpect(jsonPath("$.isDefault").value(false))
                 .andExpect(jsonPath("$.totalCount").value(0))
+                .andExpect(jsonPath("$.maxSize").value(30))
                 .andExpect(jsonPath("$.items").isEmpty())
                 .andDo(document(
                         "library-create",
@@ -558,31 +560,6 @@ class LibraryControllerTest {
     }
 
     @Test
-    @DisplayName("닉네임이 없으면 책장을 생성하지 않고 닉네임 설정 오류를 반환한다")
-    void should_ReturnUnprocessableEntity_When_MemberHasNoNickname() throws Exception {
-        // given
-        when(libraryService.create(MEMBER_ID, "올해읽을책"))
-                .thenThrow(new BusinessException(ErrorCode.NICKNAME_REQUIRED));
-
-        // when & then
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"올해읽을책"}
-                                """)),
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                ErrorCode.NICKNAME_REQUIRED,
-                "/api/v1/libraries",
-                "library-create-nickname-required",
-                LIBRARY_CREATE_SUMMARY,
-                LIBRARY_CREATE_DESCRIPTION,
-                noPathParameters(),
-                noQueryParameters()
-        );
-    }
-
-    @Test
     @DisplayName("비활성 회원은 책장을 생성할 수 없다")
     void should_ReturnForbidden_When_MemberIsInactive() throws Exception {
         // given
@@ -638,6 +615,7 @@ class LibraryControllerTest {
         // given
         LibraryListResponse response = new LibraryListResponse(
                 3,
+                30,
                 2,
                 2,
                 List.of(libraryItemResponse())
@@ -653,6 +631,7 @@ class LibraryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.totalCount").value(3))
+                .andExpect(jsonPath("$.maxSize").value(30))
                 .andExpect(jsonPath("$.filteredCount").value(2))
                 .andExpect(jsonPath("$.items[0].bookId").value(BOOK_ID))
                 .andExpect(jsonPath("$.items[0].spineImageUrl")
@@ -681,6 +660,7 @@ class LibraryControllerTest {
         // given
         LibraryListResponse response = new LibraryListResponse(
                 1,
+                30,
                 1,
                 null,
                 List.of(libraryItemResponseWithoutImages())
@@ -728,6 +708,7 @@ class LibraryControllerTest {
                         "https://example.com/profile.jpg"
                 ),
                 1,
+                30,
                 1,
                 null,
                 List.of(PublicLibraryItemResponse.from(libraryItemResponse()))
@@ -782,6 +763,7 @@ class LibraryControllerTest {
                         null
                 ),
                 1,
+                30,
                 1,
                 null,
                 List.of(PublicLibraryItemResponse.from(libraryItemResponseWithoutImages()))
@@ -2269,6 +2251,7 @@ class LibraryControllerTest {
     private FieldDescriptor[] libraryListResponseFields() {
         return new FieldDescriptor[]{
                 fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("내 서재 전체 도서 수"),
+                fieldWithPath("maxSize").type(JsonFieldType.NUMBER).description("책장에 등록 가능한 최대 도서 수"),
                 fieldWithPath("filteredCount").type(JsonFieldType.NUMBER).description("필터 적용 후 도서 수"),
                 fieldWithPath("nextPage").type(JsonFieldType.NUMBER).description("다음 페이지 번호. 마지막 페이지면 null").optional(),
                 fieldWithPath("items").type(JsonFieldType.ARRAY).description("내 서재 도서 목록"),
@@ -2312,6 +2295,7 @@ class LibraryControllerTest {
                 fieldWithPath("member.profileImageUrl").type(JsonFieldType.STRING)
                         .description("회원 프로필 이미지 URL").optional(),
                 fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("공개 서재 전체 도서 수"),
+                fieldWithPath("maxSize").type(JsonFieldType.NUMBER).description("책장에 등록 가능한 최대 도서 수"),
                 fieldWithPath("filteredCount").type(JsonFieldType.NUMBER).description("필터 적용 후 도서 수"),
                 fieldWithPath("nextPage").type(JsonFieldType.NUMBER)
                         .description("다음 페이지 번호. 마지막 페이지면 null").optional(),
@@ -2561,7 +2545,14 @@ class LibraryControllerTest {
     }
 
     private LibraryResponse libraryResponse(String name) {
-        return new LibraryResponse(7L, name, false, 0, List.of());
+        return new LibraryResponse(
+                7L,
+                name,
+                false,
+                0,
+                30,
+                List.of()
+        );
     }
 
     private LibraryItemResponse libraryItemResponseWithoutImages() {
