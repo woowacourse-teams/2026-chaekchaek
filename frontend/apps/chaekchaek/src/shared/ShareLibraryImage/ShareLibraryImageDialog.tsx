@@ -7,6 +7,8 @@ import {
   ConstrainedImgBox,
   Dialog,
   DisplayCard,
+  ImageGradientBackground,
+  ResponsiveText,
   ScrollArea,
   Showcase,
 } from '@chaekchaek/design-system';
@@ -74,7 +76,22 @@ export const ShareLibraryImageDialog = ({
             <Showcase>
               <ScrollArea width="100%" height="auto">
                 {imgs.map((img) => {
-                  return <ConstrainedImgBox img={img.url} maxWidth="15px" height={'170px'} />;
+                  return (
+                    <ConstrainedImgBox
+                      {...(img.spine && {
+                        img: img.spine,
+                      })}
+                      fallback={
+                        <ImageGradientBackground img={img.cover} width="15px" height="170px">
+                          <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                            {img.title}
+                          </ResponsiveText>
+                        </ImageGradientBackground>
+                      }
+                      maxWidth="15px"
+                      height={'170px'}
+                    />
+                  );
                 })}
               </ScrollArea>
             </Showcase>

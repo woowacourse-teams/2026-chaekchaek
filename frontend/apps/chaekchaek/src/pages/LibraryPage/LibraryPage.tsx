@@ -253,7 +253,11 @@ export const LibraryPage = () => {
             <ShareLibraryImageDialog
               libraryName={libraryItemsData.name}
               imgs={libraryItemsData?.items.map((item) => {
-                return { title: item.title, url: item.spineImageUrl ?? item.coverImageUrl };
+                return {
+                  title: item.title,
+                  spine: item.spineImageUrl,
+                  cover: item.coverImageUrl,
+                };
               })}
 
               onClose={handleCloseDialog}

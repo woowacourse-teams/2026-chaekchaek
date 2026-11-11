@@ -225,7 +225,8 @@ export const LibrariesPage = () => {
               libraryName={selectedLibrary.libraryName}
               imgs={library.items.map((item) => ({
                 title: item.title,
-                url: item.spineImageUrl ?? item.coverImageUrl,
+                spine: item.spineImageUrl,
+                cover: item.coverImageUrl,
               }))}
               onClose={handleCloseDialog}
             />
