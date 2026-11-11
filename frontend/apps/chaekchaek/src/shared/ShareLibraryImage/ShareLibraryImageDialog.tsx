@@ -11,6 +11,7 @@ import {
   ResponsiveText,
   ScrollArea,
   Showcase,
+  Text,
 } from '@chaekchaek/design-system';
 
 import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
@@ -83,8 +84,8 @@ export const ShareLibraryImageDialog = ({
                       })}
                       fallback={
                         <ImageGradientBackground img={img.cover} width="15px" height="170px">
-                          <ResponsiveText sx={{ mt: 4 }} direction="vertical">
-                            {img.title}
+                          <ResponsiveText sx={{ mt: 2 }} direction="vertical">
+                            <Text size="x-small">{img.title}</Text>
                           </ResponsiveText>
                         </ImageGradientBackground>
                       }

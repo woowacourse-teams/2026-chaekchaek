@@ -432,7 +432,7 @@ export const LibrariesPage = () => {
                                         height="170px"
                                       >
                                         <ResponsiveText sx={{ mt: 4 }} direction="vertical">
-                                          {item.title}
+                                          <Text size="x-small">{item.title}</Text>
                                         </ResponsiveText>
                                       </ImageGradientBackground>
                                     }
