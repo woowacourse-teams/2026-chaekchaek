@@ -17,7 +17,9 @@ import {
   ContentArea,
   Icon,
   IconButton,
+  ImageGradientBackground,
   Partition,
+  ResponsiveText,
   Showcase,
   Text,
   Title,
@@ -417,9 +419,22 @@ export const LibrariesPage = () => {
                               return (
                                 <Sortable key={item.bookId} id={item.bookId} index={index}>
                                   <ConstrainedImgBox
-                                    img={item.spineImageUrl ?? item.coverImageUrl}
+                                    {...(!!item.spineImageUrl && {
+                                      img: item.spineImageUrl,
+                                    })}
                                     maxWidth="20px"
                                     height="170px"
+                                    fallback={
+                                      <ImageGradientBackground
+                                        img={item.coverImageUrl}
+                                        width="20px"
+                                        height="170px"
+                                      >
+                                        <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                                          {item.title}
+                                        </ResponsiveText>
+                                      </ImageGradientBackground>
+                                    }
                                   />
                                 </Sortable>
                               );

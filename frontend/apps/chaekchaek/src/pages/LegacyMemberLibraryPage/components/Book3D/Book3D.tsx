@@ -1,5 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 
+import { ImageGradientBackground, ResponsiveText } from '@chaekchaek/design-system';
+
 import styles from './Book3D.module.css';
 
 import cover from './imgs/dummy1-cover.jpeg';
@@ -39,7 +41,15 @@ export const Book3D = ({
           <img src={backImageUrl} alt="" draggable={false} />
         </span>
         <span className={`${styles.face} ${styles.spine}`}>
-          <img src={spineImageUrl} alt="" draggable={false} />
+          {spineImageUrl && <img src={spineImageUrl} alt="" draggable={false} />}
+
+          {!spineImageUrl && (
+            <ImageGradientBackground img={coverImageUrl}>
+              <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                {title}
+              </ResponsiveText>
+            </ImageGradientBackground>
+          )}
         </span>
         <span className={`${styles.face} ${styles.top}`} />
       </span>
