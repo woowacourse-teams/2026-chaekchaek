@@ -1,5 +1,5 @@
 export type RegisterBookToLibraryDialogProps = {
   book: { isbn: string; bookId?: number | undefined };
-  onBookRegistered?: () => void | Promise<void>;
+  onBookRegistered?: (changed: { added: boolean; removed: boolean }) => void | Promise<void>;
   onClose: () => void;
 };

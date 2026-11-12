@@ -14,8 +14,10 @@ import {
   Text,
 } from '@chaekchaek/design-system';
 
-import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+import { track } from '@/analytics/track';
+
+import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 
 const APP_NAME = '책췍';
 
@@ -60,6 +62,9 @@ export const ShareLibraryImageDialog = ({
 
   const handleClickDownload = async () => {
     await download();
+
+    track('library_save_image');
+
     onClose();
   };
 

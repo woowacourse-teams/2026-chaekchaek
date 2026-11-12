@@ -118,6 +118,13 @@ export const LibrariesPage = () => {
       isDefault,
     });
     handleOpenDialog('ManageLibraryDialog');
+
+    track('library_management_open');
+  };
+
+  const handleClickRegisterLibrary = () => {
+    handleOpenDialog('RegisterLibraryDialog');
+    track('library_register_open');
   };
 
   const navigate = useNavigate();
@@ -149,6 +156,8 @@ export const LibrariesPage = () => {
     await patchOrderMutate({
       libraryIds: reorderLibraryIds,
     });
+
+    track('library_reorder');
   };
 
   const { mutate: patchBookOrderMutate } = useExecute({
@@ -177,6 +186,8 @@ export const LibrariesPage = () => {
       libraryId: Number(libraryId),
       bookIds: reorderBooksId,
     });
+
+    track('library_reorder_book');
   };
 
   const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
@@ -308,6 +319,7 @@ export const LibrariesPage = () => {
               level="main"
               description="책장과 책을 드래그해 순서를 바꿀 수 있어요."
               trailing={
+
                 <>
                   {user !== null && (
                     <>
@@ -338,14 +350,11 @@ export const LibrariesPage = () => {
                   <IconButton
                     variant="secondary"
                     aria-label="책장 추가"
-                    onClick={() => {
-                      handleOpenDialog('RegisterLibraryDialog');
-                    }}
+                    onClick={handleClickRegisterLibrary}
                   >
                     <Icon.PlusIcon />
                   </IconButton>
                 </>
-              }
             >
               내 책장
             </Title>

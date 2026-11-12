@@ -50,6 +50,8 @@ import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 
 import { ROUTES } from '@/constants/routes';
 
+import { track } from '@/analytics/track';
+
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 
@@ -167,12 +169,31 @@ export const LibraryPage = () => {
   const location = useLocation();
   const state = location.state as { startEditing: boolean };
 
+  const handleClickManageLibrary = () => {
+    handleOpenDialog('ManageLibraryDialog');
+    track('library_management_open');
+  };
+
+  const handleCLickShareImage = () => {
+    handleOpenDialog('ShareLibraryImageDialog');
+    track('library_save_image_open');
+  };
+
+  const handleClickAddBook = () => {
+    handleOpenDialog('AddBooksToLibraryDialog');
+    track('library_add_open', {
+      source: 'library',
+    });
+  };
+
   const [isEditing, setIsEditing] = useState(state?.startEditing || false);
   const handleClickStartEdit = () => {
     setIsEditing(true);
+    track('library_start_edit');
   };
   const handleClickEndEdit = () => {
     setIsEditing(false);
+    track('library_end_edit');
   };
 
   const { mutate: deleteBookMutate } = useExecute({
@@ -181,6 +202,8 @@ export const LibraryPage = () => {
 
   const handleClickDeleteBook = async (bookId: number) => {
     await deleteBookMutate({ libraryId: Number(libraryId), bookId });
+
+    track('library_remove');
 
     await refetchGetLibrary();
   };
@@ -211,6 +234,8 @@ export const LibraryPage = () => {
       libraryId: Number(libraryId),
       bookIds: reorderBooksId,
     });
+
+    track('library_reorder_book');
 
     setOrderedBookIds(reorderBooksId);
   };
@@ -341,9 +366,7 @@ export const LibraryPage = () => {
                   <IconButton
                     aria-label="책장 더보기"
                     variant="secondary"
-                    onClick={() => {
-                      handleOpenDialog('ManageLibraryDialog');
-                    }}
+                    onClick={handleClickManageLibrary}
                   >
                     <Icon.EllipsisIcon />
                   </IconButton>
@@ -395,13 +418,7 @@ export const LibraryPage = () => {
             )}
 
             <Title sx={{ mt: 8 }} level="detail">
-              <Button
-                variant="primary"
-                sx={{ mr: 4 }}
-                onClick={() => {
-                  handleOpenDialog('AddBooksToLibraryDialog');
-                }}
-              >
+              <Button variant="primary" sx={{ mr: 4 }} onClick={handleClickAddBook}>
                 <Icon.PlusIcon color="inverse" />책 담기
               </Button>
               {/* <IconButton variant="ghost" size="large" sx={{ mr: 2 }} onClick={handleCopyLink}>
@@ -415,9 +432,7 @@ export const LibraryPage = () => {
                 variant="ghost"
                 size="large"
                 sx={{ mr: 2 }}
-                onClick={() => {
-                  handleOpenDialog('ShareLibraryImageDialog');
-                }}
+                onClick={handleCLickShareImage}
               >
                 <Icon.DownloadIcon size="large" />
               </IconButton>

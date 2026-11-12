@@ -20,6 +20,7 @@ const ENV = {
   APP_URL: process.env.APP_URL,
   APP_API_URL: process.env.APP_API_URL,
   APP_GA_ID: process.env.APP_GA_ID,
+  APP_GTM_ID: process.env.APP_GTM_ID,
   APP_SENTRY_DSN: process.env.APP_SENTRY_DSN,
   APP_ENV: getAppEnv(),
 } as const;
