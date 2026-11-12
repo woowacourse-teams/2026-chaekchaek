@@ -383,7 +383,7 @@ private fun AppNavigationContent(
                 credential = credential,
                 sourceIsCurrent = { backStack.isCurrentDestination(source) },
                 readyToOpen = {
-                    bookDeepLinks.pending.value == null &&
+                    !linkViewModel.hasUnreadDelivery(bookDeepLinks.pending.value) &&
                         !authViewModel.isRestoringSession.value &&
                         !librarySaveViewModel.uiState.value.hasPendingSave &&
                         librarySaveViewModel.errors.notice.value == null

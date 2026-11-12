@@ -34,6 +34,9 @@ internal class BookDeepLinkViewModel(
         savedState[PENDING] = "${delivery.id}|${delivery.isbn13.orEmpty()}"
     }
 
+    fun hasUnreadDelivery(delivery: BookDeepLinkDelivery?): Boolean =
+        delivery != null && delivery.id != pending.value?.substringBefore('|')
+
     /** 준비 전에는 호출하지 않는다. 조회 중 다른 화면으로 이동했다면 뒤늦게 상세를 열지 않는다. */
     suspend fun openPending(
         currentIsbn: String?,

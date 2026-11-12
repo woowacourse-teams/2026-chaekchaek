@@ -97,8 +97,10 @@ class BookDeepLinkViewModelTest {
         val inbox = BookDeepLinkInbox()
         val response = CompletableDeferred<BookDetail>()
         val vm = BookDeepLinkViewModel(SavedStateHandle(), { target, _ -> if (target == isbn) response.await() else book(target) })
-        vm.accept(delivery())
-        val ready = { inbox.pending.value == null }
+        inbox.submit(BookDeepLink.exampleUri)
+        vm.accept(assertNotNull(inbox.pending.value))
+        val ready = { !vm.hasUnreadDelivery(inbox.pending.value) }
+        assertTrue(ready())
         startPending(vm, readyToOpen = ready) { fail("최신 링크가 수신되면 이전 책을 열면 안 된다") }
         runCurrent()
         inbox.submit("chaekchaek://books/$other")
