@@ -162,8 +162,9 @@ export const MemberLibraryPage = () => {
                     <Link to={`/books/${item.isbn13}`}>
                       <Book3D
                         key={index}
+                        title={item.title}
                         coverImageUrl={item.coverImageUrl}
-                        spineImageUrl={item.spineImageUrl ?? item.coverImageUrl}
+                        spineImageUrl={item.spineImageUrl}
                         backImageUrl={item.backImageUrl ?? item.coverImageUrl}
                       />
                     </Link>

@@ -7,12 +7,17 @@ import {
   ConstrainedImgBox,
   Dialog,
   DisplayCard,
+  ImageGradientBackground,
+  ResponsiveText,
   ScrollArea,
   Showcase,
+  Text,
 } from '@chaekchaek/design-system';
 
-import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+import { track } from '@/analytics/track';
+
+import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 
 const APP_NAME = '책췍';
 
@@ -57,6 +62,9 @@ export const ShareLibraryImageDialog = ({
 
   const handleClickDownload = async () => {
     await download();
+
+    track('library_save_image');
+
     onClose();
   };
 
@@ -74,7 +82,22 @@ export const ShareLibraryImageDialog = ({
             <Showcase>
               <ScrollArea width="100%" height="auto">
                 {imgs.map((img) => {
-                  return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
+                  return (
+                    <ConstrainedImgBox
+                      {...(img.spine && {
+                        img: img.spine,
+                      })}
+                      fallback={
+                        <ImageGradientBackground img={img.cover} width="15px" height="170px">
+                          <ResponsiveText sx={{ mt: 2 }} direction="vertical">
+                            <Text size="x-small">{img.title}</Text>
+                          </ResponsiveText>
+                        </ImageGradientBackground>
+                      }
+                      maxWidth="15px"
+                      height={'170px'}
+                    />
+                  );
                 })}
               </ScrollArea>
             </Showcase>

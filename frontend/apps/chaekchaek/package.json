@@ -34,6 +34,7 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@types/react-gtm-module": "^2.0.4",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",
     "css-minimizer-webpack-plugin": "^8.0.0",
@@ -56,11 +57,14 @@
   "dependencies": {
     "@chaekchaek/design-system": "^1.0.0",
     "@dnd-kit/react": "^0.5.1",
+    "@posthog/react": "^1.11.3",
     "@sentry/react": "^10.71.0",
     "html2canvas": "^1.4.1",
+    "posthog-js": "^1.447.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-ga4": "^3.0.1",
+    "react-gtm-module": "^2.0.11",
     "react-router": "^8.3.0",
     "react-router-dom": "^7.18.2"
   },

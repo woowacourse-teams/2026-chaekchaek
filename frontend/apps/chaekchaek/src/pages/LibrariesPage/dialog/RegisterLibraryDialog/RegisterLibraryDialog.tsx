@@ -5,6 +5,8 @@ import { useFormValues } from '@/hooks/useFormValues';
 import { postLibraries } from '@/services/apis/libraries/repository';
 import { useExecute } from '@/services/core/useExecute';
 
+import { track } from '@/analytics/track';
+
 import { validateLibrary, type LibraryFormValues } from './validator';
 
 import type { RegisterLibraryDialogProps } from './RegisterLibraryDialog.types';
@@ -26,6 +28,8 @@ export const RegisterLibraryDialog = ({
     await postLibrariesMutate({
       name: values.name,
     });
+
+    track('library_register');
 
     await onLibraryRegistered();
     onClose();

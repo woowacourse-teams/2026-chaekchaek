@@ -15,6 +15,7 @@ export const ConstrainedImgBox = <T extends ElementType>(props: Props<T>) => {
     className,
     style,
     img,
+    fallback,
     width,
     height,
     maxWidth,
@@ -35,7 +36,8 @@ export const ConstrainedImgBox = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps} style={customStyle}>
-      <img src={img} alt="" style={{ width, height, maxWidth, maxHeight }} />
+      {img && <img src={img} alt="" style={{ width, height, maxWidth, maxHeight }} />}
+      {!img && <div className={styles.fallback}>{fallback}</div>}
     </View>
   );
 };

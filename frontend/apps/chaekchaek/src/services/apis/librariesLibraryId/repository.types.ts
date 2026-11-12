@@ -11,7 +11,7 @@ export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Pro
   items: {
     coverImageUrl: string;
     isbn13: string;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     title: string;
     authors: string[];
     bookId: number;

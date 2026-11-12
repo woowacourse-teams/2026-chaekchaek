@@ -13,7 +13,7 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
   items: {
     coverImageUrl: string;
     isbn13: string;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     title: string;
     authors: string[];
     bookId: number;

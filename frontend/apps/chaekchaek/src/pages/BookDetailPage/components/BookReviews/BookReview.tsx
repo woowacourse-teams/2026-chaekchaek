@@ -104,6 +104,16 @@ export const BookReview = ({
         : undefined,
     );
 
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_delete', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
+
     onReviewsRefresh();
   };
 
@@ -119,6 +129,21 @@ export const BookReview = ({
       await postReviewReactionMutate({ reviewId: review.reviewId });
     } else {
       await deleteReviewReactionMutate({ reviewId: review.reviewId });
+    }
+
+    if (user) {
+      track('review_like', {
+        value: !review.likedByMe,
+        actor_type: user.actorType,
+        actor_id: user.actorId,
+      });
+    }
+    if (guest) {
+      track('review_like', {
+        value: !review.likedByMe,
+        actor_type: guest.actorType,
+        actor_id: guest.actorId,
+      });
     }
 
     await onReviewsRefresh();
@@ -161,6 +186,16 @@ export const BookReview = ({
   const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_update_open', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
   };
   const handleCloseDialog = () => {
     setDialog(null);
@@ -171,6 +206,7 @@ export const BookReview = ({
       case 'UpdateReviewDialog':
         return (
           <UpdateReviewDialog
+            isbn={isbn}
             bookId={bookId}
             myRating={myRating}
             review={review}

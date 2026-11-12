@@ -4,6 +4,9 @@ import { patchLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repo
 import { useExecute } from '@/services/core/useExecute';
 
 import { useFormValues } from '@/hooks/useFormValues';
+
+import { track } from '@/analytics/track';
+
 import { validateLibrary } from './validator';
 import type { LibraryFormValues } from './validator';
 
@@ -29,6 +32,8 @@ export const RenameLibraryDialog = ({
       libraryId,
       name: values.name,
     });
+
+    track('library_rename');
 
     await onLibraryRenamed();
 

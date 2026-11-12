@@ -7,10 +7,12 @@ import {
   ConstrainedImgBox,
   Icon,
   IconButton,
+  ImageGradientBackground,
   ImgBox,
   List,
   Notice,
   Pagination,
+  ResponsiveText,
   Select,
   Split,
   Title,
@@ -266,9 +268,22 @@ export const LibraryPage = () => {
                       to={`/books/${item.isbn13}`}
                       className={styles.book}
                       key={item.bookId}
-                      img={item.spineImageUrl ?? item.coverImageUrl}
+                      {...(!!item.spineImageUrl && {
+                        img: item.spineImageUrl,
+                      })}
                       maxWidth="80px"
                       height={`${booksHeight[index]}px`}
+                      fallback={
+                        <ImageGradientBackground
+                          img={item.coverImageUrl}
+                          width="80px"
+                          height={`${booksHeight[index]}px`}
+                        >
+                          <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                            {item.title}
+                          </ResponsiveText>
+                        </ImageGradientBackground>
+                      }
                     />
                   );
                 })}
