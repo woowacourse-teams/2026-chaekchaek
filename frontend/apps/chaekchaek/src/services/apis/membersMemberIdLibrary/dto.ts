@@ -20,7 +20,7 @@ export type GetMembersMemberIdLibraryResponseDto = ResponseDto<{
   totalCount: number;
   items: {
     coverImageUrl: string;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     backImageUrl: string;
     rating: number;
     title: string;

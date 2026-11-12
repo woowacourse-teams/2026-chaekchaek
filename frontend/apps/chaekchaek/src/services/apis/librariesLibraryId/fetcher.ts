@@ -5,7 +5,7 @@ import type { GetLibrariesLibraryIdRequestDto, GetLibrariesLibraryIdResponseDto 
 export const getLibrariesLibraryId = async ({
   pathParams: [{ value: libraryId }],
 }: GetLibrariesLibraryIdRequestDto): Promise<GetLibrariesLibraryIdResponseDto> => {
-  const response = await instance('/api/v1/libraries', {
+  const response = await instance('/api/v2/libraries', {
     method: 'get',
     pathParams: [{ name: 'libraryId', value: libraryId }],
   });

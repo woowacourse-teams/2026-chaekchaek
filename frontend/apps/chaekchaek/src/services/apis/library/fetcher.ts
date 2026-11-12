@@ -5,7 +5,7 @@ import type { GetLibraryRequestDto, GetLibraryResponseDto } from './dto';
 export const getLibrary = async ({
   query: { page, status, sort },
 }: GetLibraryRequestDto): Promise<GetLibraryResponseDto> => {
-  const response = await instance('/api/v1/library', {
+  const response = await instance('/api/v2/library', {
     method: 'get',
     query: { page, status, sort },
   });

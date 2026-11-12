@@ -9,7 +9,7 @@ export const getMembersMemberIdLibrary = async ({
   pathParams: [{ value: memberId }],
   query: { page, status, sort },
 }: GetMembersMemberIdLibraryRequestDto): Promise<GetMembersMemberIdLibraryResponseDto> => {
-  const response = await instance(`/api/v1/members/${memberId}/library`, {
+  const response = await instance(`/api/v2/members/${memberId}/library`, {
     method: 'get',
     // pathParams: [{ name: 'memberId', value: memberId }],
     query: { page, status, sort },
