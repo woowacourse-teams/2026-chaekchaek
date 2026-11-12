@@ -86,7 +86,7 @@ class LibraryQueryAuthorizationIntegrationTest {
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/v1/libraries/1").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788925568683\",\"status\":\"READING\"}"))
+                        .content("{\"isbn13\":\"9788925568683\"}"))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(delete("/api/v1/libraries/1/books/42").with(csrf()))
                 .andExpect(status().isUnauthorized());

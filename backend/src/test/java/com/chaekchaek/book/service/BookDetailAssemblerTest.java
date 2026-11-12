@@ -12,7 +12,6 @@ import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
@@ -63,8 +62,6 @@ class BookDetailAssemblerTest {
         when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(12L);
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(libraryItem));
         when(libraryBookRepository.countByMemberIdAndBookId(10L, 1L)).thenReturn(2L);
-        when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
-        when(libraryItem.getCurrentPage()).thenReturn(120);
         when(libraryItem.getRating()).thenReturn(new BigDecimal("4.2"));
         when(book.getQuestion()).thenReturn("화성에 홀로 남는다면 무엇부터 하시겠어요?");
         when(book.getPlot()).thenReturn("줄거리");
@@ -85,8 +82,7 @@ class BookDetailAssemblerTest {
         assertThat(response.ratingCount()).isEqualTo(3);
         assertThat(response.isRegisteredInMyLibrary()).isTrue();
         assertThat(response.myRatingCount()).isEqualTo(12);
-        assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
-                .containsExactly("READING", 120, new BigDecimal("4.2"));
+        assertThat(response.myRecord().myRating()).isEqualByComparingTo("4.2");
     }
 
     @Test
@@ -126,8 +122,8 @@ class BookDetailAssemblerTest {
     }
 
     @Test
-    @DisplayName("독서 기록만 초기화된 항목은 도서 상세의 내 기록에서 제외한다")
-    void should_ReturnNullMyRecord_When_ReadingStateAndRatingAreMissing() {
+    @DisplayName("평점이 없는 항목은 도서 상세의 내 기록에서 제외한다")
+    void should_ReturnNullMyRecord_When_RatingIsMissing() {
         // given
         Book book = book();
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
@@ -145,7 +141,6 @@ class BookDetailAssemblerTest {
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(0L);
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
-        when(item.hasReadingState()).thenReturn(false);
 
         // when
         var response = assembler.assemble(book);
@@ -156,8 +151,8 @@ class BookDetailAssemblerTest {
     }
 
     @Test
-    @DisplayName("마지막 배치 삭제 뒤 별점만 남으면 독서 필드는 null로 반환한다")
-    void should_ReturnRatingWithoutReadingState_When_ReadingStateIsCleared() {
+    @DisplayName("서재에서 삭제해도 남은 평점은 도서 상세에 반환한다")
+    void should_ReturnRating_When_LibraryPlacementIsRemoved() {
         // given
         Book book = book();
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
@@ -175,16 +170,13 @@ class BookDetailAssemblerTest {
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(1L);
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
-        when(item.hasReadingState()).thenReturn(false);
-        when(item.getCurrentPage()).thenReturn(null);
         when(item.getRating()).thenReturn(new BigDecimal("4.5"));
 
         // when
         var response = assembler.assemble(book);
 
         // then
-        assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
-                .containsExactly(null, null, new BigDecimal("4.5"));
+        assertThat(response.myRecord().myRating()).isEqualByComparingTo("4.5");
         assertThat(response.isRegisteredInMyLibrary()).isFalse();
     }
 
@@ -355,7 +347,6 @@ class BookDetailAssemblerTest {
         when(book.getPublisher()).thenReturn("알에이치코리아");
         when(book.getCategory()).thenReturn("SF");
         when(book.getPublishedDate()).thenReturn(LocalDate.of(2026, 1, 1));
-        when(book.getTotalPages()).thenReturn(308);
         when(book.getPurchaseUrl()).thenReturn("https://www.yes24.com/product/goods/101375809");
         return book;
     }

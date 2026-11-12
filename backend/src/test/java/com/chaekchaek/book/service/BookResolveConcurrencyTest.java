@@ -58,7 +58,6 @@ class BookResolveConcurrencyTest {
                     ISBN13.value(),
                     "SF",
                     "알에이치코리아",
-                    308,
                     null,
                     null
             );

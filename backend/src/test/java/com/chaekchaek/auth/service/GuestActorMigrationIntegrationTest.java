@@ -65,7 +65,7 @@ class GuestActorMigrationIntegrationTest {
         Actor guestActor = actorRepository.save(
                 Actor.guest("b".repeat(64), "게스트 참새", now.minusDays(1), now.plusDays(89)));
         Review review = reviewRepository.save(
-                Review.create(1L, guestActor.getId(), "게스트 감상", null, null, null, false, true));
+                Review.create(1L, guestActor.getId(), "게스트 감상", null, null, false, true));
         Reply activeReply = replyRepository.save(Reply.create(review.getId(), guestActor.getId(), "정상 답글", true));
         Reply deletedReply = replyRepository.save(Reply.create(review.getId(), guestActor.getId(), "삭제 답글", true));
         deletedReply.deleteBy(guestActor.getId());
@@ -103,9 +103,9 @@ class GuestActorMigrationIntegrationTest {
                 Actor.guest("a".repeat(64), "게스트 참새", now.minusDays(1), now.plusDays(89)));
 
         Review conflictedReview = reviewRepository.save(
-                Review.create(1L, guestActor.getId(), "게스트 감상 1", null, null, null, false, true));
+                Review.create(1L, guestActor.getId(), "게스트 감상 1", null, null, false, true));
         Review uniqueReview = reviewRepository.save(
-                Review.create(2L, guestActor.getId(), "게스트 감상 2", null, null, null, false, true));
+                Review.create(2L, guestActor.getId(), "게스트 감상 2", null, null, false, true));
         Reply reply = replyRepository.save(
                 Reply.create(conflictedReview.getId(), guestActor.getId(), "게스트 답글", true));
 

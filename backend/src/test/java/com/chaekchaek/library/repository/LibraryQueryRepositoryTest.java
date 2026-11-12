@@ -16,7 +16,6 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
 import com.chaekchaek.library.dto.LibraryDetailResponse;
 import com.chaekchaek.library.service.LibraryQueryService;
@@ -83,8 +82,8 @@ class LibraryQueryRepositoryTest {
         Library empty = library(owner, "빈 책장", 2L);
         Book firstBook = book(1);
         Book lastBook = book(2);
-        record(owner, firstBook, ReadingStatus.READING);
-        record(owner, lastBook, ReadingStatus.FINISHED);
+        record(owner, firstBook);
+        record(owner, lastBook);
         placement(first, lastBook, 2L);
         placement(first, firstBook, 1L);
         placement(last, firstBook, 1L);
@@ -120,7 +119,7 @@ class LibraryQueryRepositoryTest {
         List<Long> bookIds = new ArrayList<>();
         for (int index = 1; index <= count; index++) {
             Book book = book(index);
-            record(owner, book, ReadingStatus.READING);
+            record(owner, book);
             placement(library, book, index);
             bookIds.add(book.getId());
         }
@@ -140,16 +139,15 @@ class LibraryQueryRepositoryTest {
     }
 
     @Test
-    @DisplayName("책장 상세는 다른 회원 기록 대신 소유자의 독서 기록을 저장된 배치 순서로 반환한다")
+    @DisplayName("책장 상세는 설정된 배치 순서대로 소유자의 도서를 반환한다")
     void should_ReadOwnerState_When_OtherMemberHasSameBook() {
         // given
         Member owner = member();
         Member other = member();
         Library library = library(owner, "소유자 책장", 1L);
         Book book = book(1);
-        record(other, book, ReadingStatus.FINISHED);
-        LibraryItem ownerRecord = record(owner, book, ReadingStatus.READING);
-        ownerRecord.changeCurrentPage(23, book.getTotalPages(), NOW.plusSeconds(10));
+        record(other, book);
+        record(owner, book);
         placement(library, book, 1L);
         flushAndClear();
         clearInvocations(jdbcTemplate);
@@ -160,10 +158,6 @@ class LibraryQueryRepositoryTest {
         // then
         assertThat(response.memberId()).isEqualTo(owner.getId());
         assertThat(response.items()).singleElement().satisfies(item -> {
-            assertThat(item.status()).isEqualTo(ReadingStatus.READING);
-            assertThat(item.currentPage()).isEqualTo(23);
-            assertThat(item.readingUpdatedAt()).isEqualTo(NOW.plusSeconds(10));
-            assertThat(item.totalPages()).isEqualTo(368);
             assertThat(item.coverImageUrl()).isEqualTo("https://example.com/cover.jpg");
             assertThat(item.authors()).containsExactly("저자");
             assertThat(item.isbn13()).isEqualTo(book.getIsbn13().value());
@@ -224,8 +218,8 @@ class LibraryQueryRepositoryTest {
     }
 
     @Test
-    @DisplayName("공유 기록이 없는 배치를 전체 조회와 상세 조회에서 조용히 누락하지 않는다")
-    void should_FailInvariant_When_PlacedBookHasNoSharedRecord() {
+    @DisplayName("공유 항목이 없는 배치도 전체 조회와 상세 조회에 포함한다")
+    void should_IncludePlacement_When_SharedItemIsMissing() {
         // given
         Member owner = member();
         Library library = library(owner, "배치만 존재", 1L);
@@ -234,26 +228,10 @@ class LibraryQueryRepositoryTest {
         flushAndClear();
 
         // when & then
-        assertThatThrownBy(() -> service.findLibraries(owner.getId())).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> service.findLibrary(library.getId())).isInstanceOf(IllegalStateException.class);
+        assertThat(service.findLibraries(owner.getId()).libraries().getFirst().items()).hasSize(1);
+        assertThat(service.findLibrary(library.getId()).items()).hasSize(1);
     }
 
-    @Test
-    @DisplayName("초기화된 공유 기록에 남은 배치를 전체 조회와 상세 조회에서 거부한다")
-    void should_FailInvariant_When_PlacedBookHasClearedReadingState() {
-        // given
-        Member owner = member();
-        Library library = library(owner, "잘못된 배치", 1L);
-        Book book = book(1);
-        LibraryItem record = record(owner, book, ReadingStatus.READING);
-        placement(library, book, 1L);
-        record.clearReadingState();
-        flushAndClear();
-
-        // when & then
-        assertThatThrownBy(() -> service.findLibraries(owner.getId())).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> service.findLibrary(library.getId())).isInstanceOf(IllegalStateException.class);
-    }
 
     @Test
     @DisplayName("상세 저자는 책장 전체 도서를 한 번에 조회해 저장 순서를 유지하고 없으면 빈 배열로 반환한다")
@@ -263,11 +241,11 @@ class LibraryQueryRepositoryTest {
         Library library = library(owner, "책장", 1L);
         for (int index = 1; index <= 10; index++) {
             Book book = book(index, List.of());
-            record(owner, book, ReadingStatus.READING);
+            record(owner, book);
             placement(library, book, index);
         }
         Book lastBook = book(11, List.of("두 번째 저자", "첫 번째 저자"));
-        record(owner, lastBook, ReadingStatus.READING);
+        record(owner, lastBook);
         placement(library, lastBook, 11L);
         flushAndClear();
         clearInvocations(jdbcTemplate);
@@ -300,8 +278,8 @@ class LibraryQueryRepositoryTest {
         Library second = library(owner, "둘째 책장", 2L);
         Book authorlessBook = book(1, List.of());
         Book authoredBook = book(2, List.of("두 번째 저자", "첫 번째 저자"));
-        record(owner, authorlessBook, ReadingStatus.READING);
-        record(owner, authoredBook, ReadingStatus.READING);
+        record(owner, authorlessBook);
+        record(owner, authoredBook);
         placement(first, authorlessBook, 1L);
         placement(first, authoredBook, 2L);
         placement(second, authoredBook, 1L);
@@ -352,14 +330,13 @@ class LibraryQueryRepositoryTest {
                 "출판사",
                 "분류",
                 null,
-                368,
                 null,
                 null
         ));
     }
 
-    private LibraryItem record(Member owner, Book book, ReadingStatus status) {
-        return records.save(LibraryItem.create(owner.getId(), book.getId(), status, book.getTotalPages(), NOW));
+    private LibraryItem record(Member owner, Book book) {
+        return records.save(LibraryItem.create(owner.getId(), book.getId(), NOW));
     }
 
     private void placement(Library library, Book book, long displayOrder) {

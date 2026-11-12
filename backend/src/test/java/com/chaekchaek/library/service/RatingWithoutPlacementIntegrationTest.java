@@ -15,14 +15,12 @@ import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
-import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -60,9 +58,6 @@ class RatingWithoutPlacementIntegrationTest {
     private MemberRepository members;
 
     @Autowired
-    private ReadingRecordCoordinator readingRecordCoordinator;
-
-    @Autowired
     private PlatformTransactionManager transactionManager;
 
     @MockitoSpyBean
@@ -89,10 +84,10 @@ class RatingWithoutPlacementIntegrationTest {
     }
 
     @Test
-    @DisplayName("닉네임과 기본 책장 없이 별점만 저장하고 독서 필드와 배치를 만들지 않는다")
+    @DisplayName("닉네임과 기본 책장 없이 별점만 저장하고 배치를 만들지 않는다")
     void should_CreateRatingOnlyRecord_When_MemberHasNoNicknameOrLibrary() {
         // given
-        Book book = book(null);
+        Book book = book();
         clearInvocations(libraries);
         clearInvocations(placements);
 
@@ -102,14 +97,10 @@ class RatingWithoutPlacementIntegrationTest {
         // then
         verifyNoInteractions(libraries, placements);
         assertThat(response.rating()).isEqualByComparingTo("4.5");
-        assertThat(response.status()).isNull();
-        assertThat(response.currentPage()).isNull();
-        assertThat(response.readingUpdatedAt()).isNull();
         assertThat(item(book).getRatingUpdatedAt()).isNotNull();
         assertThat(item(book).getAddedAt()).isNotNull();
         assertThat(placements.count()).isZero();
-        assertThat(books.findById(book.getId()).orElseThrow().getTotalPages()).isNull();
-        assertThat(service.getLibrary(owner.getId(), 1, null, LibrarySort.RECENT).items()).isEmpty();
+        assertThat(service.getLibrary(owner.getId(), 1, LibrarySort.RECENT).items()).isEmpty();
     }
 
     @Test
@@ -118,74 +109,27 @@ class RatingWithoutPlacementIntegrationTest {
         // given
         Library main = library(true, 1L);
         for (int index = 1; index <= 30; index++) {
-            Book book = book(100);
-            records.saveAndFlush(LibraryItem.create(owner.getId(), book.getId(), ReadingStatus.READING, 100, ADDED_AT));
+            Book book = book();
+            records.saveAndFlush(LibraryItem.create(owner.getId(), book.getId(), ADDED_AT));
             placements.saveAndFlush(LibraryBook.create(main.getId(), book.getId(), index));
         }
-        Book book = book(null);
+        Book book = book();
 
         // when
         service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
 
         // then
         assertThat(placements.countByLibraryId(main.getId())).isEqualTo(30L);
-        assertThat(item(book).getStatus()).isNull();
-        assertThat(item(book).getCurrentPage()).isNull();
-        assertThat(service.getLibrary(owner.getId(), 1, null, LibrarySort.RECENT).totalCount()).isEqualTo(30L);
+        assertThat(service.getLibrary(owner.getId(), 1, LibrarySort.RECENT).totalCount()).isEqualTo(30L);
     }
 
-    @Test
-    @DisplayName("기존 독서 기록을 가진 도서의 별점 수정은 독서 상태와 페이지 및 시각을 보존한다")
-    void should_PreserveReadingRecord_When_UpdatingRating() {
-        // given
-        Book book = book(100);
-        LibraryItem record = LibraryItem.create(owner.getId(), book.getId(), ReadingStatus.READING, 100, ADDED_AT);
-        record.changeCurrentPage(23, 100, ADDED_AT.plusSeconds(10));
-        records.saveAndFlush(record);
 
-        // when
-        service.rate(owner.getId(), book.getId(), new BigDecimal("3.5"));
-
-        // then
-        LibraryItem actual = item(book);
-        assertThat(actual.getStatus()).isEqualTo(ReadingStatus.READING);
-        assertThat(actual.getCurrentPage()).isEqualTo(23);
-        assertThat(actual.getReadingUpdatedAt()).isEqualTo(ADDED_AT.plusSeconds(10));
-        assertThat(actual.getAddedAt()).isEqualTo(ADDED_AT);
-        assertThat(actual.getRating()).isEqualByComparingTo("3.5");
-        assertThat(placements.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("마지막 배치 삭제로 초기화된 기록에 별점을 저장해도 독서 상태를 복원하지 않는다")
-    void should_KeepClearedState_When_RatingAfterLastPlacementDeletion() {
-        // given
-        Library main = library(true, 1L);
-        Book book = book(100);
-        service.add(owner.getId(), book.getId(), ReadingStatus.READING, null);
-        service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
-        long originalId = item(book).getId();
-        Instant originalAddedAt = item(book).getAddedAt();
-        service.delete(owner.getId(), book.getId());
-
-        // when
-        service.rate(owner.getId(), book.getId(), new BigDecimal("3.5"));
-
-        // then
-        assertThat(item(book).getStatus()).isNull();
-        assertThat(item(book).getCurrentPage()).isNull();
-        assertThat(item(book).getReadingUpdatedAt()).isNull();
-        assertThat(item(book).getId()).isEqualTo(originalId);
-        assertThat(item(book).getAddedAt()).isEqualTo(originalAddedAt);
-        assertThat(item(book).getRating()).isEqualByComparingTo("3.5");
-        assertThat(placements.countByLibraryId(main.getId())).isZero();
-    }
 
     @Test
     @DisplayName("같은 별점을 다시 저장해도 공유행과 평가 수를 늘리지 않는다")
     void should_ReuseSharedRecord_When_RatingSameBookRepeatedly() {
         // given
-        Book book = book(100);
+        Book book = book();
         service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
         long originalId = item(book).getId();
         Instant originalAddedAt = item(book).getAddedAt();
@@ -207,8 +151,8 @@ class RatingWithoutPlacementIntegrationTest {
         // given
         Library main = library(true, 1L);
         Library other = library(false, 2L);
-        Book book = book(100);
-        service.add(owner.getId(), book.getId(), ReadingStatus.READING, null);
+        Book book = book();
+        service.add(owner.getId(), book.getId());
         placements.saveAndFlush(LibraryBook.create(other.getId(), book.getId(), 1L));
         service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
         Member second = members.saveAndFlush(Member.create("다른회원", null, LocalDateTime.now()));
@@ -229,7 +173,7 @@ class RatingWithoutPlacementIntegrationTest {
     @DisplayName("잘못된 별점과 없는 도서 오류는 기존 별점과 공유행을 바꾸지 않는다")
     void should_PreserveData_When_RatingRequestIsInvalid() {
         // given
-        Book book = book(100);
+        Book book = book();
         service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
 
         // when & then
@@ -246,7 +190,7 @@ class RatingWithoutPlacementIntegrationTest {
     @DisplayName("별점 삭제는 별점 전용 공유행과 최초 시각을 보존한다")
     void should_PreserveEmptySharedRecord_When_RemovingOnlyRating() {
         // given
-        Book book = book(100);
+        Book book = book();
         service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
         long originalId = item(book).getId();
         Instant originalAddedAt = item(book).getAddedAt();
@@ -257,34 +201,11 @@ class RatingWithoutPlacementIntegrationTest {
         // then
         assertThat(item(book).getId()).isEqualTo(originalId);
         assertThat(item(book).getAddedAt()).isEqualTo(originalAddedAt);
-        assertThat(item(book).getStatus()).isNull();
         assertThat(item(book).getRating()).isNull();
         assertThat(item(book).getRatingUpdatedAt()).isNull();
         assertThat(placements.count()).isZero();
     }
 
-    @Test
-    @DisplayName("감상 연계는 별점 전용 공유행을 재사용해 독서를 시작하고 별점과 최초 시각을 유지한다")
-    void should_ReuseRatingOnlyRecord_When_RecordingReview() {
-        // given
-        Book book = book(100);
-        service.rate(owner.getId(), book.getId(), new BigDecimal("4.5"));
-        long originalId = item(book).getId();
-        Instant originalAddedAt = item(book).getAddedAt();
-
-        // when
-        new TransactionTemplate(transactionManager).executeWithoutResult(transactionStatus ->
-                readingRecordCoordinator.recordReview(owner.getId(), book.getId(), 23, null));
-
-        // then
-        assertThat(item(book).getId()).isEqualTo(originalId);
-        assertThat(item(book).getAddedAt()).isEqualTo(originalAddedAt);
-        assertThat(item(book).getRating()).isEqualByComparingTo("4.5");
-        assertThat(item(book).getStatus()).isEqualTo(ReadingStatus.READING);
-        assertThat(item(book).getCurrentPage()).isEqualTo(23);
-        assertThat(item(book).getReadingUpdatedAt()).isNotNull();
-        assertThat(placements.count()).isZero();
-    }
 
     @ParameterizedTest
     @EnumSource(value = AccountStatus.class, names = {"WITHDRAWN", "SUSPENDED"})
@@ -292,17 +213,15 @@ class RatingWithoutPlacementIntegrationTest {
     void should_RecheckActiveMemberUnderLock_When_StatusChangesBeforeWrite(AccountStatus accountStatus) {
         // given
         Library main = library(true, 1L);
-        Book book = book(100);
-        records.saveAndFlush(LibraryItem.create(owner.getId(), book.getId(), ReadingStatus.READING, 100, ADDED_AT));
+        Book book = book();
+        records.saveAndFlush(LibraryItem.create(owner.getId(), book.getId(), ADDED_AT));
         placements.saveAndFlush(LibraryBook.create(main.getId(), book.getId(), 1L));
         ReflectionTestUtils.setField(owner, "accountStatus", accountStatus);
         members.saveAndFlush(owner);
         List<Runnable> writes = List.of(
-                () -> service.add(owner.getId(), book.getId(), ReadingStatus.READING, null),
-                () -> service.update(owner.getId(), book.getId(), ReadingStatus.FINISHED, null, null),
+                () -> service.add(owner.getId(), book.getId()),
                 () -> service.delete(owner.getId(), book.getId()),
                 () -> service.bulkDelete(owner.getId(), List.of(book.getId())),
-                () -> service.bulkChangeStatus(owner.getId(), List.of(book.getId()), ReadingStatus.FINISHED),
                 () -> service.rate(owner.getId(), book.getId(), new BigDecimal("4.5")),
                 () -> service.removeRating(owner.getId(), book.getId())
         );
@@ -313,7 +232,6 @@ class RatingWithoutPlacementIntegrationTest {
                     exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         }
         assertThat(placements.countByLibraryId(main.getId())).isEqualTo(1L);
-        assertThat(item(book).getStatus()).isEqualTo(ReadingStatus.READING);
         assertThat(item(book).getRating()).isNull();
     }
 
@@ -324,7 +242,7 @@ class RatingWithoutPlacementIntegrationTest {
         return libraries.saveAndFlush(library);
     }
 
-    private Book book(Integer totalPages) {
+    private Book book() {
         return books.saveAndFlush(Book.create(
                 new Isbn13(String.format("978%010d", ++bookSequence)),
                 "책" + bookSequence,
@@ -337,7 +255,6 @@ class RatingWithoutPlacementIntegrationTest {
                 "출판사",
                 "분류",
                 null,
-                totalPages,
                 null,
                 null
         ));

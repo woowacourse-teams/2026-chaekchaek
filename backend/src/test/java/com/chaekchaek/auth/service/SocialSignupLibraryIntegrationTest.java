@@ -81,7 +81,7 @@ class SocialSignupLibraryIntegrationTest {
         assertThat(library.getDisplayOrder()).isEqualTo(1L);
         assertThat(libraryRepository.findAllByMemberIdOrderByDisplayOrderAscIdAsc(member.getId()))
                 .hasSize(1);
-        assertThat(libraryService.getLibrary(member.getId(), 1, null, LibrarySort.RECENT).items()).isEmpty();
+        assertThat(libraryService.getLibrary(member.getId(), 1, LibrarySort.RECENT).items()).isEmpty();
     }
 
     @ParameterizedTest

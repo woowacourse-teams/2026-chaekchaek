@@ -5,8 +5,6 @@ import com.chaekchaek.common.exception.ErrorCode;
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,12 +17,6 @@ import java.time.Instant;
 @Table(
         name = "library_item",
         check = {
-                @CheckConstraint(
-                        name = "ck_library_item_reading_state",
-                        constraint = "(status is null and current_page is null and reading_updated_at is null) "
-                                + "or (status is not null and current_page is not null "
-                                + "and reading_updated_at is not null)"
-                ),
                 @CheckConstraint(
                         name = "ck_library_item_rating_state",
                         constraint = "(rating is null and rating_updated_at is null) "
@@ -48,19 +40,11 @@ public class LibraryItem {
     @Column(name = "book_id", nullable = false)
     private long bookId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private ReadingStatus status;
-
-    private Integer currentPage;
-
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
 
     @Column(nullable = false, updatable = false)
     private Instant addedAt;
-
-    private Instant readingUpdatedAt;
 
     private Instant ratingUpdatedAt;
 
@@ -73,30 +57,8 @@ public class LibraryItem {
         this.addedAt = now;
     }
 
-    private LibraryItem(
-            long memberId,
-            long bookId,
-            ReadingStatus status,
-            Integer totalPages,
-            Instant now
-    ) {
-        this(memberId, bookId, now);
-        this.status = status;
-        this.currentPage = initialPage(status, totalPages);
-        this.readingUpdatedAt = now;
-    }
-
-    public static LibraryItem create(
-            long memberId,
-            long bookId,
-            ReadingStatus status,
-            Integer totalPages,
-            Instant now
-    ) {
-        if (status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
-            throw invalidReadingState();
-        }
-        return new LibraryItem(memberId, bookId, status, totalPages, now);
+    public static LibraryItem create(long memberId, long bookId, Instant now) {
+        return new LibraryItem(memberId, bookId, now);
     }
 
     public static LibraryItem createForRating(
@@ -108,83 +70,6 @@ public class LibraryItem {
         LibraryItem item = new LibraryItem(memberId, bookId, now);
         item.rate(rating, now);
         return item;
-    }
-
-    public void startReading(ReadingStatus status, Integer totalPages, Instant now) {
-        if (hasReadingState() || status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
-            throw invalidReadingState();
-        }
-        this.status = status;
-        this.currentPage = initialPage(status, totalPages);
-        this.readingUpdatedAt = now;
-    }
-
-    public void clearReadingState() {
-        this.status = null;
-        this.currentPage = null;
-        this.readingUpdatedAt = null;
-    }
-
-    public boolean hasReadingState() {
-        return status != null && currentPage != null && readingUpdatedAt != null;
-    }
-
-    public void changeStatus(ReadingStatus status, Integer totalPages, Instant now) {
-        if (!hasReadingState() || status == null
-                || (status == ReadingStatus.FINISHED && totalPages == null)) {
-            throw invalidReadingState();
-        }
-        int changedPage = status == ReadingStatus.WANT_TO_READ
-                ? 0
-                : status == ReadingStatus.FINISHED ? totalPages : currentPage;
-        boolean changed = this.status != status || this.currentPage != changedPage;
-        this.status = status;
-        this.currentPage = changedPage;
-        updateReadingTimeWhenChanged(changed, now);
-    }
-
-    public void changeCurrentPage(int currentPage, Integer totalPages, Instant now) {
-        if (!hasReadingState()) {
-            throw invalidReadingState();
-        }
-        validatePage(currentPage, totalPages);
-        ReadingStatus changedStatus = resolveStatusForPage(currentPage, totalPages);
-        boolean changed = this.currentPage != currentPage || this.status != changedStatus;
-        this.currentPage = currentPage;
-        this.status = changedStatus;
-        updateReadingTimeWhenChanged(changed, now);
-    }
-
-    private static void validatePage(int currentPage, Integer totalPages) {
-        if (currentPage < 0 || (totalPages != null && currentPage > totalPages)) {
-            throw invalidReadingState();
-        }
-    }
-
-    private static BusinessException invalidReadingState() {
-        return new BusinessException(ErrorCode.INVALID_READING_STATE);
-    }
-
-    private static int initialPage(ReadingStatus status, Integer totalPages) {
-        return status == ReadingStatus.FINISHED ? totalPages : 0;
-    }
-
-    private ReadingStatus resolveStatusForPage(int currentPage, Integer totalPages) {
-        if (currentPage == 0) {
-            return status == ReadingStatus.WANT_TO_READ
-                    ? ReadingStatus.WANT_TO_READ
-                    : ReadingStatus.READING;
-        }
-        if (totalPages != null && currentPage == totalPages) {
-            return ReadingStatus.FINISHED;
-        }
-        return ReadingStatus.READING;
-    }
-
-    private void updateReadingTimeWhenChanged(boolean changed, Instant now) {
-        if (changed) {
-            readingUpdatedAt = now;
-        }
     }
 
     public void rate(BigDecimal rating, Instant now) {
@@ -208,10 +93,7 @@ public class LibraryItem {
     public Long getId() { return id; }
     public long getMemberId() { return memberId; }
     public long getBookId() { return bookId; }
-    public ReadingStatus getStatus() { return status; }
-    public Integer getCurrentPage() { return currentPage; }
     public BigDecimal getRating() { return rating; }
     public Instant getAddedAt() { return addedAt; }
-    public Instant getReadingUpdatedAt() { return readingUpdatedAt; }
     public Instant getRatingUpdatedAt() { return ratingUpdatedAt; }
 }

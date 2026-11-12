@@ -13,10 +13,6 @@ public class ReviewUpdateRequest {
     private String quote;
     private boolean chapterPresent;
     private String chapter;
-    private boolean currentPagePresent;
-    private Integer currentPage;
-    private boolean totalPagesPresent;
-    private Integer totalPages;
     private boolean spoilerPresent;
     private Boolean isSpoiler;
 
@@ -29,16 +25,10 @@ public class ReviewUpdateRequest {
     @JsonSetter("chapter")
     public void setChapter(String chapter) { this.chapterPresent = true; this.chapter = chapter; }
 
-    @JsonSetter("currentPage")
-    public void setCurrentPage(Integer currentPage) { this.currentPagePresent = true; this.currentPage = currentPage; }
-
-    @JsonSetter("totalPages")
-    public void setTotalPages(Integer totalPages) { this.totalPagesPresent = true; this.totalPages = totalPages; }
-
     @JsonSetter("isSpoiler")
     public void setSpoiler(Boolean spoiler) { this.spoilerPresent = true; this.isSpoiler = spoiler; }
 
     public boolean hasUpdate() {
-        return contentPresent || quotePresent || chapterPresent || currentPagePresent || spoilerPresent;
+        return contentPresent || quotePresent || chapterPresent || spoilerPresent;
     }
 }

@@ -19,7 +19,6 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -148,7 +147,6 @@ class AccessTokenAuthenticationIntegrationTest {
                 "출판사",
                 "분류",
                 null,
-                368,
                 null,
                 null
         ));
@@ -158,12 +156,10 @@ class AccessTokenAuthenticationIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"isbn13":"9788936433598","status":"READING","totalPages":368}
+                                {"isbn13":"9788936433598"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.bookId").value(book.getId()))
-                .andExpect(jsonPath("$.status").value("READING"))
-                .andExpect(jsonPath("$.currentPage").value(0))
                 .andExpect(header().exists(HttpHeaders.LOCATION));
 
         assertThat(libraryBookRepository.findAll())
@@ -172,7 +168,7 @@ class AccessTokenAuthenticationIntegrationTest {
                 .satisfies(placement -> assertThat(placement.getBookId()).isEqualTo(book.getId()));
         assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
                 .get()
-                .satisfies(item -> assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING));
+                .satisfies(item -> assertThat(item.getBookId()).isEqualTo(book.getId()));
     }
 
     @Test
@@ -205,8 +201,8 @@ class AccessTokenAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("마지막 배치 삭제는 독서 상태를 초기화하고 별점을 유지하며 멱등하게 처리한다")
-    void should_ClearReadingStateAndPreserveRating_When_LastPlacementIsDeleted() throws Exception {
+    @DisplayName("마지막 배치 삭제 뒤에도 별점을 유지하며 멱등하게 처리한다")
+    void should_PreserveRating_When_LastPlacementIsDeleted() throws Exception {
         // given
         String token = issueAccessToken(memberId.toString());
         Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
@@ -225,11 +221,10 @@ class AccessTokenAuthenticationIntegrationTest {
                 "출판사",
                 "분류",
                 null,
-                368,
                 null,
                 null
         ));
-        LibraryItem item = LibraryItem.create(memberId, book.getId(), ReadingStatus.READING, 368, Instant.now());
+        LibraryItem item = LibraryItem.create(memberId, book.getId(), Instant.now());
         item.rate(new BigDecimal("4.5"), Instant.now());
         Instant addedAt = item.getAddedAt();
         Instant ratingUpdatedAt = item.getRatingUpdatedAt();
@@ -244,7 +239,6 @@ class AccessTokenAuthenticationIntegrationTest {
 
         assertThat(libraryBookRepository.findByLibraryIdAndBookId(library.getId(), book.getId())).isEmpty();
         LibraryItem savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
-        assertThat(savedItem.getStatus()).isEqualTo(ReadingStatus.READING);
         assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
 
         // and then
@@ -254,9 +248,6 @@ class AccessTokenAuthenticationIntegrationTest {
 
         assertThat(libraryBookRepository.findByLibraryIdAndBookId(anotherLibrary.getId(), book.getId())).isEmpty();
         savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
-        assertThat(savedItem.getStatus()).isNull();
-        assertThat(savedItem.getCurrentPage()).isNull();
-        assertThat(savedItem.getReadingUpdatedAt()).isNull();
         assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
         assertThat(savedItem.getAddedAt()).isEqualTo(addedAt);
         assertThat(savedItem.getRatingUpdatedAt()).isEqualTo(ratingUpdatedAt);
@@ -280,7 +271,7 @@ class AccessTokenAuthenticationIntegrationTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"isbn13":"9788936433598","status":"READING"}
+                                {"isbn13":"9788936433598"}
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));

@@ -14,7 +14,6 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -77,18 +76,16 @@ class BookSearchPlacementIntegrationTest {
                 "출판사",
                 "소설",
                 null,
-                300,
                 null,
                 null
         ));
-        LibraryItem ratingOnly = LibraryItem.create(1L, book.getId(), ReadingStatus.READING, 300, now);
-        ratingOnly.clearReadingState();
+        LibraryItem ratingOnly = LibraryItem.create(1L, book.getId(), now);
         ratingOnly.rate(new BigDecimal("4.5"), now);
         libraryItemRepository.saveAndFlush(ratingOnly);
         Library mine = libraryRepository.create(Library.create(1L, "Mine", now));
         Library another = libraryRepository.create(Library.create(1L, "Another", now));
         Library foreign = libraryRepository.create(Library.create(2L, "Foreign", now));
-        libraryItemRepository.saveAndFlush(LibraryItem.create(2L, book.getId(), ReadingStatus.READING, 300, now));
+        libraryItemRepository.saveAndFlush(LibraryItem.create(2L, book.getId(), now));
         libraryBookRepository.create(LibraryBook.create(foreign.getId(), book.getId(), 1L));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(searchActivityCountReader.getActivityCounts(anyCollection())).thenReturn(Map.of());
@@ -109,7 +106,6 @@ class BookSearchPlacementIntegrationTest {
 
         // when & then
         assertThat(isRegistered()).isFalse();
-        ratingOnly.startReading(ReadingStatus.READING, 300, now);
         LibraryBook first = libraryBookRepository.create(LibraryBook.create(mine.getId(), book.getId(), 1L));
         LibraryBook second = libraryBookRepository.create(LibraryBook.create(another.getId(), book.getId(), 1L));
         assertThat(isRegistered()).isTrue();

@@ -13,7 +13,6 @@ import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.member.domain.Member;
@@ -93,27 +92,19 @@ class BookDetailV2IntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-    @DisplayName("독서 기록과 별점 조합에 따라 v1은 유지하고 v2는 내 별점만 반환한다")
-    void should_PreserveLegacyAndReturnRatingOnly_When_ReadingAndRatingVary(boolean reading, boolean rating)
+    @CsvSource({"false", "true"})
+    @DisplayName("별점 유무에 따라 두 버전에서 내 별점만 반환한다")
+    void should_ReturnRatingOnly_When_RatingVaries(boolean rating)
             throws Exception {
         // given
         Book book = book();
         Member member = members.saveAndFlush(Member.create("회원", null, REGISTERED_AT));
-        if (reading || rating) {
+        if (rating) {
             LibraryItem record = LibraryItem.create(
                     member.getId(),
                     book.getId(),
-                    ReadingStatus.READING,
-                    240,
                     NOW
             );
-            if (reading) {
-                record.changeCurrentPage(120, 240, NOW);
-            }
-            if (!reading) {
-                record.clearReadingState();
-            }
             if (rating) {
                 record.rate(new BigDecimal("4.5"), NOW);
             }
@@ -134,12 +125,9 @@ class BookDetailV2IntegrationTest {
         } else {
             assertThat(current.get("myRecord").isNull()).isTrue();
         }
-        if (reading || rating) {
-            assertThat(legacy.get("myRecord").size()).isEqualTo(3);
-            assertThat(legacy.at("/myRecord/status").isNull()).isEqualTo(!reading);
-            if (reading) {
-                assertThat(legacy.at("/myRecord/currentPage").asInt()).isEqualTo(120);
-            }
+        if (rating) {
+            assertThat(legacy.get("myRecord").size()).isEqualTo(1);
+            assertThat(legacy.at("/myRecord/myRating").decimalValue()).isEqualByComparingTo("4.5");
         } else {
             assertThat(legacy.get("myRecord").isNull()).isTrue();
         }
@@ -149,12 +137,12 @@ class BookDetailV2IntegrationTest {
     }
 
     @Test
-    @DisplayName("별점을 삭제하면 독서 기록은 v1에 남고 v2의 myRecord는 null이 된다")
+    @DisplayName("별점을 삭제하면 두 버전의 myRecord가 null이 된다")
     void should_ReturnNullRecord_When_RatingIsRemoved() throws Exception {
         // given
         Book book = book();
         Member member = members.saveAndFlush(Member.create("회원", null, REGISTERED_AT));
-        LibraryItem record = LibraryItem.create(member.getId(), book.getId(), ReadingStatus.READING, 240, NOW);
+        LibraryItem record = LibraryItem.create(member.getId(), book.getId(), NOW);
         record.rate(new BigDecimal("4.5"), NOW);
         record.removeRating();
         records.saveAndFlush(record);
@@ -162,7 +150,7 @@ class BookDetailV2IntegrationTest {
 
         // when & then
         assertThat(response(authenticated(V2, token)).get("myRecord").isNull()).isTrue();
-        assertThat(response(authenticated(V1, token)).at("/myRecord/status").asText()).isEqualTo("READING");
+        assertThat(response(authenticated(V1, token)).get("myRecord").isNull()).isTrue();
     }
 
     @Test
@@ -289,7 +277,6 @@ class BookDetailV2IntegrationTest {
                 "민음사",
                 "소설",
                 LocalDate.of(2020, 1, 1),
-                240,
                 "https://www.yes24.com/product/goods/1",
                 "yes24"
         ));
