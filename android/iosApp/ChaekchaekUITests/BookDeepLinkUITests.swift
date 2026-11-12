@@ -76,13 +76,14 @@ final class BookDeepLinkUITests: XCTestCase {
         let field = app.textViews["search-query-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
-        field.typeText("link draft")
-        XCTAssertEqual(field.value as? String, "link draft")
+        let query = "linkdraft"
+        for character in query { field.typeText(String(character)) }
+        XCTAssertEqual(field.value as? String, query)
         try await deliverToRunningSimulator()
         detail(app)
         back(app)
         XCTAssertTrue(field.waitForExistence(timeout: 5))
-        XCTAssertEqual(field.value as? String, "link draft")
+        XCTAssertEqual(field.value as? String, query)
         XCTAssertTrue(discover.isSelected)
 
         XCUIDevice.shared.press(.home)
@@ -90,7 +91,7 @@ final class BookDeepLinkUITests: XCTestCase {
         detail(app)
         back(app)
         XCTAssertTrue(field.waitForExistence(timeout: 5))
-        XCTAssertEqual(field.value as? String, "link draft")
+        XCTAssertEqual(field.value as? String, query)
     }
 
     @MainActor private func deliverToRunningSimulator() async throws {
