@@ -4,6 +4,10 @@
   --radio-unchecked-size: 14px;
   --radio-checked-size: 12px;
   --radio-checked-color: var(--chaek-color-text-primary);
+  --radio-unchecked-border: 1px solid var(--chaek-color-text-secondary);
+  --radio-unchecked-background: transparent;
+  --radio-unchecked-mask: none;
+  --radio-checked-mask: none;
 
   display: inline-flex;
   align-items: center;
@@ -17,8 +21,13 @@
 }
 
 .size-large {
-  --radio-unchecked-size: 22px;
-  --radio-checked-size: 22px;
+  /* The 24px Figma assets include 1px of padding around the 22px circle. */
+  --radio-unchecked-size: 24px;
+  --radio-checked-size: 24px;
+  --radio-unchecked-border: 0;
+  --radio-unchecked-background: var(--chaek-color-border-strong);
+  --radio-unchecked-mask: url('./imgs/radio-unchecked.svg');
+  --radio-checked-mask: url('./imgs/radio-checked.svg');
 }
 
 .is-boxed {
@@ -74,16 +83,21 @@
   box-sizing: border-box;
   width: var(--radio-unchecked-size);
   height: var(--radio-unchecked-size);
-  border: 1px solid var(--chaek-color-text-secondary);
+  flex-shrink: 0;
+  border: var(--radio-unchecked-border);
   border-radius: 50%;
+  background-color: var(--radio-unchecked-background);
+  mask: var(--radio-unchecked-mask) center / contain no-repeat;
   content: '';
 }
 
 .input:checked + .indicator::before {
   width: var(--radio-checked-size);
   height: var(--radio-checked-size);
+  flex-shrink: 0;
   border-radius: 50%;
   background-color: var(--radio-checked-color);
+  mask: var(--radio-checked-mask) center / contain no-repeat;
   content: '';
 }
 

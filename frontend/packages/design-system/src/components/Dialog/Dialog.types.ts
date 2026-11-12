@@ -9,6 +9,7 @@ type OnClose = () => void;
 export type OwnProps = {
   size?: 'medium' | 'large';
   onClose: OnClose;
+  dismissible?: boolean | undefined;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

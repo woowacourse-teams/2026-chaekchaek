@@ -21,6 +21,9 @@ export type { Props as ImgBoxProps } from './components/ImgBox';
 export { ConstrainedImgBox } from './components/ConstrainedImgBox';
 export type { Props as ConstrainedImgBoxProps } from './components/ConstrainedImgBox';
 
+export { ImageGradientBackground } from './components/ImageGradientBackground';
+export type { Props as ImageGradientBackgroundProps } from './components/ImageGradientBackground';
+
 export { Media } from './components/Media';
 export type { Props as MediaProps } from './components/Media';
 
@@ -137,6 +140,9 @@ export type { Props as FloatingButtonProps } from './components/FloatingButton';
 
 export { Text } from './components/Text';
 export type { Props as TextProps } from './components/Text';
+
+export { ResponsiveText } from './components/ResponsiveText';
+export type { Props as ResponsiveTextProps } from './components/ResponsiveText';
 
 export { Choice } from './components/Choice';
 export type { Props as ChoiceProps } from './components/Choice';

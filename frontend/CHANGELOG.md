@@ -97,3 +97,23 @@
 - 피드 무한 스크롤 시 불필요한 컴포넌트 리렌더링 및 스크롤 이벤트 계산 최적화 [#571](https://github.com/woowacourse-teams/2026-chaekchaek/pull/571)
 - 책 검색 결과 변경 시 스크린 리더에 검색 결과 유무를 안내하도록 접근성 개선 [#654](https://github.com/woowacourse-teams/2026-chaekchaek/pull/654)
 - CSR 환경에서 검색 엔진 최적화(SEO) 개선: HTML 기본 언어를 ko로 변경, robots.txt 추가, sitemap.xml 추가 <!-- PR 확인 필요 -->
+
+## 1.4.0
+
+### Added
+- 서재 페이지에 책장 이름 변경, 책 삭제, 이미지 저장, 책장 삭제, 책장 순서 변경, 책 순서 변경 기능 추가 [#660](https://github.com/woowacourse-teams/2026-chaekchaek/pull/660), [#662](https://github.com/woowacourse-teams/2026-chaekchaek/pull/662)
+- 책장 페이지에 책장 이름 변경, 책 삭제, 이미지 저장, 책장 삭제, 책장 순서 변경, 책 순서 변경 기능 추가 [#660](https://github.com/woowacourse-teams/2026-chaekchaek/pull/660), [#662](https://github.com/woowacourse-teams/
+- 피드, 책 상세, 검색 페이지에 상단 이동 기능 추가 [#685](https://github.com/woowacourse-teams/2026-chaekchaek/pull/685)
+- PMF 설문 기능 추가 [#694](https://github.com/woowacourse-teams/2026-chaekchaek/pull/694)
+
+### Changed
+- 감상과 답글의 soft delete 관련 프론트엔드 코드 제거 [#553](https://github.com/woowacourse-teams/2026-chaekchaek/pull/553)
+- 검색 페이지에서 책 검색은 Enter 키를 누르거나 검색 버튼을 클릭할 때 실행되도록 변경 [#664](https://github.com/woowacourse-teams/2026-chaekchaek/pull/664), [#667](https://github.com/woowacourse-teams/2026-chaekchaek/pull/667)
+- 용어 정리: ex) 이 순간 감상 남기기를 감상 남기기로 변경, 책 찾기를 검색으로 변경 [#685](https://github.com/woowacourse-teams/2026-chaekchaek/pull/685), [#685](https://github.com/woowacourse-teams/2026-chaekchaek/pull/685)
+- 책 담기 화면에 책장에 담긴 권수와 최대 권수를 서버로부터 받아서 표시 [#685](https://github.com/woowacourse-teams/2026-chaekchaek/pull/685)
+
+### Fixed
+- 로고 화질 개선 [#685](https://github.com/woowacourse-teams/2026-chaekchaek/pull/685)
+
+### Improved
+- S3와 CloudFront로 배포 방식을 전환하면서 CI 빌드에서 Lefthook 설치를 건너뛰도록 변경 [#673](https://github.com/woowacourse-teams/2026-chaekchaek/pull/673)

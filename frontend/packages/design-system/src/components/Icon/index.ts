@@ -21,6 +21,7 @@ export {
   InvisibleIcon,
   LongArrowRightIcon,
   LongArrowUpIcon,
+  LongArrowUpRightIcon,
   PencilIcon,
   RefreshIcon,
   ShareIcon,

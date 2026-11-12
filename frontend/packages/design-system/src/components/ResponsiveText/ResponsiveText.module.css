@@ -1,0 +1,20 @@
+.root {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.direction-horizontal {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+.direction-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center; 
+}

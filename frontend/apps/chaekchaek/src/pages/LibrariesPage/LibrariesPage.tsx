@@ -12,11 +12,14 @@ type DragEndEvent = Parameters<
 import styles from './LibrariesPage.module.css';
 
 import {
+  Button,
   ConstrainedImgBox,
   ContentArea,
   Icon,
   IconButton,
+  ImageGradientBackground,
   Partition,
+  ResponsiveText,
   Showcase,
   Text,
   Title,
@@ -33,6 +36,7 @@ import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { patchLibrariesOrder } from '@/services/apis/librariesOrder/repository';
 import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 import { useExecute } from '@/services/core/useExecute';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
@@ -43,6 +47,7 @@ import { ROUTES } from '@/constants/routes';
 import { track } from '@/analytics/track';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 import { RenameLibraryDialog } from '@/shared/RenameLibrary';
 import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
@@ -52,7 +57,10 @@ const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
 };
 
 type LibrariesPageDialogType =
-  ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
+  | ManageLibraryDialogType
+  | 'RegisterLibraryDialog'
+  | 'ManageLibraryDialog'
+  | 'UpdateNicknameDialog';
 
 import { Sortable } from './components/Sortable/Sortable';
 
@@ -69,7 +77,7 @@ const move = <T,>(array: T[], from: number, to: number): T[] => {
 };
 
 export const LibrariesPage = () => {
-  const { user } = useAuthContext();
+  const { user, updateAccount } = useAuthContext();
   const getLibrariesLoadData = useCallback(async () => {
     if (!user?.memberId) return;
     return await getLibraries({ memberId: user?.memberId });
@@ -226,7 +234,11 @@ export const LibrariesPage = () => {
           library && (
             <ShareLibraryImageDialog
               libraryName={selectedLibrary.libraryName}
-              imgs={library.items.map((item) => ({ title: item.title, url: item.spineImageUrl }))}
+              imgs={library.items.map((item) => ({
+                title: item.title,
+                spine: item.spineImageUrl,
+                cover: item.coverImageUrl,
+              }))}
               onClose={handleCloseDialog}
             />
           )
@@ -257,12 +269,45 @@ export const LibrariesPage = () => {
             />
           )
         );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
+
       default:
         return null;
     }
   };
 
   const dialogElement = renderDialog(dialog);
+
+  const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
+    executeFn: patchMembersMeAnonymity,
+  });
+
+  const handleToggleAnonymous = async () => {
+    if (!user) return;
+
+    if (user.displayAnonymous) {
+      if (!user.nickname) return handleOpenDialog('UpdateNicknameDialog');
+
+      const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+      if (!userWithAnonymityDisabled) return;
+
+      updateAccount({
+        ...user,
+        ...userWithAnonymityDisabled,
+      });
+
+      return;
+    }
+
+    const updatedUser = await updateAnonymity({ displayAnonymous: true });
+    if (!updatedUser) return;
+
+    updateAccount({
+      ...user,
+      ...updatedUser,
+    });
+  };
 
   return (
     <Layout>
@@ -274,14 +319,42 @@ export const LibrariesPage = () => {
               level="main"
               description="책장과 책을 드래그해 순서를 바꿀 수 있어요."
               trailing={
-                <IconButton
-                  variant="secondary"
-                  aria-label="책장 추가"
-                  onClick={handleClickRegisterLibrary}
-                >
-                  <Icon.PlusIcon />
-                </IconButton>
-              }
+
+                <>
+                  {user !== null && (
+                    <>
+                      {user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOnIcon color="secondary" />}
+                          variant="ghost"
+                          size="small"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명으로 감상 공개
+                        </Button>
+                      )}
+                      {!user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOffIcon color="secondary" />}
+                          variant="ghost"
+                          size="small"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명으로 감상 공개
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  <IconButton
+                    variant="secondary"
+                    aria-label="책장 추가"
+                    onClick={handleClickRegisterLibrary}
+                  >
+                    <Icon.PlusIcon />
+                  </IconButton>
+                </>
             >
               내 책장
             </Title>
@@ -355,7 +428,24 @@ export const LibrariesPage = () => {
                             {library.items.map((item, index) => {
                               return (
                                 <Sortable key={item.bookId} id={item.bookId} index={index}>
-                                  <ConstrainedImgBox img={item.spineImageUrl} height="170px" />
+                                  <ConstrainedImgBox
+                                    {...(!!item.spineImageUrl && {
+                                      img: item.spineImageUrl,
+                                    })}
+                                    maxWidth="20px"
+                                    height="170px"
+                                    fallback={
+                                      <ImageGradientBackground
+                                        img={item.coverImageUrl}
+                                        width="20px"
+                                        height="170px"
+                                      >
+                                        <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                                          <Text size="x-small">{item.title}</Text>
+                                        </ResponsiveText>
+                                      </ImageGradientBackground>
+                                    }
+                                  />
                                 </Sortable>
                               );
                             })}

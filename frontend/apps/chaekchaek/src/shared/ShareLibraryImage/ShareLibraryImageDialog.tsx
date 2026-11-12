@@ -7,8 +7,11 @@ import {
   ConstrainedImgBox,
   Dialog,
   DisplayCard,
+  ImageGradientBackground,
+  ResponsiveText,
   ScrollArea,
   Showcase,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
@@ -79,7 +82,22 @@ export const ShareLibraryImageDialog = ({
             <Showcase>
               <ScrollArea width="100%" height="auto">
                 {imgs.map((img) => {
-                  return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
+                  return (
+                    <ConstrainedImgBox
+                      {...(img.spine && {
+                        img: img.spine,
+                      })}
+                      fallback={
+                        <ImageGradientBackground img={img.cover} width="15px" height="170px">
+                          <ResponsiveText sx={{ mt: 2 }} direction="vertical">
+                            <Text size="x-small">{img.title}</Text>
+                          </ResponsiveText>
+                        </ImageGradientBackground>
+                      }
+                      maxWidth="15px"
+                      height={'170px'}
+                    />
+                  );
                 })}
               </ScrollArea>
             </Showcase>

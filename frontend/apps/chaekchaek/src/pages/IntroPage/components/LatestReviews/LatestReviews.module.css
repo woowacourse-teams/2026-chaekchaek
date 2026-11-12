@@ -1,11 +1,8 @@
 .scene-latest-reviews {
-  display: inline-block;
-  width: 464px;
-  max-height: calc(100vh - 80px);
-  overflow-y: auto;
   color: var(--chaek-color-text-primary);
   background: var(--chaek-color-surface-canvas);
-  border-left: 1px solid var(--chaek-color-border-divider);
+  flex: 1;
+  overflow-y: auto;
 }
 
 .latest-reviews-title {

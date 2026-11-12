@@ -1,4 +1,4 @@
-type Img = { title: string; url: string };
+type Img = { title: string; spine: string | null; cover: string };
 
 export type ShareLibraryImageDialogProps = {
   libraryName: string;

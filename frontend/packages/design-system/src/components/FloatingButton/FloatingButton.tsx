@@ -10,11 +10,16 @@ import type { Props } from './';
 const classnameDefault = 'ui-FloatingButton';
 
 export const FloatingButton = <T extends ElementType = 'button'>(props: Props<T>) => {
-  const { as = 'button', children, className, ...restProps } = props;
+  const { as = 'button', children, className, variant = 'default', ...restProps } = props;
+
+  const modifiers = {
+    variant: variant && styles[`variant-${variant}`],
+  };
 
   const classname = createClassName({
     styles,
     baseName: classnameDefault,
+    modifiers,
     className,
   });
 

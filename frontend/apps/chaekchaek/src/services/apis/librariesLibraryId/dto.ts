@@ -14,7 +14,7 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
     coverImageUrl: string;
     isbn13: string;
     totalPages: number;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     currentPage: number;
     title: string;
     readingUpdatedAt: string;

@@ -16,9 +16,11 @@ import {
   Divider,
   Icon,
   IconButton,
+  ImageGradientBackground,
   ImgBox,
   List,
   Notice,
+  ResponsiveText,
   Showcase,
   Surface,
   Text,
@@ -51,6 +53,7 @@ import { ROUTES } from '@/constants/routes';
 import { track } from '@/analytics/track';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 
 export type LibraryPageDialogType =
   | ManageLibraryDialogType
@@ -275,8 +278,13 @@ export const LibraryPage = () => {
             <ShareLibraryImageDialog
               libraryName={libraryItemsData.name}
               imgs={libraryItemsData?.items.map((item) => {
-                return { title: item.title, url: item.spineImageUrl };
+                return {
+                  title: item.title,
+                  spine: item.spineImageUrl,
+                  cover: item.coverImageUrl,
+                };
               })}
+
               onClose={handleCloseDialog}
             />
           )
@@ -306,6 +314,8 @@ export const LibraryPage = () => {
             />
           )
         );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -372,9 +382,22 @@ export const LibraryPage = () => {
                     return (
                       <Sortable key={item.bookId} id={item.bookId} index={index}>
                         <ConstrainedImgBox
-                          img={item.spineImageUrl}
-                          maxWidth="80px"
-                          maxHeight={`${booksHeight[index]}px`}
+                          {...(!!item.spineImageUrl && {
+                            img: item.spineImageUrl,
+                          })}
+                          fallback={
+                            <ImageGradientBackground
+                              img={item.coverImageUrl}
+                              width="40px"
+                              height={`${booksHeight[index]}px`}
+                            >
+                              <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                                {item.title}
+                              </ResponsiveText>
+                            </ImageGradientBackground>
+                          }
+                          maxWidth="40px"
+                          height={`${booksHeight[index]}px`}
                         />
                       </Sortable>
                     );
