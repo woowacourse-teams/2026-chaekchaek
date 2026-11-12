@@ -48,12 +48,17 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
     val sources = remember { ErrorSources() }
     val sessionExpiry = remember { ErrorRecoveryState() }
     val requiresLogin by auth.requiresLogin.collectAsState()
+    val memberSession by auth.memberSession.collectAsState()
     val expiryNotice by sessionExpiry.notice.collectAsState()
     var authenticating by remember { mutableStateOf<AuthenticationRecovery?>(null) }
     val authState by auth.uiState.collectAsState()
-    LaunchedEffect(requiresLogin) {
-        if (requiresLogin) {
-            sessionExpiry.report(MobileLoginException("UNAUTHORIZED", 401), ErrorOperation.Request) {}
+    LaunchedEffect(requiresLogin, memberSession) {
+        val member = memberSession
+        if (requiresLogin && member != null) {
+            sessionExpiry.report(
+                MobileLoginException("UNAUTHORIZED", 401, member.requestKey, member.generation),
+                ErrorOperation.Request,
+            ) {}
         } else {
             sessionExpiry.dismiss()
         }
@@ -61,10 +66,10 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
     CompositionLocalProvider(LocalErrorSources provides sources) {
         content()
         ErrorRecoveryEffect(auth.errors)
-        authenticating?.let { (owner, id, originalMemberId) ->
+        authenticating?.let { (owner, id, originalRequestKey) ->
             val resume: suspend (String) -> Unit = { token ->
                 authenticating = null
-                if (originalMemberId != null && auth.memberIdFor(token) != originalMemberId) owner.dismiss(id)
+                if (originalRequestKey != null && originalRequestKey != token) owner.dismiss(id)
                 else if (owner in sources.states || owner === sessionExpiry) owner.takeRecovery(id)?.invoke(token)
             }
             LoginRequiredSheet(
@@ -91,19 +96,36 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
                 onConfirm = { auth.saveNickname(nickname.text.toString()) },
             )
         }
+        val member = memberSession
         val active = sources.states.map { owner ->
-            val notice = key(owner) { owner.notice.collectAsState().value }
-            owner to notice
+            key(owner) {
+                val notice by owner.notice.collectAsState()
+                val currentNotice = notice
+                val availableNotice = currentNotice?.forMember(member?.requestKey, member?.generation)
+                if (currentNotice != null && availableNotice == null) {
+                    LaunchedEffect(currentNotice.id) { owner.dismiss(currentNotice.id) }
+                }
+                owner to availableNotice
+            }
         }.lastOrNull { (owner, notice) ->
             notice != null && (authenticating == null || owner === auth.errors)
         }?.let { (owner, notice) -> owner to requireNotNull(notice) }
-            ?: expiryNotice?.takeIf { authenticating == null }?.let { sessionExpiry to it }
+            ?: expiryNotice?.takeIf { authenticating == null && requiresLogin }
+                ?.forMember(member?.requestKey, member?.generation)?.let { sessionExpiry to it }
         active?.let { (owner, notice) ->
             ChaekErrorDialog(notice, { owner.dismiss(notice.id) }) {
-                if (notice.action == ErrorAction.Login) {
-                    if (owner !== sessionExpiry) sessionExpiry.dismiss()
-                    authenticating = AuthenticationRecovery(owner, notice.id, auth.memberSession.value?.memberId)
-                } else owner.takeRecovery(notice.id)?.invoke(null)
+                val currentMember = auth.memberSession.value
+                when (notice.forMember(currentMember?.requestKey, currentMember?.generation)?.action) {
+                    ErrorAction.Login -> {
+                        if (owner !== sessionExpiry) sessionExpiry.dismiss()
+                        authenticating = AuthenticationRecovery(
+                            owner, notice.id, notice.memberRequestKey ?: currentMember?.requestKey,
+                        )
+                    }
+                    ErrorAction.Retry, ErrorAction.Confirm -> owner.takeRecovery(notice.id)
+                        ?.invoke(currentMember?.requestKey.takeIf { notice.memberRequestKey != null })
+                    null -> owner.dismiss(notice.id)
+                }
             }
         }
     }
@@ -112,7 +134,7 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
 private data class AuthenticationRecovery(
     val owner: ErrorRecoveryState,
     val noticeId: Long,
-    val memberId: Long?,
+    val requestKey: String?,
 )
 
 /** Figma 책췍/ErrorDialog 1394:5478. 두 버튼은 좁은 화면과 큰 글자에서도 가로 배치한다. */

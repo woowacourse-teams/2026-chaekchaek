@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -124,8 +124,8 @@ internal fun AppNavigation(
     onExitRequested: () -> Unit = {},
     authDeveloperOverlay: @Composable (AuthViewModel) -> Unit = {},
 ) {
-    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
-    DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
+    val authViewModel: AuthViewModel = viewModel { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
+    SideEffect { authViewModel.attachPlatform(authPlatform) }
     ErrorRecoveryHost(authViewModel) {
         AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
     }
@@ -510,8 +510,9 @@ private fun AppNavigationContent(
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
-                    LaunchedEffect(key.book, restoringAuthentication) {
-                        if (!restoringAuthentication) {
+                    val waitingForInitialAuthentication = restoringAuthentication && state.book == null
+                    LaunchedEffect(key.book, waitingForInitialAuthentication) {
+                        if (!waitingForInitialAuthentication) {
                             analytics.screenView("book_detail")
                             viewModel.open(key.book, memberSession?.requestKey)
                         }
@@ -529,7 +530,7 @@ private fun AppNavigationContent(
                         }
                     }
 
-                    if (restoringAuthentication) {
+                    if (waitingForInitialAuthentication) {
                         AuthenticationRestorationContent(safeContent)
                     } else CompositionLocalProvider(LocalOpenAuthorLibrary provides { profile -> openAuthorLibrary(key, profile) }) {
                         BookDetailScreen(

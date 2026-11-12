@@ -1,6 +1,9 @@
 package com.chaekchaek.app.data.remote
 
 import com.chaekchaek.app.auth.AuthSession
+import com.chaekchaek.app.presentation.common.ErrorAction
+import com.chaekchaek.app.presentation.common.ErrorOperation
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
@@ -16,11 +19,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SilentRefreshClientTest {
@@ -29,7 +34,7 @@ class SilentRefreshClientTest {
         engine: MockEngine,
     ): HttpClient = HttpClient(engine) {
         expectSuccess = true
-    }.installSilentRefresh { AuthenticatedRequest(it, refreshAccessToken) }
+    }.installSilentRefresh { AuthenticatedRequest(it, refreshAfterRejection = refreshAccessToken) }
 
     @Test
     fun `401 수신 시 토큰을 갱신하고 원래 요청을 재전송하여 성공한다`() = runTest {
@@ -191,7 +196,7 @@ class SilentRefreshClientTest {
         assertFailsWith<IllegalStateException> { first.refreshAfterRejection() }
         assertFailsWith<IllegalStateException> { concurrent.refreshAfterRejection() }
         assertEquals(1, refreshCount)
-        assertEquals("expired-token", session.tokens.value?.accessToken)
+        assertEquals("expired-token", session.credentials.value?.tokens?.accessToken)
         assertEquals("refreshed-token", session.prepareRequest("member-session").refreshAfterRejection())
         assertEquals(2, refreshCount)
     }
@@ -205,7 +210,68 @@ class SilentRefreshClientTest {
         session.bindMemberRequestKey("another-session")
 
         assertFailsWith<CancellationException> { oldRequest.refreshAfterRejection() }
-        assertEquals("another-access", session.tokens.value?.accessToken)
+        assertEquals("another-access", session.credentials.value?.tokens?.accessToken)
+    }
+
+    @Test
+    fun `복구 오류는 요청을 보낸 회원만 재시도하고 같은 회원의 새 로그인 뒤에는 재시도 안내를 사용한다`() = runTest {
+        var renewals = 0
+        val session = authSession {
+            renewals++
+            throw MobileLoginException("UNUSABLE_REFRESH_TOKEN", 401)
+        }
+        val generation = session.credentials.value?.generation
+        val engine = MockEngine(MockEngineConfig().apply {
+            dispatcher = StandardTestDispatcher(testScheduler)
+            addHandler { respond("Unauthorized", HttpStatusCode.Unauthorized) }
+        })
+        val client = HttpClient(engine) { expectSuccess = true }.installSilentRefresh(session::prepareRequest)
+        try {
+            val unauthorized = assertFailsWith<ClientRequestException> {
+                client.get("https://api.example.com/data") { header(HttpHeaders.Authorization, "Bearer member-session") }
+            }
+            val afterExpiry = assertFailsWith<MobileLoginException> { session.prepareRequest("member-session") }
+            assertEquals(1, renewals)
+            for (error in listOf(unauthorized, afterExpiry)) {
+                val recovery = ErrorRecoveryState()
+                recovery.report(error, ErrorOperation.Request) {}
+                val notice = requireNotNull(recovery.notice.value)
+                assertEquals(ErrorAction.Login, notice.forMember("member-session", generation)?.action)
+                assertNull(notice.forMember("other-member", 2))
+                assertEquals(ErrorAction.Retry, notice.forMember("member-session", 2)?.action)
+            }
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `개발자 폐기가 실패해도 기다리던 보호 요청은 갱신을 공유한다`() = runTest {
+        val revocationStarted = CompletableDeferred<Unit>()
+        val finishRevocation = CompletableDeferred<Unit>()
+        var renewals = 0
+        val session = authSession(
+            logout = {
+                revocationStarted.complete(Unit)
+                finishRevocation.await()
+                error("connection lost")
+            },
+            reissue = { renewals++; tokens("refreshed-token") },
+        )
+        val revocation = async { assertFailsWith<IllegalStateException> { session.revokeRefreshTokenForTesting() } }
+        revocationStarted.await()
+        val first = session.prepareRequest("member-session")
+        val second = session.prepareRequest("member-session")
+        val firstRefresh = async { first.refreshAfterRejection() }
+        val secondRefresh = async { second.refreshAfterRejection() }
+        runCurrent()
+        assertEquals(0, renewals)
+
+        finishRevocation.complete(Unit)
+        revocation.await()
+        assertEquals("refreshed-token", firstRefresh.await())
+        assertEquals("refreshed-token", secondRefresh.await())
+        assertEquals(1, renewals)
     }
 
     @Test
@@ -224,14 +290,17 @@ class SilentRefreshClientTest {
         testClient.close()
     }
 
-    private suspend fun TestScope.authSession(reissue: suspend (String) -> MobileAuthTokens): AuthSession {
+    private suspend fun TestScope.authSession(
+        logout: suspend (String) -> Unit = {},
+        reissue: suspend (String) -> MobileAuthTokens,
+    ): AuthSession {
         var storedRefreshToken: String? = null
         return AuthSession(
             readRefreshToken = { storedRefreshToken },
             writeRefreshToken = { storedRefreshToken = it },
             clearRefreshToken = { storedRefreshToken = null },
             reissue = reissue,
-            logout = {},
+            logout = logout,
             scope = backgroundScope,
             currentTimeMillis = { testScheduler.currentTime },
         ).also {

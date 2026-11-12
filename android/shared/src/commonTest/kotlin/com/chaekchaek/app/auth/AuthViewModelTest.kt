@@ -2,6 +2,7 @@ package com.chaekchaek.app.auth
 
 import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
+import com.chaekchaek.app.data.remote.RemoteMemberProfile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -104,6 +105,56 @@ class AuthViewModelTest {
   }
 
   @Test
+  fun `화면 재생성 뒤 인증 모델은 새 로그인 콜백을 사용하고 이전 응답을 무시한다`() = runTest {
+    var previousCallback: ((String?, String?) -> Unit)? = null
+    val credentials = mutableListOf<String>()
+    val vm = AuthViewModel(
+      callbacks = AuthPlatformCallbacks({ previousCallback = it }, { null }, {}, {}),
+      getProfile = { RemoteMemberProfile(1, "책췍", "참새", null, true) },
+      loginWithGoogle = { credential, _ -> credentials += credential; tokens("new") },
+      reissue = { error("unexpected") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    var resumed = 0
+    vm.requireAuthentication { error("이전 화면의 작업을 재개하면 안 됨") }
+    vm.attachPlatform(AuthPlatformCallbacks({ it("current-credential", null) }, { null }, {}, {}))
+    previousCallback!!("old-credential", null)
+    vm.requireAuthentication { resumed++ }
+    runCurrent()
+    assertEquals(listOf("current-credential"), credentials)
+    assertEquals(1, resumed)
+  }
+
+  @Test
+  fun `닉네임 저장 중 토큰이 회전해도 저장 결과로 로그인과 대기 작업을 완료한다`() = runTest {
+    var profileReads = 0
+    var resumed: String? = null
+    val saved = CompletableDeferred<RemoteMemberProfile>()
+    val vm = AuthViewModel(
+      callbacks = AuthPlatformCallbacks({ it("id", null) }, { null }, {}, {}),
+      getProfile = { profileReads++; RemoteMemberProfile(1, "", "참새", null, true) },
+      updateNickname = { _, _ -> saved.await() },
+      loginWithGoogle = { _, _ -> tokens("new") },
+      reissue = { tokens("rotated") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+
+    vm.requireAuthentication { resumed = it }
+    runCurrent()
+    vm.saveNickname("책췍")
+    runCurrent()
+    assertEquals("access-rotated", vm.refreshAccessTokenForRetry())
+    runCurrent()
+    assertEquals(true, vm.uiState.value.savingNickname)
+    assertEquals(1, profileReads)
+    saved.complete(RemoteMemberProfile(1, "책췍", "참새", null, true))
+    runCurrent()
+
+    assertEquals("access-rotated", resumed)
+    assertEquals(false, vm.uiState.value.requiresNickname)
+  }
+
+  @Test
   fun `닉네임 없는 기존 회원 복원도 저장 실패 후 재시도까지 로그인 완료를 보류한다`() = runTest {
     var saves = 0
     val vm = AuthViewModel(
@@ -174,17 +225,17 @@ class AuthViewModelTest {
       currentTimeMillis = { testScheduler.currentTime },
     )
     runCurrent()
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertEquals(true, session.isRestoring.value)
 
     restored.complete(tokens("restored"))
     runCurrent()
     assertEquals(false, session.isRestoring.value)
-    assertEquals("restored", session.tokens.value?.refreshToken)
+    assertEquals("restored", session.credentials.value?.tokens?.refreshToken)
 
     session.signOut()
     assertEquals(false, session.isRestoring.value)
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
   }
 
   @Test
@@ -200,7 +251,7 @@ class AuthViewModelTest {
     )
     runCurrent()
     assertEquals(false, session.isRestoring.value)
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
   }
 
   @Test
@@ -224,7 +275,7 @@ class AuthViewModelTest {
 
     runCurrent()
 
-    assertEquals("rotated", session.tokens.value?.refreshToken)
+    assertEquals("rotated", session.credentials.value?.tokens?.refreshToken)
     assertEquals("rotated", storedRefreshToken)
   }
 
@@ -241,7 +292,7 @@ class AuthViewModelTest {
     runCurrent()
 
     assertEquals(listOf("stored", "rotated-once"), backend.reissueRequests)
-    assertEquals("rotated-twice", session.tokens.value?.refreshToken)
+    assertEquals("rotated-twice", session.credentials.value?.tokens?.refreshToken)
     assertEquals("rotated-twice", backend.storedRefreshToken)
   }
 
@@ -308,7 +359,7 @@ class AuthViewModelTest {
 
     assertNull(session.refreshAccessTokenForRetry())
 
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(backend.storedRefreshToken)
     assertEquals(1, backend.clearCount)
   }
@@ -333,7 +384,7 @@ class AuthViewModelTest {
     signIn.join()
 
     assertEquals(0, backend.clearCount)
-    assertEquals("account-b", session.tokens.value?.refreshToken)
+    assertEquals("account-b", session.credentials.value?.tokens?.refreshToken)
     assertEquals("account-b", backend.storedRefreshToken)
   }
 
@@ -353,7 +404,7 @@ class AuthViewModelTest {
 
     advanceTimeBy(RETRY_DELAY_MILLIS)
     runCurrent()
-    assertEquals("rotated", session.tokens.value?.refreshToken)
+    assertEquals("rotated", session.credentials.value?.tokens?.refreshToken)
   }
 
   @Test
@@ -372,7 +423,7 @@ class AuthViewModelTest {
 
     advanceTimeBy(RETRY_DELAY_MILLIS)
     runCurrent()
-    assertEquals("rotated", session.tokens.value?.refreshToken)
+    assertEquals("rotated", session.credentials.value?.tokens?.refreshToken)
   }
 
   @Test
@@ -385,7 +436,7 @@ class AuthViewModelTest {
     session.signOut()
 
     assertEquals(listOf("signed-in"), backend.logoutRequests)
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(backend.storedRefreshToken)
   }
 
@@ -412,7 +463,7 @@ class AuthViewModelTest {
     val signOut = launch { session.signOut { localSessionCleared.complete(Unit) } }
     localSessionCleared.await()
 
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(storedRefreshToken)
     logoutStarted.await()
     assertEquals(false, signOut.isCompleted)
@@ -437,7 +488,7 @@ class AuthViewModelTest {
 
     session.signOut()
 
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(storedRefreshToken)
   }
 
@@ -567,11 +618,11 @@ class AuthViewModelTest {
     backgroundScope.launch { session.signOut { localCleared = true } }
     runCurrent()
     assertEquals(true, localCleared)
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(stored)
     response.complete(tokens("late"))
     runCurrent()
-    assertNull(session.tokens.value)
+    assertNull(session.credentials.value?.tokens)
     assertNull(stored)
   }
 
@@ -716,10 +767,10 @@ class AuthViewModelTest {
     val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") { tokens("reissued") }
     val session = authSession(backend)
     session.refreshAccessTokenForRetry()
-    assertEquals("access-reissued", session.tokens.value?.accessToken)
+    assertEquals("access-reissued", session.credentials.value?.tokens?.accessToken)
 
     session.expireAccessTokenForTesting()
-    assertEquals("expired-token-for-testing", session.tokens.value?.accessToken)
+    assertEquals("expired-token-for-testing", session.credentials.value?.tokens?.accessToken)
     val debugInfo = session.tokenDebugInfo()
     assertEquals(0L, debugInfo.accessTokenExpiresInSeconds)
   }
@@ -729,11 +780,11 @@ class AuthViewModelTest {
     val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") { tokens("reissued") }
     val session = authSession(backend)
     session.refreshAccessTokenForRetry()
-    val tokenBefore = session.tokens.value
+    val tokenBefore = session.credentials.value?.tokens
 
     session.revokeRefreshTokenForTesting()
     assertEquals(listOf("reissued"), backend.logoutRequests)
-    assertEquals(tokenBefore, session.tokens.value)
+    assertEquals(tokenBefore, session.credentials.value?.tokens)
     assertEquals(0, backend.clearCount)
   }
 

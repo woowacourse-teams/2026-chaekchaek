@@ -16,8 +16,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,7 +31,7 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-internal data class MemberSession(val memberId: Long, val requestKey: String)
+internal data class MemberSession(val memberId: Long, val requestKey: String, val generation: Long)
 
 data class AuthUiState(
   val signingIn: Boolean = false,
@@ -40,7 +42,7 @@ data class AuthUiState(
 )
 
 class AuthViewModel private constructor(
-  private val callbacks: AuthPlatformCallbacks,
+  callbacks: AuthPlatformCallbacks,
   private val getProfile: (suspend (String) -> RemoteMemberProfile)?,
   private val updateNickname: (suspend (String, String) -> RemoteMemberProfile)?,
   private val loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
@@ -93,11 +95,17 @@ class AuthViewModel private constructor(
   ) : this(callbacks, getProfile, updateNickname, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis, com.chaekchaek.app.analytics.UserErrorReporter.None)
 
   val errors = ErrorRecoveryState(errorReporter)
+  private var callbacks = callbacks
+
+  internal fun attachPlatform(callbacks: AuthPlatformCallbacks) {
+    if (this.callbacks !== callbacks && waitingForPlatformCredential) cancelPendingAuthentication()
+    this.callbacks = callbacks
+  }
 
   private val session = AuthSession(
-    readRefreshToken = callbacks.readRefreshToken,
-    writeRefreshToken = callbacks.writeRefreshToken,
-    clearRefreshToken = callbacks.clearRefreshToken,
+    readRefreshToken = { this.callbacks.readRefreshToken() },
+    writeRefreshToken = { this.callbacks.writeRefreshToken(it) },
+    clearRefreshToken = { this.callbacks.clearRefreshToken() },
     reissue = reissue,
     logout = logout,
     scope = scope,
@@ -111,7 +119,7 @@ class AuthViewModel private constructor(
   private val authenticatedClientDelegate = lazy { createHttpClient(session::prepareRequest) }
   internal val authenticatedClient by authenticatedClientDelegate
   private val memberRepository by lazy { MemberRemoteRepository(authenticatedClient) }
-  val appleSignInAvailable: Boolean = callbacks.requestAppleCredential != null
+  val appleSignInAvailable: Boolean get() = callbacks.requestAppleCredential != null
 
   private val _uiState = MutableStateFlow(AuthUiState())
   val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -120,28 +128,31 @@ class AuthViewModel private constructor(
   }.stateIn(scope, SharingStarted.Eagerly, session.isRestoring.value)
   private var authenticationGeneration = 0
   private var authenticationJob: Job? = null
+  private var waitingForPlatformCredential = false
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
-  // 보안 세션은 복원하되 공개 닉네임이 확인된 뒤에만 화면과 대기 작업에 전달한다.
-  private var confirmedMemberId: Long? = null
-
   fun memberIdFor(accessToken: String?): Long? =
-    activeMember.value?.takeIf { it.requestKey == accessToken }?.memberId
-      ?: confirmedMemberId.takeIf { accessToken != null && readyTokens.value?.accessToken == accessToken }
+    activeMember.value?.takeIf {
+      accessToken != null && (it.requestKey == accessToken || readyTokens.value?.accessToken == accessToken)
+    }?.memberId
 
   private var profileReady = false
   private var profileJob: Job? = null
 
   init {
     scope.launch {
-      session.tokens.collectLatest { current ->
+      session.credentials.collect { current ->
+        if (profileReady && current?.generation == activeMember.value?.generation) {
+          readyTokens.value = current?.tokens
+        }
+      }
+    }
+    scope.launch {
+      session.credentials.distinctUntilChangedBy { it?.generation }.collectLatest { current ->
         if (current == null) {
           profileReady = false
-          confirmedMemberId = null
           readyTokens.value = null
           if (_uiState.value.requiresNickname || _uiState.value.checkingProfile) _uiState.value = AuthUiState()
-        } else if (profileReady) {
-          readyTokens.value = current
         } else {
           checkProfile(current)
         }
@@ -149,21 +160,21 @@ class AuthViewModel private constructor(
     }
   }
 
-  private suspend fun checkProfile(current: MobileAuthTokens) {
+  private suspend fun checkProfile(current: SessionCredentials) {
     _uiState.value = _uiState.value.copy(checkingProfile = true)
     try {
-      val profile = getProfile?.invoke(current.accessToken) ?: memberRepository.get(current.accessToken)
-      if (session.tokens.value != current) return
+      val profile = getProfile?.invoke(current.tokens.accessToken) ?: memberRepository.get(current.profileRequestKey)
+      if (session.credentials.value?.generation != current.generation) return
       if (profile.nickname.isBlank()) {
         _uiState.value = AuthUiState(requiresNickname = true)
       } else completeAuthentication(current, profile.memberId)
     } catch (error: CancellationException) {
       throw error
     } catch (error: Exception) {
-      if (session.tokens.value != current) return
+      if (session.credentials.value?.generation != current.generation) return
       _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
       errors.report(error, ErrorOperation.Settings) {
-        profileJob = scope.launch { session.tokens.value?.let { checkProfile(it) } }
+        profileJob = scope.launch { session.credentials.value?.let { checkProfile(it) } }
       }
     }
   }
@@ -175,19 +186,19 @@ class AuthViewModel private constructor(
       return
     }
     if (_uiState.value.savingNickname) return
-    val current = session.tokens.value ?: return
+    val current = session.credentials.value ?: return
     _uiState.value = AuthUiState(requiresNickname = true, savingNickname = true)
     profileJob = scope.launch {
       try {
-        val profile = updateNickname?.invoke(value, current.accessToken)
-          ?: memberRepository.updateNickname(value, current.accessToken)
-        if (session.tokens.value != current) return@launch
+        val profile = updateNickname?.invoke(value, current.tokens.accessToken)
+          ?: memberRepository.updateNickname(value, current.profileRequestKey)
+        if (session.credentials.value?.generation != current.generation) return@launch
         check(profile.nickname.isNotBlank())
         completeAuthentication(current, profile.memberId)
       } catch (error: CancellationException) {
         throw error
       } catch (error: Exception) {
-        if (session.tokens.value == current) {
+        if (session.credentials.value?.generation == current.generation) {
           _uiState.value = AuthUiState(requiresNickname = true)
           if ((error as? io.ktor.client.plugins.ResponseException)?.response?.status?.value == 409) {
             errors.confirm("이미 사용 중인 닉네임이에요. 다른 닉네임을 입력해 주세요.")
@@ -198,32 +209,32 @@ class AuthViewModel private constructor(
   }
 
   @OptIn(ExperimentalUuidApi::class)
-  private suspend fun completeAuthentication(current: MobileAuthTokens, memberId: Long) {
-    val member = activeMember.value?.takeIf { it.memberId == memberId }
-      ?: MemberSession(memberId, Uuid.random().toString())
-    if (!session.bindMemberRequestKey(member.requestKey, current.accessToken)) return
-    confirmedMemberId = memberId
+  private suspend fun completeAuthentication(current: SessionCredentials, memberId: Long) {
+    val requestKey = activeMember.value?.takeIf { it.memberId == memberId }?.requestKey ?: Uuid.random().toString()
+    val credentials = session.bindMemberRequestKey(requestKey, current.generation) ?: return
     profileReady = true
-    readyTokens.value = current
-    activeMember.value = member
+    readyTokens.value = credentials.tokens
+    activeMember.value = MemberSession(memberId, requestKey, credentials.generation)
     _uiState.value = AuthUiState()
     val resume = pendingAction
     pendingAction = null
     val generation = authenticationGeneration
     if (resume != null) scope.launch {
-      if (authenticationGeneration == generation && profileReady) resume(current.accessToken)
+      if (authenticationGeneration == generation && profileReady) {
+        readyTokens.value?.accessToken?.let { resume(it) }
+      }
     }
   }
 
   fun requireAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
-    requestAuthentication(action, force, callbacks.requestGoogleIdToken) { idToken ->
+    requestAuthentication<String>(action, force, { callbacks.requestGoogleIdToken(it) }) { idToken ->
       loginWithGoogle(idToken, callbacks.readGuest()?.token)
     }
   }
 
   fun requireAppleAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
-    val requestAppleCredential = callbacks.requestAppleCredential ?: return
-    requestAuthentication(action, force, requestAppleCredential) { credential ->
+    if (!appleSignInAvailable) return
+    requestAuthentication<AppleSignInCredential>(action, force, { callbacks.requestAppleCredential?.invoke(it) }) { credential ->
       loginWithApple(credential, callbacks.readGuest()?.token)
     }
   }
@@ -251,22 +262,24 @@ class AuthViewModel private constructor(
       return
     }
 
-    val original = pendingAction.takeIf { force && !profileReady && session.tokens.value != null }
+    val original = pendingAction.takeIf { force && !profileReady && session.credentials.value != null }
     pendingAction = if (original == null) action else { token -> original(token); action(token) }
     if (_uiState.value.signingIn || (_uiState.value.requiresNickname && !force)) return
-    if (!force && session.tokens.value != null) {
+    if (!force && session.credentials.value != null) {
       errors.dismiss()
       profileJob?.cancel()
-      profileJob = scope.launch { session.tokens.value?.let { checkProfile(it) } }
+      profileJob = scope.launch { session.credentials.value?.let { checkProfile(it) } }
       return
     }
     val generation = ++authenticationGeneration
     errors.dismiss()
     var credentialConsumed = false
+    waitingForPlatformCredential = true
     _uiState.value = AuthUiState(signingIn = true)
     requestCredential { credential, platformError ->
       if (generation != authenticationGeneration || credentialConsumed) return@requestCredential
       credentialConsumed = true
+      waitingForPlatformCredential = false
       if (credential == null) {
         _uiState.value = AuthUiState(errorMessage = platformError?.let { LOGIN_ERROR })
         if (platformError != null) errors.report(IllegalStateException(), ErrorOperation.SignIn) {
@@ -279,6 +292,7 @@ class AuthViewModel private constructor(
         try {
           val tokens = login(credential)
           if (generation != authenticationGeneration) return@launch
+          profileJob?.cancel()
           profileReady = false
           // 재인증의 프로필 확인 중에도 이미 확인된 세션과 오류 복구 작업을 유지한다.
           // 새 토큰은 프로필 확인 후에만 전달하고 실제 로그아웃에서만 기존 토큰을 지운다.
@@ -302,6 +316,7 @@ class AuthViewModel private constructor(
     if (_uiState.value.requiresNickname) return
     errors.dismiss()
     authenticationGeneration += 1
+    waitingForPlatformCredential = false
     authenticationJob?.cancel()
     authenticationJob = null
     pendingAction = null
@@ -344,7 +359,6 @@ class AuthViewModel private constructor(
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
     profileJob?.cancel()
     profileReady = false
-    confirmedMemberId = null
     readyTokens.value = null
     activeMember.value = null
     _uiState.value = AuthUiState()

@@ -100,7 +100,12 @@ internal data class RefreshTokenRequest(val refreshToken: String)
 @Serializable
 internal data class MobileLoginProblem(val code: String)
 
-class MobileLoginException(val code: String, val statusCode: Int) : RuntimeException(code)
+class MobileLoginException(
+  val code: String,
+  val statusCode: Int,
+  internal val memberRequestKey: String? = null,
+  internal val memberGeneration: Long? = null,
+) : RuntimeException(code)
 
 @Serializable
 data class MobileAuthTokens(

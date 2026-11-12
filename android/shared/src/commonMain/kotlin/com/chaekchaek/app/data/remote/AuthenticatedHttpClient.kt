@@ -1,5 +1,6 @@
 package com.chaekchaek.app.data.remote
 
+import com.chaekchaek.app.auth.MemberAuthorization
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.HttpSend
@@ -12,9 +13,11 @@ import io.ktor.util.AttributeKey
 import kotlinx.serialization.json.Json
 
 internal val authRetriedKey = AttributeKey<Boolean>("AuthRetriedKey")
+internal val failedMemberAuthorization = AttributeKey<MemberAuthorization>("FailedMemberAuthorization")
 
 internal class AuthenticatedRequest(
     val accessToken: String,
+    val member: MemberAuthorization? = null,
     val refreshAfterRejection: suspend () -> String?,
 )
 
@@ -38,7 +41,7 @@ internal fun HttpClient.installSilentRefresh(
         val credentials = prepareRequest(authHeader.substringAfter(' '))
         request.headers[HttpHeaders.Authorization] = "Bearer ${credentials.accessToken}"
         val originalCall = execute(request)
-        if (originalCall.response.status == HttpStatusCode.Unauthorized) {
+        val completedCall = if (originalCall.response.status == HttpStatusCode.Unauthorized) {
             request.attributes.put(authRetriedKey, true)
             val refreshed = credentials.refreshAfterRejection()
             if (refreshed != null) {
@@ -50,6 +53,10 @@ internal fun HttpClient.installSilentRefresh(
         } else {
             originalCall
         }
+        if (completedCall.response.status == HttpStatusCode.Unauthorized) {
+            credentials.member?.let { completedCall.attributes.put(failedMemberAuthorization, it) }
+        }
+        completedCall
     }
     return this
 }

@@ -333,7 +333,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         for restored in [false, true] {
             fixture.reset()
             let app = XCUIApplication()
-            app.launchArguments = ["-uiTestingGuest", "-uiTestingRefresh", "-uiTestingNickname"]
+            app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingRefresh", "-uiTestingNickname"]
             if restored { app.launchArguments.append("-uiTestingNicknameRestore") }
             app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = fixture.baseURL
             app.launch()
@@ -355,14 +355,15 @@ final class LoginRequiredSheetUITests: XCTestCase {
             XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
             field.tap()
             field.typeText("reader")
-            app.buttons["확인"].tap()
+            let confirm = app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "확인", "확인, 확인")).firstMatch
+            confirm.tap()
             let failure = app.staticTexts["설정을 변경하지 못했어요"]
             XCTAssertTrue(failure.waitForExistence(timeout: 5))
-            app.buttons["닫기"].tap()
+            app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "닫기", "닫기, 닫기")).firstMatch.tap()
             XCTAssertTrue(field.waitForExistence(timeout: 5))
             XCTAssertEqual(field.value as? String, "reader")
             attachScreenshot(named: restored ? "기존 회원 닉네임 실패 입력 유지" : "신규 회원 닉네임 실패 입력 유지")
-            app.buttons["확인"].tap()
+            confirm.tap()
             XCTAssertTrue(title.waitForNonExistence(timeout: 10))
             XCTAssertEqual(fixture.nicknameWrites, 2)
             app.terminate()
