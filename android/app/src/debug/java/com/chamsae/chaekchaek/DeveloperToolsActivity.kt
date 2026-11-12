@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -40,11 +41,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.data.remote.ApiConfiguration
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.chaekchaek.app.ui.theme.ChaekBorder
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
+
+internal val developerToolsAuth = MutableStateFlow<AuthViewModel?>(null)
 
 class DeveloperToolsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -152,6 +157,8 @@ private fun DeveloperToolsScreen(
             DeveloperInfoCard(items)
             com.chaekchaek.app.ui.common.PolicyDeveloperContent(policy.controller) { policy.refresh(force = true) }
             val context = androidx.compose.ui.platform.LocalContext.current
+            val authViewModel by developerToolsAuth.collectAsState()
+            authViewModel?.let { com.chaekchaek.app.ui.common.AuthDeveloperContent(it) }
             TextButton(onClick = { DebugAppUpdates.enable(context) }) { Text("FakeAppUpdateManager 사용") }
             TextButton(onClick = { DebugAppUpdates.fake?.userAcceptsUpdate() }) { Text("Fake 업데이트 수락") }
             TextButton(onClick = { DebugAppUpdates.fake?.userRejectsUpdate(); policy.controller.setUpdating(false) }) { Text("Fake 업데이트 취소") }

@@ -1,0 +1,21 @@
+# 개발 서버 인증 오류 응답 확인
+# 확인 시각: 2026-11-12T06:25:06Z (UTC)
+# 대상: https://dev-api.chaekchaek.com
+# 모든 토큰은 실제 회원 토큰이 아닌 임의 문자열이다.
+
+$ GET /api/v1/members/me (Authorization 없음)
+{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}
+HTTP 401
+
+$ GET /api/v1/members/me (Bearer expired-token-for-testing: 개발자 도구 강제 만료 값)
+{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}
+HTTP 401
+
+$ POST /api/v1/auth/mobile/reissue (임의 Refresh 토큰)
+{"detail":"Refresh Token이 유효하지 않습니다.","instance":"/api/v1/auth/mobile/reissue","status":401,"title":"Unauthorized","type":"about:blank","code":"INVALID_REFRESH_TOKEN"}
+HTTP 401
+
+$ POST /api/v1/auth/mobile/logout (임의 Refresh 토큰)
+
+HTTP 204
+

@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
+import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.LocalAnalyticsTracker
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
@@ -25,6 +26,7 @@ fun App(
     onExitRequested: () -> Unit = {},
     policyController: com.chaekchaek.app.config.MobilePolicyController? = null,
     onUpdate: () -> Unit = {},
+    authDeveloperOverlay: @Composable (AuthViewModel) -> Unit = {},
     bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox = remember { com.chaekchaek.app.deeplink.BookDeepLinkInbox() },
 ) {
     com.chaekchaek.app.analytics.AnalyticsLifecycleEffect(analytics, refreshAnalyticsConfiguration)
@@ -42,6 +44,7 @@ fun App(
                     uiTestingMyPage = uiTestingMyPage,
                     homeHeaderAction = homeHeaderAction,
                     onExitRequested = onExitRequested,
+                    authDeveloperOverlay = authDeveloperOverlay,
                     bookDeepLinks = bookDeepLinks,
                 )
                 policyController?.let {

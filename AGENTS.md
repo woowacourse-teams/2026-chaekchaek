@@ -157,6 +157,7 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- Access 만료, Refresh 만료·폐기, 동시 요청 갱신 중복 제거, 토큰 만료 개발자 도구를 변경하거나 검증할 때는 [모바일 인증 만료와 세션 복구 정책](docs/mobile-auth-expiry-policy.md)을 먼저 읽는다. 백엔드 응답 계약, Silent Refresh, 단일 재발급 공유와 위치·초안 복원 정책을 확인한다.
 - 책 상세 딥링크, 외부 진입 뒤로가기, 온보딩 후 목적지 재개 또는 개발자 도구의 링크 실행을 변경할 때는 [모바일 책 상세 딥링크](docs/mobile-book-detail-deeplinks.md)를 먼저 읽는다. 확정 정책과 Android·iOS 구현·실행 검증 상태를 구분한다.
 
 - 홈 하단 PMF 설문 바, 설문 문항 이동·제출·숨김 또는 대상 판정을 변경할 때는 [모바일 PMF 설문](docs/mobile-pmf-survey.md)을 먼저 읽는다. 승인 HTML, Figma 접근 예외, development·production 계약 차이와 플랫폼별 검증 상태를 구분한다.
@@ -186,6 +187,7 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 - 레벨4 과제 제출에 필요한 LMS 안내와 제출 양식은
   [레벨4 과제 제출 문서](docs/level4-submission/README.md)를 먼저 참고한다.
+- 레벨4 요구사항 5(외부 진입점·딥링크)나 6(인증 만료 처리)의 구현, 시연 또는 제출 증거를 다룰 때는 [외부 진입점과 인증 만료 처리 제출 문서](docs/level4-submission/auth-expiry-and-deep-link.md)를 먼저 읽는다. 증거 현황표와 미확인 항목을 함께 갱신한다.
 - Android 개발자 도구와 상태 보존 요구사항을 제출하거나 완료 근거를 갱신할 때는
   [Android 개발자 도구와 상태 보존 제출 문서](docs/level4-submission/android-developer-tools-state-preservation.md)를 먼저 읽는다.
 

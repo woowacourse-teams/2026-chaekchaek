@@ -1,6 +1,7 @@
 package com.chaekchaek.app.presentation.common
 
 import com.chaekchaek.app.data.remote.MobileLoginException
+import com.chaekchaek.app.data.remote.failedMemberAuthorization
 import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,25 @@ enum class ErrorOperation(val failureTitle: String) {
     Withdrawal("회원 탈퇴를 완료하지 못했어요"), ImageExport("이미지를 만들지 못했어요"),
 }
 
-data class ErrorNotice(val id: Long, val title: String, val message: String, val action: ErrorAction)
+data class ErrorNotice(
+    val id: Long,
+    val title: String,
+    val message: String,
+    val action: ErrorAction,
+    internal val memberRequestKey: String? = null,
+    internal val memberGeneration: Long? = null,
+) {
+    internal fun forMember(requestKey: String?, generation: Long?): ErrorNotice? = when {
+        memberRequestKey == null -> this
+        memberRequestKey != requestKey -> null
+        memberGeneration != generation -> copy(
+            title = "요청을 완료하지 못했어요",
+            message = "로그인했어요. 다시 시도해 주세요.",
+            action = ErrorAction.Retry,
+        )
+        else -> this
+    }
+}
 
 class ErrorRecoveryState(
     private val errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
@@ -35,8 +54,9 @@ class ErrorRecoveryState(
     ) {
         if (error is CancellationException) throw error
         errorReporter.report(error, operation.name)
-        val status = (error as? ResponseException)?.response?.status?.value
-            ?: (error as? MobileLoginException)?.statusCode
+        val response = (error as? ResponseException)?.response
+        val loginError = error as? MobileLoginException
+        val status = response?.status?.value ?: loginError?.statusCode
         val action = when {
             operation == ErrorOperation.SignIn && retry != null -> ErrorAction.Retry
             status == 401 && retry != null -> ErrorAction.Login
@@ -60,7 +80,12 @@ class ErrorRecoveryState(
             else -> "연결 상태를 확인한 뒤 다시 시도해 주세요."
         }
         this.retry = retry.takeIf { action != ErrorAction.Confirm }
-        state.value = ErrorNotice(++revision, title, message, action)
+        val member = response?.call?.attributes?.getOrNull(failedMemberAuthorization)
+        state.value = ErrorNotice(
+            ++revision, title, message, action,
+            memberRequestKey = (member?.requestKey ?: loginError?.memberRequestKey).takeIf { action == ErrorAction.Login },
+            memberGeneration = (member?.generation ?: loginError?.memberGeneration).takeIf { action == ErrorAction.Login },
+        )
     }
 
     fun confirm(message: String, title: String = "입력값을 확인해 주세요") {

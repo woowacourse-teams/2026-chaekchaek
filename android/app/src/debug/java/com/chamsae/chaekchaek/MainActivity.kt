@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -17,10 +18,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.chaekchaek.app.auth.AuthViewModel
 
 class MainActivity : ChaekchaekActivity() {
     override val analyticsEnvironment = "test"
     override fun createAppUpdateManager() = DebugAppUpdates.fake ?: super.createAppUpdateManager()
+
+    @Composable
+    override fun AuthDeveloperOverlay(authViewModel: AuthViewModel) {
+        DisposableEffect(authViewModel) {
+            developerToolsAuth.value = authViewModel
+            onDispose { developerToolsAuth.compareAndSet(authViewModel, null) }
+        }
+    }
 
     @Composable
     override fun HomeHeaderAction() {

@@ -5,6 +5,7 @@ import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
+import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.data.remote.RemoteMemberProfile
 import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
@@ -172,6 +173,8 @@ class MemberSettingsViewModel(
 private fun Throwable.toWithdrawalFailure(): WithdrawalFailure =
     when {
         this is ResponseException && response.status == HttpStatusCode.Unauthorized ->
+            WithdrawalFailure.AuthenticationExpired
+        this is MobileLoginException && statusCode == HttpStatusCode.Unauthorized.value ->
             WithdrawalFailure.AuthenticationExpired
         this is ResponseException -> WithdrawalFailure.ServerRejected
         this is IOException -> WithdrawalFailure.NetworkUnavailable
