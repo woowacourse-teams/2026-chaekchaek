@@ -57,8 +57,10 @@
   "dependencies": {
     "@chaekchaek/design-system": "^1.0.0",
     "@dnd-kit/react": "^0.5.1",
+    "@posthog/react": "^1.11.3",
     "@sentry/react": "^10.71.0",
     "html2canvas": "^1.4.1",
+    "posthog-js": "^1.447.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-ga4": "^3.0.1",
