@@ -6,6 +6,8 @@ import { createClassName } from '@chaekchaek/design-system';
 
 import { ROUTES } from '@/constants/routes';
 
+import { track } from '@/analytics/track';
+
 import styles from './Header.module.css';
 
 import type { NavProps } from './Header.types';
@@ -14,6 +16,13 @@ const navs = [
   { link: ROUTES.FEED, text: '피드' },
   { link: ROUTES.LIBRARIES, text: '내 서재' },
 ];
+
+const NAV_DESTINATIONS = {
+  [ROUTES.FEED]: 'feed',
+  [ROUTES.LIBRARIES]: 'libraries',
+} as const;
+
+type NavLink = keyof typeof NAV_DESTINATIONS;
 
 const classnameDefault = 'frame-Header-Nav';
 
@@ -31,6 +40,17 @@ export const Nav = <T extends ElementType>(props: NavProps<T>) => {
 
   const { pathname } = useLocation();
 
+  const handleClickNav = (link: NavLink) => {
+    const destination = NAV_DESTINATIONS[link];
+
+    if (!destination) return;
+
+    track('navigate', {
+      source: 'header',
+      destination,
+    });
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
       {navs.map((nav) => {
@@ -40,6 +60,9 @@ export const Nav = <T extends ElementType>(props: NavProps<T>) => {
             key={nav.link}
             className={pathname === nav.link ? styles['is-active'] : undefined}
             aria-current={pathname === nav.link ? 'page' : undefined}
+            onClick={() => {
+              handleClickNav(nav.link);
+            }}
           >
             {nav.text}
           </a>

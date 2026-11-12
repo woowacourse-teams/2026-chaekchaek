@@ -52,7 +52,6 @@ export interface PostBooksBookIdReviewsCommand {
   content: string;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
-  totalPages?: number | undefined;
 }
 
 export type PostBooksBookIdReviews = (

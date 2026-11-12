@@ -17,7 +17,9 @@ import {
   ContentArea,
   Icon,
   IconButton,
+  ImageGradientBackground,
   Partition,
+  ResponsiveText,
   Showcase,
   Text,
   Title,
@@ -116,6 +118,13 @@ export const LibrariesPage = () => {
       isDefault,
     });
     handleOpenDialog('ManageLibraryDialog');
+
+    track('library_management_open');
+  };
+
+  const handleClickRegisterLibrary = () => {
+    handleOpenDialog('RegisterLibraryDialog');
+    track('library_register_open');
   };
 
   const navigate = useNavigate();
@@ -147,6 +156,8 @@ export const LibrariesPage = () => {
     await patchOrderMutate({
       libraryIds: reorderLibraryIds,
     });
+
+    track('library_reorder');
   };
 
   const { mutate: patchBookOrderMutate } = useExecute({
@@ -175,6 +186,8 @@ export const LibrariesPage = () => {
       libraryId: Number(libraryId),
       bookIds: reorderBooksId,
     });
+
+    track('library_reorder_book');
   };
 
   const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
@@ -221,7 +234,11 @@ export const LibrariesPage = () => {
           library && (
             <ShareLibraryImageDialog
               libraryName={selectedLibrary.libraryName}
-              imgs={library.items.map((item) => ({ title: item.title, url: item.spineImageUrl }))}
+              imgs={library.items.map((item) => ({
+                title: item.title,
+                spine: item.spineImageUrl,
+                cover: item.coverImageUrl,
+              }))}
               onClose={handleCloseDialog}
             />
           )
@@ -302,6 +319,7 @@ export const LibrariesPage = () => {
               level="main"
               description="책장과 책을 드래그해 순서를 바꿀 수 있어요."
               trailing={
+
                 <>
                   {user !== null && (
                     <>
@@ -332,9 +350,7 @@ export const LibrariesPage = () => {
                   <IconButton
                     variant="secondary"
                     aria-label="책장 추가"
-                    onClick={() => {
-                      handleOpenDialog('RegisterLibraryDialog');
-                    }}
+                    onClick={handleClickRegisterLibrary}
                   >
                     <Icon.PlusIcon />
                   </IconButton>
@@ -413,7 +429,24 @@ export const LibrariesPage = () => {
                             {library.items.map((item, index) => {
                               return (
                                 <Sortable key={item.bookId} id={item.bookId} index={index}>
-                                  <ConstrainedImgBox img={item.spineImageUrl} height="170px" />
+                                  <ConstrainedImgBox
+                                    {...(!!item.spineImageUrl && {
+                                      img: item.spineImageUrl,
+                                    })}
+                                    maxWidth="20px"
+                                    height="170px"
+                                    fallback={
+                                      <ImageGradientBackground
+                                        img={item.coverImageUrl}
+                                        width="20px"
+                                        height="170px"
+                                      >
+                                        <ResponsiveText sx={{ mt: 4 }} direction="vertical">
+                                          <Text size="x-small">{item.title}</Text>
+                                        </ResponsiveText>
+                                      </ImageGradientBackground>
+                                    }
+                                  />
                                 </Sortable>
                               );
                             })}

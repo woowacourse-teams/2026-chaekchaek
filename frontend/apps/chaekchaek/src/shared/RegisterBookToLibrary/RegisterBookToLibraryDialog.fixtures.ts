@@ -9,7 +9,6 @@ export const bookToRegister = {
   category: '소설',
   description: '화성에 홀로 남은 우주비행사의 생존 이야기',
   coverImageUrl: 'https://static.example.com/books/47/cover.jpg',
-  totalPages: 600,
   averageRating: 0,
   ratingCount: 0,
   myRatingCount: 0,
@@ -36,10 +35,7 @@ export const librariesBeforeBookRegistrationResponse = {
 export const registeredBookResponse = {
   ...bookToRegister,
   spineImageUrl: 'https://static.example.com/books/47/spine.webp',
-  currentPage: 0,
-  status: 'WANT_TO_READ',
   addedAt: '2026-10-27T09:00:00',
-  readingUpdatedAt: '2026-10-27T09:00:00',
 };
 
 export const bookToRemove = {

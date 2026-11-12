@@ -7,10 +7,10 @@ import {
 import type { GetMembersMemberIdLibrary } from './repository.types';
 
 export const getMembersMemberIdLibrary: GetMembersMemberIdLibrary = async (model) => {
-  const { page, status, sort, memberId } = mapGetMembersMemberIdLibraryModelToRequestDTO(model);
+  const { page, sort, memberId } = mapGetMembersMemberIdLibraryModelToRequestDTO(model);
 
   const responseDTO = await fetcher.getMembersMemberIdLibrary({
-    query: { page, status, sort },
+    query: { page, sort },
     pathParams: [{ name: 'memberId', value: memberId }],
   });
 

@@ -12,7 +12,6 @@ export interface PatchReviewsReviewIdParams {
   reviewId: number;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
-  totalPages?: number | undefined;
   content: string;
 }
 

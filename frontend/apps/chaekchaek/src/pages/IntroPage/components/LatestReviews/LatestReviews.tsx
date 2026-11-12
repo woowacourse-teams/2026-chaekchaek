@@ -53,6 +53,13 @@ export const LatestReviews = () => {
     });
   };
 
+  const handleClickGoToFeed = () => {
+    track('navigate', {
+      destination: 'feed',
+      source: 'intro_latest_reviews',
+    });
+  };
+
   const [dialog, setDialog] = useState<'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'AlertDialog') => {
     setDialog(dialog);
@@ -84,7 +91,7 @@ export const LatestReviews = () => {
       <div className={styles['latest-reviews-title']}>
         <h1>최근 감상</h1>
         <div className={styles['latest-reviews-title-right']}>
-          <IconButton as={Link} to={ROUTES.FEED} target="_blank">
+          <IconButton as={Link} to={ROUTES.FEED} target="_blank" onClick={handleClickGoToFeed}>
             <Icon.ExternalLinkIcon color="secondary" />
           </IconButton>
         </div>

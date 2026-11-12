@@ -2,7 +2,6 @@ export interface PostBooksByIsbnIsbn13ReviewsCommand {
   isbn13: string;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
-  totalPages?: number | undefined;
   content: string;
 }
 

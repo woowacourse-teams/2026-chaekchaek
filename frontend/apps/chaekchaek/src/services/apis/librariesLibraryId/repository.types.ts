@@ -11,12 +11,8 @@ export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Pro
   items: {
     coverImageUrl: string;
     isbn13: string;
-    totalPages: number;
-    spineImageUrl: string;
-    currentPage: number;
+    spineImageUrl: string | null;
     title: string;
-    readingUpdatedAt: string;
-    status: string;
     authors: string[];
     bookId: number;
   }[];
@@ -25,8 +21,6 @@ export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Pro
 export interface PostLibrariesLibraryIdCommand {
   libraryId: number;
   isbn13: string;
-  totalPages?: number | undefined;
-  status: string;
 }
 
 export type PostLibrariesLibraryId = (command: PostLibrariesLibraryIdCommand) => Promise<undefined>;

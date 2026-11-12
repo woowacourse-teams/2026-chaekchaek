@@ -18,7 +18,7 @@ import type { GetLibrariesRequestDto, GetLibrariesResponseDto } from './dto';
 export const getLibraries = async ({
   query: { memberId },
 }: GetLibrariesRequestDto): Promise<GetLibrariesResponseDto> => {
-  const response = await instance('/api/v1/libraries', {
+  const response = await instance('/api/v2/libraries', {
     method: 'get',
     query: { memberId },
   });

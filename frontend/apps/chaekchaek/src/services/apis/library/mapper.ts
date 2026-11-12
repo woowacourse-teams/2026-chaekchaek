@@ -4,8 +4,8 @@ import type { GetLibraryParams } from './repository.types';
 // GetLibrary
 export const mapGetLibraryModelToRequestDTO = (
   model: GetLibraryParams,
-): { page: number; status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED'; sort: string } => {
-  return { ...model, status: model.status === 'ALL' ? '' : model.status };
+): { page: number; sort: string } => {
+  return model;
 };
 
 export const mapGetLibraryResponseDTOToModel = (response: GetLibraryResponseDto) => {

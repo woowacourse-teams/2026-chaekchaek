@@ -62,6 +62,10 @@ export const BooksPage = () => {
       },
       { replace: true },
     );
+
+    track('search', {
+      query: query,
+    });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -73,6 +77,7 @@ export const BooksPage = () => {
   const handleChangeDefaultPage = (defaultPage: number) => {
     track('search_more', {
       page: defaultPage,
+      query: keywordQuery,
     });
 
     setPage(defaultPage);
@@ -132,29 +137,28 @@ export const BooksPage = () => {
 
     setSelectedBook(book);
     handleOpenDialog('RegisterBookToLibraryDialog');
-  };
 
-  const handleBookRegistered = async () => {
-    await refetchGEtBooksLoadData();
-
-    track('library_add', {
+    track('library_add_open', {
       source: 'search',
-      status: 'reading',
     });
   };
 
-  useEffect(() => {
-    if (!query.length) return;
+  const handleBookRegistered = async ({ added, removed }: { added: boolean; removed: boolean }) => {
+    await refetchGEtBooksLoadData();
 
-    const TIMEOUT = 500;
-    const timeoutId = setTimeout(() => {
-      track('search');
-    }, TIMEOUT);
+    if (added) {
+      track('library_add', {
+        source: 'search',
+        status: 'reading',
+      });
+    }
 
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [query]);
+    if (removed) {
+      track('library_remove', {
+        source: 'search',
+      });
+    }
+  };
 
   const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
   const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {

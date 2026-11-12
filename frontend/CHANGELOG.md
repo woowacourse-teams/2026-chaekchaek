@@ -117,3 +117,18 @@
 
 ### Improved
 - S3와 CloudFront로 배포 방식을 전환하면서 CI 빌드에서 Lefthook 설치를 건너뛰도록 변경 [#673](https://github.com/woowacourse-teams/2026-chaekchaek/pull/673)
+
+## 1.5.0
+
+### Changed
+
+- 로그인 사용자의 닉네임 미설정 시 주요 화면에 설정 팝업 자동 표시 및 닫기·취소 버튼 숨김 [#709](https://github.com/woowacourse-teams/2026-chaekchaek/pull/709)
+- 서재·책장 조회 API를 책등 이미지 누락을 허용하는 v2로 변경 [#713](https://github.com/woowacourse-teams/2026-chaekchaek/pull/713)
+- 폐지된 독서 상태·페이지 정보의 API 요청·응답 의존성과 레거시 서재 UI 제거 [#714](https://github.com/woowacourse-teams/2026-chaekchaek/pull/714)
+
+### Improved
+
+- 서재·책장·이미지 저장 화면에서 책등 이미지가 없는 책에 표지 색상 기반 그라데이션과 제목 표시 [#713](https://github.com/woowacourse-teams/2026-chaekchaek/pull/713)
+- 검색·화면 이동·감상·답글·책장 관리 이벤트 트래킹 확대 및 검색어 수집 추가 [#716](https://github.com/woowacourse-teams/2026-chaekchaek/pull/716)
+- 운영 환경에 Google Tag Manager 연동 추가 [#716](https://github.com/woowacourse-teams/2026-chaekchaek/pull/716)
+- PostHog 연동 및 GA4와 동일한 이벤트 전송 추가 [#721](https://github.com/woowacourse-teams/2026-chaekchaek/pull/721)

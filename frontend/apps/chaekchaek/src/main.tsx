@@ -5,7 +5,7 @@ import { ENV } from '@/configs/env';
 import { AppProviders } from '@/providers/AppProvider';
 import { enableMocking } from '@/mocks/msw/browser';
 
-import { initializeGA } from '@/analytics/ga';
+import { initializeAnalytics } from '@/analytics';
 import { initializeErrorTracking } from '@/monitoring';
 
 import { App } from '@/App';
@@ -19,7 +19,7 @@ if (!container) throw new Error('root 요소를 찾을 수 없습니다.');
 // }
 
 if (ENV.APP_ENV === 'production') {
-  initializeGA();
+  initializeAnalytics();
 }
 
 if (ENV.APP_ENV !== 'local') {
@@ -28,9 +28,9 @@ if (ENV.APP_ENV !== 'local') {
 
 const root = createRoot(container);
 root.render(
-  <StrictMode>
-    <AppProviders>
-      <App />
-    </AppProviders>
-  </StrictMode>,
+  // <StrictMode>
+  <AppProviders>
+    <App />
+  </AppProviders>,
+  // </StrictMode>,
 );

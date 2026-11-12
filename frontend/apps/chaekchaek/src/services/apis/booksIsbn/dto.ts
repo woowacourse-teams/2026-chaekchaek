@@ -26,7 +26,6 @@ export type GetBooksIsbnResponseDto = ResponseDto<{
   };
   averageRating: number;
   isbn13: string;
-  totalPages: number;
   publisher: string;
   publishedDate: string;
   isRegisteredInMyLibrary: boolean;

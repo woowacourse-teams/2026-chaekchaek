@@ -55,6 +55,10 @@ export const BookDetailPage = () => {
   const handleRegisterBookToLibrary = () => {
     if (!isAuthenticated) return handleOpenLoginDialog();
 
+    track('library_add_open', {
+      source: 'detail_info',
+    });
+
     handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
@@ -140,13 +144,21 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
-  const handleBookRegistered = async () => {
-    track('library_add', {
-      source: 'detail_info',
-      status: 'reading',
-    });
 
-    refetchGetBooksIsbnLoadData();
+  const handleBookRegistered = async ({ added, removed }: { added: boolean; removed: boolean }) => {
+    await refetchGetBooksIsbnLoadData();
+
+    if (added) {
+      track('library_add', {
+        source: 'detail_info',
+      });
+    }
+
+    if (removed) {
+      track('library_remove', {
+        source: 'detail_info',
+      });
+    }
   };
 
   const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);

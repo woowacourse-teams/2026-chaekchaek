@@ -10,19 +10,15 @@ export type PutBooksByIsbnIsbn13RatingResponseDto = ResponseDto<{
   coverImageUrl: string;
   rating: number;
   title: string;
-  readingUpdatedAt: string;
   commentCount: number;
   bookId: number;
   translators: string[];
   isbn13: string;
-  totalPages: number;
   publisher: string;
   spineImageUrl: string;
   publishedDate: string;
-  currentPage: number;
   category: string;
   backImageUrl: string;
-  status: string;
   authors: string[];
 }>;
 export interface DeleteBooksByIsbnIsbn13RatingRequestDto {

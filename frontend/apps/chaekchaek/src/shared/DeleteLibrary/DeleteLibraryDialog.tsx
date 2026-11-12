@@ -4,6 +4,7 @@ import type { DeleteLibraryDialogProps } from './DeleteLibraryDialog.types';
 
 import { deleteLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 import { useExecute } from '@/services/core/useExecute';
+import { track } from '@/analytics/track';
 
 export const DeleteLibraryDialog = ({
   libraryId,
@@ -17,6 +18,8 @@ export const DeleteLibraryDialog = ({
 
   const handleClickDeleteLibrary = async () => {
     await deleteLibrariesLibraryIdMutate({ libraryId });
+
+    track('library_delete');
 
     await onLibraryDeleted();
     onClose();

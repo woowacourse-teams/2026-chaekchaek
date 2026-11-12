@@ -1,7 +1,6 @@
 export interface GetMembersMemberIdLibraryParams {
   memberId: number;
   page: number;
-  status: 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
   sort: string;
 }
 
@@ -16,7 +15,7 @@ export type GetMembersMemberIdLibrary = (params: GetMembersMemberIdLibraryParams
   totalCount: number;
   items: {
     coverImageUrl: string;
-    spineImageUrl: string;
+    spineImageUrl: string | null;
     backImageUrl: string;
     rating: number;
     title: string;
@@ -24,11 +23,9 @@ export type GetMembersMemberIdLibrary = (params: GetMembersMemberIdLibraryParams
     bookId: number;
     translators: string[];
     isbn13: string;
-    totalPages: number;
     publisher: string;
     publishedDate: string;
     category: string;
-    status: string;
     authors: string[];
   }[];
 }>;

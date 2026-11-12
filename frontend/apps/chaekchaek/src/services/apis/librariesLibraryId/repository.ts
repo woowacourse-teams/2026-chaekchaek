@@ -23,12 +23,11 @@ import {
 import type { PostLibrariesLibraryId } from './repository.types';
 
 export const postLibrariesLibraryId: PostLibrariesLibraryId = async (model) => {
-  const { libraryId, isbn13, totalPages, status } =
-    mapPostLibrariesLibraryIdModelToRequestDTO(model);
+  const { libraryId, isbn13 } = mapPostLibrariesLibraryIdModelToRequestDTO(model);
 
   const responseDTO = await fetcher.postLibrariesLibraryId({
     pathParams: [{ name: 'libraryId', value: libraryId }],
-    data: { isbn13, totalPages, status },
+    data: { isbn13 },
   });
 
   return mapPostLibrariesLibraryIdResponseDTOToModel(responseDTO);

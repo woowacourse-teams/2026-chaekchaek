@@ -118,7 +118,7 @@ const DummyPage = () => {
   return 'dummy page';
 };
 
-const routes: Route[] = [
+export const standaloneRoutes: Route[] = [
   {
     path: ROUTES.QR,
     element: <Navigate to={ROUTES.HOME} replace />,
@@ -147,6 +147,9 @@ const routes: Route[] = [
     path: ROUTES.HOME,
     element: <LandingHomePage />,
   },
+];
+
+export const mainAppRoutes = [
   {
     path: ROUTES.INTRO,
     element: <IntroPage />,
@@ -200,5 +203,3 @@ const routes: Route[] = [
     element: <BookFeedPage />,
   },
 ];
-
-export { routes };
