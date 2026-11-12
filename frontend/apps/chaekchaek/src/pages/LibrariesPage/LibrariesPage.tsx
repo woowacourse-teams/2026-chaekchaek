@@ -355,6 +355,7 @@ export const LibrariesPage = () => {
                     <Icon.PlusIcon />
                   </IconButton>
                 </>
+              }
             >
               내 책장
             </Title>
