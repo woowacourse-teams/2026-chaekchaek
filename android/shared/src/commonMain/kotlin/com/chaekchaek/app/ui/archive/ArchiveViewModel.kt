@@ -11,7 +11,6 @@ import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.chunkLibraryBookIds
-import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -77,9 +76,6 @@ class ArchiveViewModel(
                 category = existing?.category ?: book.category,
                 coverUrl = existing?.coverUrl ?: book.coverUrl.ifBlank { book.coverId },
                 spineUrl = existing?.spineUrl,
-                status = ReadingStatus.entries.firstOrNull { it.apiValue == record.status } ?: ReadingStatus.READING,
-                currentPage = record.currentPage,
-                totalPages = existing?.totalPages ?: book.totalPages,
                 lastRecordedAt = existing?.lastRecordedAt ?: 0L,
             )
             _uiState.value = _uiState.value.copy(
@@ -108,17 +104,6 @@ class ArchiveViewModel(
         }
     }
 
-    fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
-        val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
-        if (serverBookIds.isEmpty()) return
-        val remaining = chunkLibraryBookIds(serverBookIds).toMutableList()
-        mutate("reading_status_change", serverBookIds.size) { token ->
-            while (remaining.isNotEmpty()) {
-                repository.bulkChangeStatus(remaining.first(), status.apiValue, token)
-                remaining.removeAt(0)
-            }
-        }
-    }
 
     private fun load(refreshing: Boolean = false) {
         val token = accessToken ?: return

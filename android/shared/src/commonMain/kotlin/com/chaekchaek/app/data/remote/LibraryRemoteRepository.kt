@@ -31,9 +31,9 @@ class LibraryRemoteRepository(
     return items
   }
 
-  suspend fun add(isbn13: String, totalPages: Int?, accessToken: String) {
+  suspend fun add(isbn13: String, accessToken: String) {
     client.post("${apiConfiguration.baseUrl}/api/v1/library") {
-      authenticatedJson(accessToken, AddLibraryBookRequest(isbn13, "READING", totalPages))
+      authenticatedJson(accessToken, AddLibraryBookRequest(isbn13))
     }
   }
 
@@ -41,14 +41,6 @@ class LibraryRemoteRepository(
     chunkLibraryBookIds(bookIds).forEach { chunk ->
       client.post("${apiConfiguration.baseUrl}/api/v1/library/bulk-delete") {
         authenticatedJson(accessToken, BulkDeleteRequest(chunk))
-      }
-    }
-  }
-
-  suspend fun bulkChangeStatus(bookIds: List<Long>, status: String, accessToken: String) {
-    chunkLibraryBookIds(bookIds).forEach { chunk ->
-      client.patch("${apiConfiguration.baseUrl}/api/v1/library/bulk-status") {
-        authenticatedJson(accessToken, BulkStatusRequest(chunk, status))
       }
     }
   }
@@ -77,9 +69,6 @@ data class RemoteLibraryBook(
   val publisher: String,
   val category: String,
   val publishedDate: String?,
-  val totalPages: Int?,
-  val status: String,
-  val currentPage: Int,
   val readingUpdatedAt: String,
 )
 
@@ -100,9 +89,6 @@ private data class LibraryBookDto(
   val publisher: String,
   val category: String,
   val publishedDate: String? = null,
-  val totalPages: Int? = null,
-  val status: String,
-  val currentPage: Int,
   val readingUpdatedAt: String,
 ) {
   fun toRemoteLibraryBook(): RemoteLibraryBook? {
@@ -117,19 +103,13 @@ private data class LibraryBookDto(
       publisher = publisher,
       category = category,
       publishedDate = publishedDate,
-      totalPages = totalPages,
-      status = status,
-      currentPage = currentPage,
       readingUpdatedAt = readingUpdatedAt,
     )
   }
 }
 
 @Serializable
-private data class AddLibraryBookRequest(val isbn13: String, val status: String, val totalPages: Int?)
+private data class AddLibraryBookRequest(val isbn13: String)
 
 @Serializable
 private data class BulkDeleteRequest(val bookIds: List<Long>)
-
-@Serializable
-private data class BulkStatusRequest(val bookIds: List<Long>, val status: String)

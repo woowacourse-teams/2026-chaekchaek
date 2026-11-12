@@ -435,6 +435,5 @@ class FirstLibraryOnboardingViewModelTest {
         year = "2026",
         coverUrl = "",
         isbn13 = isbn,
-        totalPages = 100,
     )
 }

@@ -32,6 +32,15 @@ struct ContentView: View {
     }
 }
 
+private var usesBookDeepLinkFixture: Bool {
+#if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    return arguments.contains("-uiTestingBookDeepLink") && arguments.contains("-uiTestingRefresh")
+#else
+    return false
+#endif
+}
+
 private enum FirstLibraryInstallationPolicy {
     static let shownKey = "first_library_onboarding_shown"
     static let eligibleKey = "first_library_onboarding_eligible"
@@ -41,6 +50,7 @@ private enum FirstLibraryInstallationPolicy {
         let defaults = UserDefaults.standard
 #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
+        if usesBookDeepLinkFixture { return arguments.contains("-uiTestingResetOnboarding") }
         if arguments.contains("-uiTestingResetOnboarding") {
             defaults.removeObject(forKey: shownKey)
             defaults.removeObject(forKey: eligibleKey)
@@ -72,9 +82,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
         let guestKeychain = GuestAuthKeychain()
+        let fixture = usesBookDeepLinkFixture
 #if DEBUG
         let launchArguments = ProcessInfo.processInfo.arguments
-        if launchArguments.contains("-uiTestingResetOnboarding") {
+        if !fixture && launchArguments.contains("-uiTestingResetOnboarding") {
             UserDefaults.standard.removeObject(forKey: "first_library_onboarding_shown")
         } else if launchArguments.contains("-uiTestingGuest") || launchArguments.contains("-uiTestingMyPage") {
             UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
@@ -132,10 +143,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                     return "fixture-refresh"
                 }
 #endif
-                return keychain.read()
+                return fixture ? nil : keychain.read()
             },
-            writeRefreshToken: keychain.write,
-            clearRefreshToken: keychain.clear,
+            writeRefreshToken: { if !fixture { keychain.write($0) } },
+            clearRefreshToken: { if !fixture { keychain.clear() } },
             requestAppleCredential: { onResult in
                 Task { @MainActor in
                     do {
@@ -155,31 +166,35 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                     }
                 }
             },
-            readGuest: guestKeychain.read,
-            writeGuest: guestKeychain.write,
-            clearGuest: guestKeychain.clear,
+            readGuest: { fixture ? nil : guestKeychain.read() },
+            writeGuest: { if !fixture { guestKeychain.write($0) } },
+            clearGuest: { if !fixture { guestKeychain.clear() } },
             readAnonymousReviews: {
-                guard UserDefaults.standard.object(forKey: "review_anonymous") != nil else { return nil }
+                guard !fixture, UserDefaults.standard.object(forKey: "review_anonymous") != nil else { return nil }
                 return KotlinBoolean(bool: UserDefaults.standard.bool(forKey: "review_anonymous"))
             },
             writeAnonymousReviews: { value in
-                UserDefaults.standard.set(value.boolValue, forKey: "review_anonymous")
+                if !fixture { UserDefaults.standard.set(value.boolValue, forKey: "review_anonymous") }
             }
         )
+        var fixtureRecentSearches: [String] = []
         let recentSearchStorage = RecentSearchStorage(
             read: {
-                UserDefaults.standard.stringArray(forKey: "recent_searches") ?? []
+                fixture ? fixtureRecentSearches : UserDefaults.standard.stringArray(forKey: "recent_searches") ?? []
             },
             write: { queries in
-                UserDefaults.standard.set(queries, forKey: "recent_searches")
+                if fixture { fixtureRecentSearches = queries }
+                else { UserDefaults.standard.set(queries, forKey: "recent_searches") }
             }
         )
+        var fixtureOnboardingShown = !onboardingEligible
         let onboardingStorage = OnboardingStorage(
             hasBeenShown: {
-                KotlinBoolean(bool: !onboardingEligible || UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
+                KotlinBoolean(bool: fixture ? fixtureOnboardingShown : !onboardingEligible || UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
             },
             markShown: {
-                UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
+                if fixture { fixtureOnboardingShown = true }
+                else { UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown") }
             }
         )
         let defaults = UserDefaults.standard

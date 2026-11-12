@@ -428,7 +428,7 @@ class BookDetailViewModelTest {
     for (latestDetail in listOf(DETAIL_WITH_RECORD.replace("READING", "FINISHED"), DETAIL_WITHOUT_RECORD)) {
       val target = book().copy(isbn13 = "9780000000042")
       val saves = LibrarySaveViewModel(
-        addBook = { _, _, _ -> LibraryRecord("READING", 0, null, 42) },
+        addBook = { _, _ -> LibraryRecord(rating = null, bookId = 42) },
         onSaved = { _, _ -> },
       )
       saves.authenticate("member")
@@ -459,36 +459,10 @@ class BookDetailViewModelTest {
       if (latestDetail == DETAIL_WITHOUT_RECORD) {
         assertNull(detail.uiState.value.detail?.myRecord)
       } else {
-        assertEquals("FINISHED", detail.uiState.value.detail?.myRecord?.status)
-        assertEquals(12, detail.uiState.value.detail?.myRecord?.currentPage)
         assertEquals(4.0, detail.uiState.value.detail?.myRating)
       }
       observation.cancel()
     }
-  }
-
-  @Test
-  fun `바로 담기 완료는 열린 상세의 기록 수정에서 중복 등록하지 않는다`() = runViewModelTest {
-    val writes = mutableListOf<String>()
-    val client = testClient(MockEngine { request ->
-      when {
-        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
-        request.method == HttpMethod.Patch -> {
-          writes += request.url.encodedPath
-          respond(LIBRARY_RECORD.replace("\"currentPage\":0", "\"currentPage\":18"), headers = jsonHeaders())
-        }
-        request.method == HttpMethod.Post -> error("저장된 책을 다시 등록하면 안 된다")
-        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
-      }
-    })
-    val vm = viewModel(client, client, platform({ null }))
-    val target = book().copy(isbn13 = "9780000000042")
-    vm.open(target, "member")
-    awaitReal { vm.uiState.first { it.detail != null } }
-    vm.acceptSavedLibraryRecord(target.isbn13, LibraryRecord("READING", 0, null, 73))
-    vm.savePage(18)
-    awaitReal { vm.uiState.first { it.detail?.myRecord?.currentPage == 18 } }
-    assertEquals(listOf("/api/v1/library/73"), writes)
   }
 
   @Test
@@ -506,12 +480,12 @@ class BookDetailViewModelTest {
     val target = book().copy(isbn13 = "9780000000042")
     vm.open(target, "member")
     awaitReal { detailRequested.await() }
-    val record = LibraryRecord("READING", 0, null, 73)
+    val record = LibraryRecord(rating = null, bookId = 73)
     vm.acceptSavedLibraryRecord(target.isbn13, record)
     detailResponse.complete(Unit)
     awaitReal { vm.uiState.first { it.detail != null } }
     assertEquals(record, vm.uiState.value.detail?.myRecord)
-    vm.acceptSavedLibraryRecord("9780000000099", LibraryRecord("COMPLETED", 99, null, 99))
+    vm.acceptSavedLibraryRecord("9780000000099", LibraryRecord(rating = null, bookId = 99))
     assertEquals(record, vm.uiState.value.detail?.myRecord)
   }
 
@@ -580,7 +554,7 @@ class BookDetailViewModelTest {
       viewModel.open(book().copy(isbn13 = "9780000000042"), "fixture-member")
       awaitReal { viewModel.uiState.first { it.detail != null } }
       viewModel.openReviewComposer {}
-      val request = ReviewCreateRequest("보존할 감상", "문장", "첫 장", 80, 224, true)
+      val request = ReviewCreateRequest("보존할 감상", "문장", "첫 장", isSpoiler = true)
       viewModel.createReview(request)
       assertEquals(ReviewSubmissionState.Submitting, viewModel.uiState.value.reviewSubmissionState)
       viewModel.createReview(request)
@@ -1050,7 +1024,7 @@ class BookDetailViewModelTest {
     viewModel.open(book(), accessToken = null)
     advanceUntilIdle()
 
-    viewModel.createReview(ReviewCreateRequest("감상", currentPage = 10, totalPages = 100))
+    viewModel.createReview(ReviewCreateRequest("감상"))
     awaitReal { secondWriteStarted.await() }
     advanceTimeBy(API_LOADING_DELAY_MILLIS)
     runCurrent()
@@ -1441,41 +1415,6 @@ class BookDetailViewModelTest {
   }
 
   @Test
-  fun `상태와 쪽수 변경 응답을 재조회 없이 즉시 반영한다`() = runViewModelTest {
-    var currentPage = 12
-    var status = "READING"
-    val engine = MockEngine { request ->
-      when {
-        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") ->
-          respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
-        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
-        request.method == HttpMethod.Patch -> {
-          if (request.url.encodedPath.endsWith("/42")) {
-            if (currentPage == 12) currentPage = 80 else status = "FINISHED"
-          }
-          respond(
-            """{"bookId":42,"status":"$status","currentPage":$currentPage,"rating":4.0}""",
-            headers = jsonHeaders(),
-          )
-        }
-        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
-      }
-    }
-    val client = testClient(engine)
-    val viewModel = viewModel(client, client, platform(readGuest = { null }))
-    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
-    awaitReal { viewModel.uiState.first { it.detail != null } }
-
-    viewModel.savePage(80)
-    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 80 } }
-    assertEquals(80, viewModel.uiState.value.detail?.myRecord?.currentPage)
-
-    viewModel.updateStatus(ReadingStatus.Finished)
-    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.status == "FINISHED" } }
-    assertEquals("FINISHED", viewModel.uiState.value.detail?.myRecord?.status)
-  }
-
-  @Test
   fun `로그인 토큰이 바뀌면 상세 요청도 새 토큰을 사용한다`() = runViewModelTest {
     val authorizations = mutableListOf<String?>()
     val oldDetailStarted = CompletableDeferred<Unit>()
@@ -1503,10 +1442,10 @@ class BookDetailViewModelTest {
 
     viewModel.syncAuthentication("new-token")
     finishOldDetail.complete(Unit)
-    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 7 } }
+    awaitReal { viewModel.uiState.first { it.detail?.myRating == 3.0 } }
 
     assertEquals(listOf<String?>("Bearer old-token", "Bearer new-token"), authorizations)
-    assertEquals(7, viewModel.uiState.value.detail?.myRecord?.currentPage)
+    assertEquals(3.0, viewModel.uiState.value.detail?.myRating)
   }
 
   @Test
@@ -1525,11 +1464,11 @@ class BookDetailViewModelTest {
           respond(detail, headers = jsonHeaders())
         }
         request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
-        request.method == HttpMethod.Patch -> {
+        request.method == HttpMethod.Put && request.url.encodedPath.contains("/rating") -> {
           oldMutationStarted.complete(Unit)
           finishOldMutation.await()
           respond(
-            """{"bookId":42,"status":"READING","currentPage":80,"rating":4.0}""",
+            """{"bookId":42,"rating":5.0}""",
             headers = jsonHeaders(),
           )
         }
@@ -1541,14 +1480,14 @@ class BookDetailViewModelTest {
     viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "old-token")
     awaitReal { viewModel.uiState.first { it.detail != null } }
 
-    viewModel.savePage(80) { successCount += 1 }
+    viewModel.saveRating(Rating.ofScore(5f)) { successCount += 1 }
     awaitReal { oldMutationStarted.await() }
     viewModel.syncAuthentication("new-token")
     finishOldMutation.complete(Unit)
-    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 7 } }
+    awaitReal { viewModel.uiState.first { it.detail?.myRating == 3.0 } }
 
     assertEquals(0, successCount)
-    assertEquals(7, viewModel.uiState.value.detail?.myRecord?.currentPage)
+    assertEquals(3.0, viewModel.uiState.value.detail?.myRating)
   }
 
   @Test
@@ -1856,7 +1795,7 @@ class BookDetailViewModelTest {
     gate.complete(Unit)
     awaitReal { vm.refreshState.first { it.enabled } }
     assertTrue(vm.uiState.value.signedIn)
-    assertEquals(12, vm.uiState.value.detail?.myRecord?.currentPage)
+    assertEquals(4.0, vm.uiState.value.detail?.myRating)
   }
 
   @Test
@@ -1866,14 +1805,14 @@ class BookDetailViewModelTest {
     var writes = 0
     val client = testClient(MockEngine { request ->
       when {
-        request.method == HttpMethod.Patch -> {
+        request.method == HttpMethod.Put && request.url.encodedPath.contains("/rating") -> {
           writes++
           gate.await()
-          respond("""{"bookId":42,"status":"READING","currentPage":24,"rating":4.0}""", headers = jsonHeaders())
+          respond("""{"bookId":42,"rating":5.0}""", headers = jsonHeaders())
         }
         request.url.encodedPath.contains("/by-isbn/") -> {
           reads++
-          respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+          respond(if (writes > 0) DETAIL_AFTER_EXISTING_RATING else DETAIL_WITH_RECORD, headers = jsonHeaders())
         }
         else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
       }
@@ -1881,7 +1820,7 @@ class BookDetailViewModelTest {
     val vm = viewModel(client, client, platform({ null }))
     vm.open(book().copy(isbn13 = "9780000000042"), "member-test")
     awaitReal { vm.refreshState.first { it.enabled } }
-    vm.savePage(24)
+    vm.saveRating(Rating.ofScore(5f))
     awaitReal { while (writes == 0) kotlinx.coroutines.yield() }
     assertFalse(vm.refreshState.value.enabled)
     vm.refresh()
@@ -1889,7 +1828,8 @@ class BookDetailViewModelTest {
     assertEquals(1, reads)
     gate.complete(Unit)
     awaitReal { vm.refreshState.first { it.enabled } }
-    assertEquals(24, vm.uiState.value.detail?.myRecord?.currentPage)
+    assertEquals(5.0, vm.uiState.value.detail?.myRating)
+    assertEquals(2, reads)
     assertEquals(1, writes)
   }
 

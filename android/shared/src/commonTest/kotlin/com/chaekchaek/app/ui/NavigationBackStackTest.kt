@@ -3,6 +3,8 @@ package com.chaekchaek.app.ui
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.assertNotEquals
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
@@ -15,10 +17,10 @@ class NavigationBackStackTest {
         val previous = BookDetailKey(BookDetailArgs(id = "previous", isbn13 = "9791172376215", title = "이전 책"))
         val stack = mutableListOf<androidx.navigation3.runtime.NavKey>(previous)
         val next = BookDetailArgs(id = "linked", isbn13 = "9788937460449", title = "링크 책")
-        assertTrue(stack.openExternalBookFromCurrent(previous, next))
+        assertNotNull(stack.openExternalBookFromCurrent(previous, next))
         val linked = stack.last()
-        assertFalse(stack.openExternalBookFromCurrent(linked, next))
-        assertFalse(stack.openExternalBookFromCurrent(previous, next))
+        assertNull(stack.openExternalBookFromCurrent(linked, next))
+        assertNull(stack.openExternalBookFromCurrent(previous, next))
         assertTrue(stack.popDestinationIfCurrent(linked))
         assertTrue(stack.last() === previous)
         assertFalse(stack.popDestinationIfCurrent(linked))

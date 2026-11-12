@@ -34,11 +34,14 @@ data class LibrarySaveUiState(
     val lastSavedBook: SavedLibraryBook? = null,
     val failedBook: BookDetailArgs? = null,
     val errorMessage: String? = null,
-)
+) {
+    val hasPendingSave: Boolean
+        get() = pendingBook != null || choosingBook != null || savingIsbn != null
+}
 
 /** 화면 이동 없이 책만 담는 요청과 인증 대기를 관리한다. 저장 여부는 공통 서재 상태가 소유한다. */
 class LibrarySaveViewModel(
-    private val addBook: suspend (String, Int?, String) -> LibraryRecord,
+    private val addBook: suspend (String, String) -> LibraryRecord,
     private val onSaved: (BookDetailArgs, LibraryRecord) -> Unit,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val shelves: BookshelfRepository? = null,
@@ -219,8 +222,8 @@ class LibrarySaveViewModel(
                         if (generation == requestGeneration) state.value = state.value.copy(showLoading = loading)
                     },
                 ) {
-                    if (shelfId != null) shelves!!.add(shelfId, book.isbn13, book.totalPages.takeIf { it > 0 }, token)
-                    else addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+                    if (shelfId != null) shelves!!.add(shelfId, book.isbn13, token)
+                    else addBook(book.isbn13, token)
                 }.getOrThrow()
                 if (generation != requestGeneration) return@launch
                 if (shelfId != null) state.value.memberId?.let { writeRecentShelf(it, shelfId) }

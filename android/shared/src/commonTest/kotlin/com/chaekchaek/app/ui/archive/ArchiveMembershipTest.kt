@@ -2,7 +2,6 @@ package com.chaekchaek.app.ui.archive
 
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
-import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -39,23 +38,22 @@ import kotlin.test.assertTrue
 class ArchiveMembershipTest {
     @Test
     fun partialBulkFailureRetriesOnlyTheUnfinishedChunkWithFreshToken() = runTest {
-        for (delete in listOf(true, false)) {
-            val bodies = mutableListOf<String>()
-            val tokens = mutableListOf<String?>()
-            var calls = 0
-            val engine = MockEngine { request ->
-                if (request.url.encodedPath.contains("bulk-")) {
-                    calls++
-                    bodies += (request.body as io.ktor.http.content.TextContent).text
-                    tokens += request.headers[HttpHeaders.Authorization]
-                    respond("", if (calls == 2) HttpStatusCode.Unauthorized else HttpStatusCode.NoContent)
-                } else respond(libraryJson((1..11).toList()), headers = jsonHeaders())
-            }
-            withArchive(engine) { vm ->
-                vm.authenticate("old-token")
-                awaitReal { vm.uiState.first { it.items.size == 11 } }
-                val ids = (1..11).mapTo(mutableSetOf(), ::isbn)
-                if (delete) vm.remove(ids) else vm.changeStatus(ids, ReadingStatus.FINISHED)
+        val bodies = mutableListOf<String>()
+        val tokens = mutableListOf<String?>()
+        var calls = 0
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.contains("bulk-")) {
+                calls++
+                bodies += (request.body as io.ktor.http.content.TextContent).text
+                tokens += request.headers[HttpHeaders.Authorization]
+                respond("", if (calls == 2) HttpStatusCode.Unauthorized else HttpStatusCode.NoContent)
+            } else respond(libraryJson((1..11).toList()), headers = jsonHeaders())
+        }
+        withArchive(engine) { vm ->
+            vm.authenticate("old-token")
+            awaitReal { vm.uiState.first { it.items.size == 11 } }
+            val ids = (1..11).mapTo(mutableSetOf(), ::isbn)
+            vm.remove(ids)
                 awaitReal { vm.errors.notice.first { it != null } }
                 assertEquals(2, calls)
                 vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke("fresh-token")
@@ -65,7 +63,6 @@ class ArchiveMembershipTest {
                 assertFalse(bodies[0] == bodies[2])
                 assertEquals("Bearer fresh-token", tokens.last())
             }
-        }
     }
 
     @Test
@@ -99,7 +96,6 @@ class ArchiveMembershipTest {
         val finishSecondDelete = CompletableDeferred<Unit>()
         var deleteCalls = 0
         var completedDeletes = 0
-        var statusCalls = 0
         var refreshedAfterWrites = false
         val engine = MockEngine { request ->
             when {
@@ -112,14 +108,9 @@ class ArchiveMembershipTest {
                     completedDeletes += 1
                     respond("", HttpStatusCode.NoContent)
                 }
-                request.url.encodedPath.endsWith("bulk-status") -> {
-                    assertEquals(2, completedDeletes)
-                    statusCalls += 1
-                    respond("", HttpStatusCode.NoContent)
-                }
                 else -> {
-                    val ids = if (statusCalls == 0) (1..13).toList() else listOf(12, 42)
-                    if (statusCalls > 0) refreshedAfterWrites = true
+                    val ids = if (completedDeletes < 3) (1..13).toList() else listOf(42)
+                    if (completedDeletes >= 3) refreshedAfterWrites = true
                     respond(libraryJson(ids), headers = jsonHeaders())
                 }
             }
@@ -129,25 +120,23 @@ class ArchiveMembershipTest {
             awaitReal { vm.uiState.first { it.items.size == 13 } }
             vm.remove((1..11).mapTo(mutableSetOf(), ::isbn))
             awaitReal { secondDeleteStarted.await() }
-            vm.changeStatus(setOf(isbn(12)), ReadingStatus.FINISHED)
+            vm.remove(setOf(isbn(12)))
             val savedBook = BookDetailArgs("42", isbn13 = isbn(42), title = "저장한 책")
-            vm.acceptSavedBook(savedBook, LibraryRecord("READING", 0, null, 42))
+            vm.acceptSavedBook(savedBook, LibraryRecord(rating = null, bookId = 42))
             vm.acceptRemovedBook(isbn(13))
             vm.retry()
             vm.authenticate("member-renewed-token")
             runCurrent()
             advanceTimeBy(500)
             runCurrent()
-            assertEquals(0, statusCalls)
             assertEquals(1, completedDeletes)
             assertTrue(vm.uiState.value.showLoading)
             assertTrue(vm.uiState.value.items.any { it.id == isbn(42) })
             assertFalse(vm.uiState.value.items.any { it.id == isbn(13) })
 
             finishSecondDelete.complete(Unit)
-            awaitReal { vm.uiState.first { it.items.map { book -> book.id } == listOf(isbn(12), isbn(42)) } }
-            assertEquals(2, completedDeletes)
-            assertEquals(1, statusCalls)
+            awaitReal { vm.uiState.first { it.items.map { book -> book.id } == listOf(isbn(42)) } }
+            assertEquals(3, completedDeletes)
             assertTrue(refreshedAfterWrites)
             assertFalse(vm.uiState.value.showLoading)
             assertNull(vm.uiState.value.errorMessage)
@@ -158,16 +147,11 @@ class ArchiveMembershipTest {
     fun logoutCancelsQueuedWritesAndLateOldSessionResponseCannotChangeNewAccount() = runTest {
         val deleteStarted = CompletableDeferred<Unit>()
         val finishOldDelete = CompletableDeferred<Unit>()
-        var statusCalls = 0
         val engine = MockEngine { request ->
             when {
                 request.url.encodedPath.endsWith("bulk-delete") -> {
                     deleteStarted.complete(Unit)
                     withContext(NonCancellable) { finishOldDelete.await() }
-                    respond("", HttpStatusCode.NoContent)
-                }
-                request.url.encodedPath.endsWith("bulk-status") -> {
-                    statusCalls += 1
                     respond("", HttpStatusCode.NoContent)
                 }
                 else -> {
@@ -181,7 +165,7 @@ class ArchiveMembershipTest {
             awaitReal { vm.uiState.first { it.items.size == 2 } }
             vm.remove(setOf(isbn(1)))
             awaitReal { deleteStarted.await() }
-            vm.changeStatus(setOf(isbn(2)), ReadingStatus.FINISHED)
+            vm.remove(setOf(isbn(2)))
             advanceTimeBy(500)
             runCurrent()
             assertTrue(vm.uiState.value.showLoading)
@@ -192,7 +176,6 @@ class ArchiveMembershipTest {
 
             finishOldDelete.complete(Unit)
             awaitReal { vm.uiState.first { it.items.singleOrNull()?.id == isbn(77) } }
-            assertEquals(0, statusCalls)
             assertNull(vm.uiState.value.errorMessage)
             assertFalse(vm.uiState.value.showLoading)
         }
@@ -267,7 +250,7 @@ class ArchiveMembershipTest {
             awaitReal { oldReadStarted.await() }
             vm.acceptSavedBook(
                 BookDetailArgs("42", isbn13 = isbn(42), title = "저장한 책"),
-                LibraryRecord("READING", 0, null, 42),
+                LibraryRecord(rating = null, bookId = 42),
             )
             finishOldRead.complete(Unit)
             awaitReal { vm.uiState.first { it.errorMessage != null } }
@@ -291,7 +274,7 @@ class ArchiveMembershipTest {
             advanceUntilIdle()
             failRefresh = true
             val book = BookDetailArgs("42", isbn13 = "9780000000042", title = "책")
-            vm.acceptSavedBook(book, LibraryRecord("READING", 0, null, 42))
+            vm.acceptSavedBook(book, LibraryRecord(rating = null, bookId = 42))
             assertEquals(listOf(book.isbn13), vm.uiState.value.items.map { it.id })
             withContext(Dispatchers.Default) {
                 withTimeout(5_000) { vm.uiState.first { it.errorMessage != null } }

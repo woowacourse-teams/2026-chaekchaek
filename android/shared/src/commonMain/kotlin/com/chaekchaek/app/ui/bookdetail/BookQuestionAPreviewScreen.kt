@@ -52,9 +52,9 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
                 (1..10).joinToString("\n\n") { "**발췌 표시 예시 $it**\n\n이 자료는 마크다운 서식과 독립 스크롤을 확인하기 위한 개발 프리뷰입니다." },
         )
     }
-    val book = remember { BookDetailArgs(id = "development-fixture", bookId = 1, title = "어린 왕자", creator = "앙투안 드 생텍쥐페리", publisher = "개발 프리뷰", totalPages = 200, coverId = "cover_01") }
+    val book = remember { BookDetailArgs(id = "development-fixture", bookId = 1, title = "어린 왕자", creator = "앙투안 드 생텍쥐페리", publisher = "개발 프리뷰", coverId = "cover_01") }
     val reviews = remember { (1L..20L).map { id ->
-        BookReview(id, "개발 프리뷰 감상 $id. 시간을 들여 읽은 장면이 오래 남습니다.", null, null, null,
+        BookReview(id, "개발 프리뷰 감상 $id. 시간을 들여 읽은 장면이 오래 남습니다.", null, null,
             "2026-10-21T00:00:00Z", "프리뷰 독자", true, 0, 0)
     } }
     Column(Modifier.fillMaxSize()) {
@@ -79,7 +79,7 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
             modifier = Modifier.weight(1f),
             state = BookDetailUiState(
                 book = book,
-                detail = BookDetail(1, "", book.title, listOf(book.creator), emptyList(), book.publisher, "소설", "1943", 200, "", 20, 4.5, 10, null,
+                detail = BookDetail(1, "", book.title, listOf(book.creator), emptyList(), book.publisher, "소설", "1943", "", 20, 4.5, 10, null,
                     myRating = savedRating, isRegisteredInMyLibrary = savedToLibrary),
                 reviews = reviews,
                 reviewCount = reviews.size,

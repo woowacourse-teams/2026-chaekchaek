@@ -19,7 +19,7 @@ class BookRegistrationViewModelTest {
     fun resumesPendingRegistrationAfterAuthentication() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val calls = mutableListOf<Pair<String, String>>()
-        val viewModel = BookRegistrationViewModel { isbn13, _, token -> calls += isbn13 to token }
+        val viewModel = BookRegistrationViewModel { isbn13, token -> calls += isbn13 to token }
         val book = BookSearchResult(
             title = "마션",
             creator = "앤디 위어",
@@ -27,7 +27,6 @@ class BookRegistrationViewModelTest {
             year = "2026",
             coverUrl = "",
             isbn13 = "9780000000000",
-            totalPages = 308,
         )
 
         try {

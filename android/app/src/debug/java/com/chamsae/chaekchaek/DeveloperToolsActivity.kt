@@ -94,7 +94,7 @@ class DeveloperToolsActivity : ComponentActivity() {
                     if (questionPreview) Box(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
                         BookQuestionAPreviewScreen(onExit = { questionPreview = false })
                     } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true }, onOpenBookLink = { uri ->
-                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)).setPackage(packageName))
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri).normalizeScheme()).setPackage(packageName))
                         finish()
                     }, policy = AndroidRemotePolicy.get(this))
                 }

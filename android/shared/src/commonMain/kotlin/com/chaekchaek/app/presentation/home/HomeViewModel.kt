@@ -133,8 +133,6 @@ class HomeViewModel(
                                     isbn13 = book.isbn13,
                                     title = book.title,
                                     coverId = book.coverId,
-                                    currentPage = book.currentPage,
-                                    totalPages = book.totalPages,
                                 )
                             },
                         )

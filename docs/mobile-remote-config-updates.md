@@ -113,6 +113,19 @@ Galaxy S25(SM-S931N), 앱 1.3.2(12)에서 확인했다. 기존 앱과 같은 서
 | --- | --- | --- |
 | ![원격 설정값과 마지막 수신 시각](assets/mobile-remote-config/android-remote-policy.png) | ![권장 업데이트 안내](assets/mobile-remote-config/android-recommended.png) | ![강제 업데이트 안내](assets/mobile-remote-config/android-required.png) |
 
+## Android 구버전에서 실제 Play 업데이트 (2026-11-11)
+
+Galaxy S25(SM-S931N)에 Google Play 내부 앱 공유로 **1.3.2 (12)**를 설치하고, 앱에서 Flexible 업데이트를 시작해 **1.3.2 (13)**으로 올렸다. 두 Debug 번들은 소스 `5082264f`와 같은 패키지 및 내부 공유 서명을 사용했다. 13번 번들은 버전 코드만 올려 빌드했다.
+
+1. 기기에 있던 로컬 설치본을 제거하고 Play 내부 공유 링크에서 12번을 설치했다.
+2. 13번 공유 링크를 열어 Play에 `업데이트`가 표시되는 것을 확인하고 기존 앱으로 돌아왔다. 12번 개발자 도구에서 권장 판정만 임시로 적용했다.
+3. 앱의 `업데이트` 버튼으로 Google Play의 Flexible 창을 열고 다운로드했다. 앱에서 `업데이트가 준비됐어요`가 뜬 뒤 `다시 시작`을 눌렀다.
+4. 13번으로 홈이 다시 열렸다. 기기에서 설치 전후의 `versionCode`가 `12 → 13`으로 바뀌었고, 설치 출처는 두 버전 모두 `com.android.vending`으로 확인했다.
+
+| Play에서 12번 설치 | 앱 버전 12 | Google Play Flexible | 다운로드 후 재시작 | 앱 버전 13 |
+| --- | --- | --- | --- | --- |
+| ![내부 공유 설치 화면](assets/mobile-remote-config/android-play-install-code12.png) | ![업데이트 전 앱 버전 1.3.2 (12)](assets/mobile-remote-config/android-play-version-code12.png) | ![앱 위에 표시된 Google Play 업데이트 창](assets/mobile-remote-config/android-play-flexible.png) | ![다운로드 완료 후 다시 시작 안내](assets/mobile-remote-config/android-play-restart.png) | ![업데이트 후 앱 버전 1.3.2 (13)](assets/mobile-remote-config/android-play-version-code13.png) |
+
 ## 참고
 
 - [Firebase Remote Config 로딩 전략](https://firebase.google.com/docs/remote-config/loading)

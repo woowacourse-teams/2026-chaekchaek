@@ -541,7 +541,6 @@ private fun BookDetailTarget.toBookDetailArgs() = BookDetailArgs(
     publisher = publisher,
     year = year,
     category = category,
-    totalPages = totalPages,
     coverUrl = coverUrl,
     coverId = coverId,
 )
@@ -554,6 +553,5 @@ private fun ArchiveBookUiModel.toBookDetailArgs() = BookDetailArgs(
     creator = creator,
     publisher = publisher,
     category = category,
-    totalPages = totalPages,
     coverUrl = coverUrl,
 )

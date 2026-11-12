@@ -43,7 +43,9 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
+import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
@@ -61,6 +63,8 @@ import com.chaekchaek.app.ui.bookdetail.toReviewRequest
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
+import com.chaekchaek.app.ui.bookdetail.bookDetailCredential
+import com.chaekchaek.app.ui.bookdetail.toBookDetailArgs
 import com.chaekchaek.app.ui.common.ErrorRecoveryHost
 import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
@@ -91,6 +95,12 @@ internal data class BookDetailKey(
     val book: BookDetailArgs,
     val entryId: String = Uuid.random().toString(),
 ) : NavKey
+
+private class LinkedBookDetail(
+    val destination: BookDetailKey,
+    val book: BookDetail,
+    val credential: WriteCredential?,
+)
 
 @Serializable
 private data class PublicLibraryKey(val memberId: Long, val ownerName: String) : NavKey
@@ -145,7 +155,7 @@ private fun AppNavigationContent(
 ) {
     val linkRepository = remember { BookDetailRemoteRepository() }
     val linkViewModel: com.chaekchaek.app.deeplink.BookDeepLinkViewModel = viewModel {
-        com.chaekchaek.app.deeplink.BookDeepLinkViewModel(createSavedStateHandle(), { linkRepository.detail(it) }, analytics.errors)
+        com.chaekchaek.app.deeplink.BookDeepLinkViewModel(createSavedStateHandle(), linkRepository::detail, analytics.errors)
     }
     val delivery by bookDeepLinks.pending.collectAsState()
     LaunchedEffect(delivery) {
@@ -350,16 +360,30 @@ private fun AppNavigationContent(
         memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
+    var linkedBookDetail by remember { mutableStateOf<LinkedBookDetail?>(null) }
     val pendingLink by linkViewModel.pending.collectAsState()
     val linkLoading by linkViewModel.showLoading.collectAsState()
+    val librarySaveError by librarySaveViewModel.errors.notice.collectAsState()
+    val librarySaveInProgress = librarySaveState.hasPendingSave || librarySaveError != null
     ErrorRecoveryEffect(linkViewModel.errors)
-    LaunchedEffect(pendingLink, restoringAuthentication) {
-        if (!restoringAuthentication) {
+    LaunchedEffect(pendingLink, restoringAuthentication, authTokens?.accessToken, librarySaveInProgress) {
+        if (!restoringAuthentication && !librarySaveInProgress) {
             val source = backStack.last()
+            val credential = authPlatform.bookDetailCredential(authViewModel.tokens.value?.accessToken)
             linkViewModel.openPending(
                 currentIsbn = (source as? BookDetailKey)?.book?.isbn13,
+                credential = credential,
                 sourceIsCurrent = { backStack.isCurrentDestination(source) },
-                openBook = { backStack.openExternalBookFromCurrent(source, it) },
+                readyToOpen = {
+                    !librarySaveViewModel.uiState.value.hasPendingSave &&
+                        librarySaveViewModel.errors.notice.value == null
+                },
+                openBook = { book ->
+                    val args = book.toBookDetailArgs(BookDetailArgs(id = book.isbn13, title = book.title))
+                    backStack.openExternalBookFromCurrent(source, args)?.let { destination ->
+                        linkedBookDetail = LinkedBookDetail(destination, book, credential)
+                    }
+                },
             )
         }
     }
@@ -416,7 +440,7 @@ private fun AppNavigationContent(
                     val searchViewModel = viewModel<SearchViewModel> {
                         SearchViewModel(
                             bookSearchRepository = BookSearchRemoteRepository(),
-                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl)) },
                             isSignedIn = { authViewModel.tokens.value != null },
                             recentSearchStorage = recentSearchStorage,
                             analytics = analytics,
@@ -424,7 +448,7 @@ private fun AppNavigationContent(
                         )
                     }
                     searchViewModel.attachRegistration(
-                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl)) },
                         isSignedIn = { authViewModel.tokens.value != null },
                     )
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
@@ -528,7 +552,13 @@ private fun AppNavigationContent(
                     LaunchedEffect(key.book, restoringAuthentication) {
                         if (!restoringAuthentication) {
                             analytics.screenView("book_detail")
-                            viewModel.open(key.book, authTokens?.accessToken)
+                            val accessToken = authViewModel.tokens.value?.accessToken
+                            val linked = linkedBookDetail?.takeIf { it.destination == key }
+                            if (linked != null) linkedBookDetail = null
+                            val initialDetail = linked?.book?.takeIf {
+                                linked.credential == authPlatform.bookDetailCredential(accessToken)
+                            }
+                            viewModel.open(key.book, accessToken, initialDetail)
                         }
                     }
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
@@ -570,23 +600,6 @@ private fun AppNavigationContent(
                             onLoginRequired = viewModel::requestAuthentication,
                             onAddToLibrary = { librarySaveViewModel.save(displayBook) },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
-                            onStatusChange = { status ->
-                                viewModel.updateStatus(
-                                    status,
-                                    onSuccess = bookshelfViewModel::refresh,
-                                    onLibraryAdded = bookshelfViewModel::refresh,
-                                )
-                            },
-                            onPageSave = { page, onSaved ->
-                                viewModel.savePage(
-                                    page,
-                                    onSuccess = {
-                                        bookshelfViewModel.refresh()
-                                        onSaved()
-                                    },
-                                    onLibraryAdded = bookshelfViewModel::refresh,
-                                )
-                            },
                             onRatingCriterionChange = viewModel::loadRatingComparison,
                             onRatingSave = { rating, onSaved ->
                                 viewModel.saveRating(

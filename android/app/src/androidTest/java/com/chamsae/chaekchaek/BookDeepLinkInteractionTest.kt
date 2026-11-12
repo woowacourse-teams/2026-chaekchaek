@@ -30,8 +30,9 @@ class BookDeepLinkInteractionTest {
     private val valid = "chaekchaek://books/9788937460449"
 
     @Before fun prepare() {
-        assertEquals("local", ApiConfiguration.environment)
-        Assume.assumeFalse("인증 데이터가 있는 기기는 보존한다", context.getSharedPreferences("auth_session", Context.MODE_PRIVATE).contains("refresh_token"))
+        Assume.assumeTrue("딥링크 fixture는 local 빌드에서만 실행한다", ApiConfiguration.environment == "local")
+        val auth = context.getSharedPreferences("auth_session", Context.MODE_PRIVATE)
+        Assume.assumeFalse("인증 데이터가 있는 기기는 보존한다", auth.contains("refresh_token") || auth.contains("guest_token"))
         check(URI("$base/__692/reset").toURL().readText().contains("692"))
         val preferences = context.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
         priorOnboarding = if (preferences.contains("first_library_shown")) preferences.getBoolean("first_library_shown", false) else null
@@ -49,8 +50,10 @@ class BookDeepLinkInteractionTest {
         edit.commit()
         instrumentation.waitForIdleSync()
     }
-    private fun link(uri: String = valid) {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    private fun link(uri: String = valid, direct: Boolean = false) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName)
+        if (direct) intent.setClass(context, MainActivity::class.java)
+        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
     private fun waitCondition(timeoutMs: Long = 15_000, condition: () -> Boolean) = compose.waitUntil(timeoutMs) {
         try {
@@ -127,6 +130,30 @@ class BookDeepLinkInteractionTest {
         main(); detail(); back(); waitText("홈")
     }
 
+    @Test fun directLinkDoesNotReplayAfterReturningHomeAndRecreating() {
+        link(direct = true); detail(); back(); waitText("홈")
+        main(); waitText("홈")
+        compose.onNodeWithText("딥링크 검증 도서").assertDoesNotExist()
+        link(direct = true); detail(); back(); waitText("홈")
+    }
+
+    @Test fun linkResumesIfActivityRecreatesDuringLookup() {
+        val isbnPath = "/api/v1/books/by-isbn/9788937460449"
+        URI("$base/__692/mode/delayed").toURL().readText()
+        link()
+        waitCondition { counts().optInt(isbnPath) == 1 }
+        main()
+        detail()
+        back(); waitText("홈")
+    }
+
+    @Test fun initialBookLookupIsUsedByTheDetailScreen() {
+        link()
+        detail()
+        waitCondition { counts().optInt("/api/v1/books/692/reviews") > 0 }
+        assertEquals(1, counts().getInt("/api/v1/books/by-isbn/9788937460449"))
+    }
+
     @Test fun onboardingDefersTargetUntilSkipped() {
         context.getSharedPreferences("onboarding", Context.MODE_PRIVATE).edit().putBoolean("first_library_shown", false).commit()
         link(); waitText("건너뛰기")
@@ -142,7 +169,8 @@ class BookDeepLinkInteractionTest {
         compose.onNodeWithText("잘못된 링크").performClick(); compose.onNodeWithText("링크 실행").performClick()
         waitText("링크를 열 수 없어요"); compose.onNodeWithText("확인").performClick()
         compose.onNodeWithTag("developer-deeplink-uri").assertTextEquals("chaekchaek://books/not-a-book")
-        compose.onNodeWithText("정상 링크").performClick(); compose.onNodeWithText("링크 실행").performClick()
+        compose.onNodeWithTag("developer-deeplink-uri").performTextReplacement("CHAEKCHAEK://BOOKS/9788937460449")
+        compose.onNodeWithText("링크 실행").performClick()
         detail(); back(); waitText("홈")
     }
 }

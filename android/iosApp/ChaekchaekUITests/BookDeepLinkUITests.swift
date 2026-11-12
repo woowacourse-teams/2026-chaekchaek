@@ -10,7 +10,7 @@ final class BookDeepLinkUITests: XCTestCase {
         let (data, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__692/reset"))
         XCTAssertTrue(String(decoding: data, as: UTF8.self).contains("692"))
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestingRefresh", onboarding ? "-uiTestingResetOnboarding" : "-uiTestingExistingInstallation"]
+        app.launchArguments = ["-uiTestingRefresh", "-uiTestingBookDeepLink", onboarding ? "-uiTestingResetOnboarding" : "-uiTestingExistingInstallation"]
         app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = base.absoluteString
         return app
     }
@@ -42,8 +42,40 @@ final class BookDeepLinkUITests: XCTestCase {
         app.open(valid)
         detail(app)
         capture(app, "딥링크 상세")
+        try await assertOneInitialLookup()
         back(app)
         XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor private func assertOneInitialLookup() async throws {
+        for _ in 0..<30 {
+            let (data, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__692"))
+            let response = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let counts = try XCTUnwrap(response["counts"] as? [String: Int])
+            if counts["/api/v1/books/692/reviews", default: 0] > 0 {
+                XCTAssertEqual(counts["/api/v1/books/by-isbn/9788937460449"], 1)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        XCTFail("딥링크에서 연 상세의 감상 조회가 시작되지 않았어요.")
+    }
+
+    @MainActor func testWarmLinkReturnsToDiscoverWithInput() async throws {
+        let app = try await prepared()
+        app.launch()
+        let discover = app.buttons["발견"]
+        XCTAssertTrue(discover.waitForExistence(timeout: 10))
+        discover.tap()
+        let field = app.textViews["search-query-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("link draft")
+        app.open(valid)
+        detail(app)
+        back(app)
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertEqual(field.value as? String, "link draft")
     }
 
     @MainActor func testOnboardingDefersLinkUntilCompleted() async throws {
@@ -71,6 +103,8 @@ final class BookDeepLinkUITests: XCTestCase {
         app.buttons["링크 실행"].tap()
         XCTAssertTrue(app.staticTexts["링크를 열 수 없어요"].waitForExistence(timeout: 5))
         app.buttons["확인"].tap()
+        let uri = app.textViews["developer-deeplink-uri"]
+        XCTAssertEqual(uri.value as? String, "chaekchaek://books/not-a-book")
 
         // 2. 정상 링크 실행 -> 책 상세 이동 -> 뒤로가기 시 홈 복귀
         // 잘못된 링크 검증은 자체 에러 다이얼로그였으므로 개발자 도구가 닫히지 않고 열려 있다.

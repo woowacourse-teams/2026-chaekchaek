@@ -871,7 +871,6 @@ private fun BookSearchResult.toBookDetailTarget() = BookDetailTarget(
   publisher = publisher,
   year = year,
   category = category,
-  totalPages = totalPages,
   coverUrl = coverUrl,
 )
 

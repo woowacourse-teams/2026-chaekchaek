@@ -50,10 +50,10 @@ class BookDetailRemoteRepository(
       credential?.let { authenticate(it) }
     }.body<ReviewPageDto>().toReviewPage()
 
-  suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
+  suspend fun addToLibrary(isbn13: String, accessToken: String): LibraryRecord =
     try {
       client.post("${apiConfiguration.baseUrl}/api/v1/library") {
-        authenticatedJson(accessToken, LibraryAddRequest(isbn13, "READING", totalPages))
+        authenticatedJson(accessToken, LibraryAddRequest(isbn13))
       }.body<LibraryRecordDto>().toLibraryRecord()
     } catch (error: ResponseException) {
       if (!error.isAlreadySavedBookConflict()) throw error
@@ -62,16 +62,6 @@ class BookDetailRemoteRepository(
       val bookId = existingRecord.bookId ?: existingBook.bookId ?: throw error
       existingRecord.copy(bookId = bookId)
     }
-
-  suspend fun updateReadingStatus(bookId: Long, status: String, accessToken: String): LibraryRecord =
-    client.patch("${apiConfiguration.baseUrl}/api/v1/library/$bookId") {
-      authenticatedJson(accessToken, LibraryUpdateRequest(status = status))
-    }.body<LibraryRecordDto>().toLibraryRecord()
-
-  suspend fun updateCurrentPage(bookId: Long, currentPage: Int, totalPages: Int?, accessToken: String): LibraryRecord =
-    client.patch("${apiConfiguration.baseUrl}/api/v1/library/$bookId") {
-      authenticatedJson(accessToken, LibraryUpdateRequest(currentPage = currentPage, totalPages = totalPages))
-    }.body<LibraryRecordDto>().toLibraryRecord()
 
   suspend fun rate(bookId: Long, rating: Double, accessToken: String): PersonalRating =
     client.put("${apiConfiguration.baseUrl}/api/v1/library/$bookId/rating") {
@@ -87,10 +77,7 @@ class BookDetailRemoteRepository(
 
   suspend fun createReview(bookId: Long, request: ReviewCreateRequest, credential: WriteCredential): BookReview =
     client.post("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
-      authenticatedJson(
-        credential,
-        if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
-      )
+      authenticatedJson(credential, request)
     }.body<ReviewDto>().toBookReview()
 
   suspend fun createReviewByIsbn(
@@ -99,10 +86,7 @@ class BookDetailRemoteRepository(
     credential: WriteCredential,
   ): BookReview =
     client.post("${apiConfiguration.baseUrl}/api/v1/books/by-isbn/$isbn13/reviews") {
-      authenticatedJson(
-        credential,
-        if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
-      )
+      authenticatedJson(credential, request)
     }.body<ReviewCreateByIsbnDto>().review.toBookReview()
 
   suspend fun updateReview(
@@ -113,7 +97,7 @@ class BookDetailRemoteRepository(
     client.patch("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId") {
       authenticate(credential)
       contentType(ContentType.Application.Json)
-      setBody(request.toUpdateBody(includeReadingProgress = credential is WriteCredential.Member))
+      setBody(request.toUpdateBody())
     }.body<ReviewDto>().toBookReview()
 
   /** 새 감상 화면에서 편집하지 않는 읽기 메타데이터는 PATCH에서 생략해 서버 값을 유지한다. */
@@ -219,15 +203,11 @@ internal suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
   }.getOrDefault(false)
 }
 
-private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = buildJsonObject {
+private fun ReviewCreateRequest.toUpdateBody() = buildJsonObject {
   put("content", content)
   put("quote", quote?.let(::JsonPrimitive) ?: JsonNull)
   put("chapter", chapter?.let(::JsonPrimitive) ?: JsonNull)
   put("isSpoiler", isSpoiler)
-  if (includeReadingProgress) {
-    put("currentPage", currentPage?.let(::JsonPrimitive) ?: JsonNull)
-    put("totalPages", totalPages?.let(::JsonPrimitive) ?: JsonNull)
-  }
 }
 
 enum class ReviewScope { ALL, MINE }
@@ -243,7 +223,6 @@ data class BookDetail(
   val publisher: String,
   val category: String,
   val publishedDate: String?,
-  val totalPages: Int?,
   val coverImageUrl: String,
   val commentCount: Int?,
   val averageRating: Double?,
@@ -261,13 +240,9 @@ data class BookQuestion(val question: String, val plot: String? = null, val extr
 data class PersonalRating(
   val bookId: Long,
   val rating: Double,
-  val status: String? = null,
-  val currentPage: Int? = null,
 )
 
 data class LibraryRecord(
-  val status: String?,
-  val currentPage: Int,
   val rating: Double?,
   val bookId: Long? = null,
 )
@@ -296,7 +271,6 @@ data class BookReview(
   val content: String,
   val quote: String?,
   val chapter: String?,
-  val currentPage: Int?,
   val createdAt: String,
   val authorName: String,
   val anonymous: Boolean,
@@ -334,7 +308,6 @@ internal data class BookDetailDto(
   val publisher: String,
   val category: String,
   val publishedDate: String? = null,
-  val totalPages: Int? = null,
   val coverImageUrl: String,
   val commentCount: Int? = null,
   val averageRating: Double? = null,
@@ -354,27 +327,16 @@ internal data class BookQuestionDto(
 @Serializable
 internal data class LibraryRecordDto(
   val bookId: Long,
-  val status: String? = null,
-  val currentPage: Int? = null,
   val rating: Double? = null,
 )
 
 @Serializable
 internal data class BookDetailRecordDto(
-  val status: String? = null,
-  val currentPage: Int? = null,
   val myRating: Double? = null,
 )
 
 @Serializable
-private data class LibraryAddRequest(val isbn13: String, val status: String, val totalPages: Int? = null)
-
-@Serializable
-private data class LibraryUpdateRequest(
-  val status: String? = null,
-  val currentPage: Int? = null,
-  val totalPages: Int? = null,
-)
+private data class LibraryAddRequest(val isbn13: String)
 
 @Serializable
 private data class RatingRequest(val rating: Double)
@@ -399,8 +361,6 @@ data class ReviewCreateRequest(
   val content: String,
   val quote: String? = null,
   val chapter: String? = null,
-  val currentPage: Int? = null,
-  val totalPages: Int? = null,
   val isSpoiler: Boolean = false,
 )
 
@@ -433,7 +393,6 @@ internal data class ReviewDto(
   val content: String,
   val quote: String? = null,
   val chapter: String? = null,
-  val currentPage: Int? = null,
   val createdAt: String,
   val author: ReviewAuthorDto,
   val replyCount: Int,
@@ -482,7 +441,6 @@ internal fun BookDetailDto.toBookDetail() =
     publisher = publisher,
     category = category.substringAfterLast('>'),
     publishedDate = publishedDate,
-    totalPages = totalPages,
     coverImageUrl = coverImageUrl,
     commentCount = commentCount,
     averageRating = averageRating,
@@ -494,11 +452,10 @@ internal fun BookDetailDto.toBookDetail() =
         BookQuestion(question, value.plot?.takeIf(String::isNotBlank), value.extract?.takeIf(String::isNotBlank))
       }
     },
-    // 이전 서버에는 등록 여부 필드가 없어 실제 독서 기록으로만 보완한다.
-    isRegisteredInMyLibrary = isRegisteredInMyLibrary ?: (myRecord?.status != null),
+    isRegisteredInMyLibrary = isRegisteredInMyLibrary ?: false,
   )
 
-internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage ?: 0, rating, bookId)
+internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(rating, bookId)
 
 private fun RatingComparisonDto.toRatingComparison() =
   RatingComparison(lower?.toRatingComparisonBook(), current?.toRatingComparisonBook(), higher?.toRatingComparisonBook())
@@ -507,7 +464,7 @@ private fun RatingComparisonBookDto.toRatingComparisonBook() =
   bookId?.let { RatingComparisonBook(it, title, myRating, ratingUpdatedAt) }
 
 internal fun BookDetailRecordDto.toLibraryRecord() =
-  status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }
+  LibraryRecord(myRating)
 
 internal fun ReviewPageDto.toReviewPage() =
   ReviewPage(
@@ -529,7 +486,6 @@ internal fun ReviewDto.toBookReview() =
     content = content,
     quote = quote,
     chapter = chapter,
-    currentPage = currentPage,
     createdAt = createdAt,
     authorName = author.displayName,
     authorProfile = author.toAuthorProfile(),

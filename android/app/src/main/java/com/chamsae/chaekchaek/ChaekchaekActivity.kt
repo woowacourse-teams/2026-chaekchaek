@@ -67,8 +67,8 @@ abstract class ChaekchaekActivity : ComponentActivity() {
         val pendingUri = savedInstanceState?.getString("book_link_pending_uri")
         val pendingId = savedInstanceState?.getString("book_link_pending_id")
         if (pendingUri != null && pendingId != null) bookDeepLinks.receive(pendingUri, pendingId)
-        // Relay가 수신 ID를 부여하므로 재생성과 새로운 동일 URI 실행을 구분한다.
-        if (savedInstanceState == null || intent.getStringExtra(BookDeepLinkActivity.RECEIPT) != lastLinkReceipt) receiveBookLink(intent)
+        // 복원된 Activity의 최초 Intent는 이전 실행의 것이고 새 전달은 onNewIntent로 받는다.
+        if (savedInstanceState == null) receiveBookLink(intent)
         remotePolicy = AndroidRemotePolicy.get(this)
         updates = AndroidAppUpdates(this, createAppUpdateManager(), remotePolicy.controller, remotePolicy.controller::storeFailed)
 

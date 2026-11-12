@@ -43,12 +43,6 @@ class HomeCollageLayoutTest {
         assertEquals(CollageTransform(141f, 29f, 1f, 1f, 0f), transform)
     }
 
-    @Test
-    fun readingProgressIsClamped() {
-        assertEquals(0.4125f, readingProgress(currentPage = 132, totalPages = 320))
-        assertEquals(0f, readingProgress(currentPage = 10, totalPages = 0))
-        assertEquals(1f, readingProgress(currentPage = 400, totalPages = 320))
-    }
 
     @Test
     fun recentReflectionCardFitsTheAvailableWidthWithoutGrowingPastTheFigmaWidth() {

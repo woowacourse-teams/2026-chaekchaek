@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.domain.reader.Nickname
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.theme.ChaekAccent
@@ -41,30 +40,6 @@ import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
-@Composable
-internal fun StatusChangeDialog(selectedCount: Int, onDismiss: () -> Unit, onChange: (ReadingStatus) -> Unit) {
-    var selected by rememberSaveable { mutableStateOf(ReadingStatus.READING) }
-    ChaekTwoActionDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("독서 상태 변경", style = MaterialTheme.typography.titleMedium) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "선택한 ${selectedCount}권의 상태를 변경합니다.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Column(modifier = Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ReadingStatus.entries.forEach { status ->
-                        StatusOptionRow(status = status, selected = selected == status, onClick = { selected = status })
-                    }
-                }
-            }
-        },
-        dismissButton = { DialogDismissButton(onDismiss) },
-        confirmButton = { DialogConfirmButton(label = "변경", onClick = { onChange(selected) }) },
-    )
-}
 
 @Composable
 internal fun DeleteConfirmationDialog(selectedCount: Int, onDismiss: () -> Unit, onConfirm: () -> Unit) {
@@ -93,38 +68,6 @@ private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boo
     ChaekOverlayButton(label, onClick, enabled = enabled, modifier = modifier)
 }
 
-@Composable
-private fun StatusOptionRow(status: ReadingStatus, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = ChaekOverlayTokens.inputShape,
-            )
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(20.dp).background(MaterialTheme.colorScheme.surface, CircleShape)
-                .border(
-                    1.dp,
-                    if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                    CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (selected) Box(Modifier.size(10.dp).background(ChaekAccent, CircleShape))
-        }
-        Text(
-            status.label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            ),
-        )
-    }
-}
 
 @Composable
 internal fun NicknameDialog(

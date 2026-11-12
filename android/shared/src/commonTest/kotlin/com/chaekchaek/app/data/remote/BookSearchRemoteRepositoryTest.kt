@@ -34,7 +34,6 @@ class BookSearchRemoteRepositoryTest {
         assertEquals("앤디 위어  박아람 옮김", result.creator)
         assertEquals("2015", result.year)
         assertEquals("과학소설", result.category)
-        assertEquals(0, result.totalPages)
     }
 
     @Test

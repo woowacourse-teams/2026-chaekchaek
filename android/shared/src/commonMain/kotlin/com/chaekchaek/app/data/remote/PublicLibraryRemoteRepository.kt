@@ -30,7 +30,7 @@ class PublicLibraryRemoteRepository(
         return PublicBookshelfDetail(response.libraryId, response.memberId, response.name, response.isDefault,
             response.totalCount, response.items.map { book ->
                 PublicLibraryBook(book.bookId, book.isbn13, book.title, book.coverImageUrl, book.spineImageUrl,
-                    book.authors, book.totalPages, book.status, book.currentPage)
+                    book.authors)
             })
     }
 }
@@ -51,6 +51,5 @@ private data class PublicBookshelfDto(
 @Serializable
 private data class PublicLibraryBookDto(
     val bookId: Long, val isbn13: String, val title: String, val coverImageUrl: String,
-    val spineImageUrl: String? = null, val authors: List<String>, val totalPages: Int? = null,
-    val status: String, val currentPage: Int,
+    val spineImageUrl: String? = null, val authors: List<String>,
 )
