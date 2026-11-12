@@ -14,6 +14,10 @@
 	<string>6.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
+        <dict>
+            <key>CFBundleURLName</key><string>com.chaekchaek.books</string>
+            <key>CFBundleURLSchemes</key><array><string>chaekchaek</string></array>
+        </dict>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>

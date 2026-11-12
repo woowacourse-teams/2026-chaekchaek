@@ -67,7 +67,7 @@ class Jev580FlowHostTest {
         try {
             val anonymousReviews = mutableStateOf(prefs.getBoolean("anonymous", true))
             val state = mutableStateOf(BookDetailUiState(
-                book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증", totalPages = 224), signedIn = true,
+                book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증"), signedIn = true,
             ))
             val submissions = mutableListOf<QuestionAReviewDraft>()
             val restoration = StateRestorationTester(compose)

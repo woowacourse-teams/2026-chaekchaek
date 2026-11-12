@@ -41,7 +41,7 @@ class BookDetailScrollRestorationTest {
         val liveMembership = mutableStateOf(true)
         val reviews = (1L..12L).map { id ->
             BookReview(reviewId = id, content = "복원 감상 $id", quote = null, chapter = null,
-                currentPage = null, createdAt = "2026-10-15T00:00:00Z", authorName = "작성자",
+                createdAt = "2026-10-15T00:00:00Z", authorName = "작성자",
                 anonymous = false, replyCount = 0, likeCount = 0, writtenByMe = false)
         }
         val restoration = StateRestorationTester(compose)

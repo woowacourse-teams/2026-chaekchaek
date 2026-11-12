@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +44,9 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
+import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
@@ -61,6 +64,8 @@ import com.chaekchaek.app.ui.bookdetail.toReviewRequest
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
+import com.chaekchaek.app.ui.bookdetail.bookDetailCredential
+import com.chaekchaek.app.ui.bookdetail.toBookDetailArgs
 import com.chaekchaek.app.ui.common.ErrorRecoveryHost
 import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
@@ -91,6 +96,12 @@ internal data class BookDetailKey(
     val book: BookDetailArgs,
     val entryId: String = Uuid.random().toString(),
 ) : NavKey
+
+private class LinkedBookDetail(
+    val destination: BookDetailKey,
+    val book: BookDetail,
+    val credential: WriteCredential?,
+)
 
 @Serializable
 private data class PublicLibraryKey(val memberId: Long, val ownerName: String) : NavKey
@@ -123,11 +134,12 @@ internal fun AppNavigation(
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
     authDeveloperOverlay: @Composable (AuthViewModel) -> Unit = {},
+    bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox,
 ) {
     val authViewModel: AuthViewModel = viewModel { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
     SideEffect { authViewModel.attachPlatform(authPlatform) }
     ErrorRecoveryHost(authViewModel) {
-        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
+        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel, bookDeepLinks)
     }
     authDeveloperOverlay(authViewModel)
 }
@@ -142,7 +154,16 @@ private fun AppNavigationContent(
     homeHeaderAction: @Composable () -> Unit,
     onExitRequested: () -> Unit,
     authViewModel: AuthViewModel,
+    bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox,
 ) {
+    val linkRepository = remember { BookDetailRemoteRepository(authViewModel.authenticatedClient) }
+    val linkViewModel: com.chaekchaek.app.deeplink.BookDeepLinkViewModel = viewModel {
+        com.chaekchaek.app.deeplink.BookDeepLinkViewModel(createSavedStateHandle(), linkRepository::detail, analytics.errors)
+    }
+    val delivery by bookDeepLinks.pending.collectAsState()
+    LaunchedEffect(delivery) {
+        delivery?.let { linkViewModel.accept(it); bookDeepLinks.acknowledge(it.id) }
+    }
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
@@ -311,18 +332,19 @@ private fun AppNavigationContent(
     val libraryRepository = remember { LibraryRemoteRepository(authenticatedClient) }
     val memberRepository = remember { MemberRemoteRepository(authenticatedClient) }
     val bookshelfRepository = remember { com.chaekchaek.app.data.remote.BookshelfRemoteRepository(authenticatedClient) }
-    val bookshelfViewModel = remember { com.chaekchaek.app.ui.archive.BookshelfViewModel(bookshelfRepository) }
+    val bookshelfViewModel = viewModel { com.chaekchaek.app.ui.archive.BookshelfViewModel(bookshelfRepository) }
     val shelfPlatform = com.chaekchaek.app.ui.archive.rememberBookshelfPlatform()
-    val librarySaveViewModel = remember {
+    val librarySaveViewModel = viewModel {
         LibrarySaveViewModel(
             addBook = detailRepository::addToLibrary,
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
             onShelfCreated = bookshelfViewModel::refresh,
             shelves = bookshelfRepository,
-            readRecentShelf = shelfPlatform::readRecent,
-            writeRecentShelf = shelfPlatform::writeRecent,
             analytics = analytics,
         )
+    }
+    SideEffect {
+        librarySaveViewModel.attachRecentShelfStorage(shelfPlatform::readRecent, shelfPlatform::writeRecent)
     }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository, errorReporter = analytics.errors) }
     ErrorRecoveryEffect(bookshelfViewModel.errors)
@@ -342,12 +364,47 @@ private fun AppNavigationContent(
         val accessToken = memberSession?.requestKey
         surveyViewModel.authenticate(surveyRespondent())
         homeViewModel.authenticate(accessToken)
-        bookshelfViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
-        librarySaveViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
         memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
     }
+    LaunchedEffect(memberSession?.requestKey, restoringAuthentication) {
+        if (!restoringAuthentication) {
+            val accessToken = memberSession?.requestKey
+            val memberId = authViewModel.memberIdFor(accessToken)
+            bookshelfViewModel.authenticate(accessToken, memberId)
+            librarySaveViewModel.authenticate(accessToken, memberId)
+        }
+    }
     val backStack = rememberNavBackStack(navigationConfig, Root)
-    val publicLibraryRepository = remember { PublicLibraryRemoteRepository(authenticatedClient) }
+    var linkedBookDetail by remember { mutableStateOf<LinkedBookDetail?>(null) }
+    val pendingLink by linkViewModel.pending.collectAsState()
+    val linkLoading by linkViewModel.showLoading.collectAsState()
+    val librarySaveError by librarySaveViewModel.errors.notice.collectAsState()
+    val librarySaveInProgress = librarySaveState.hasPendingSave || librarySaveError != null
+    ErrorRecoveryEffect(linkViewModel.errors)
+    LaunchedEffect(pendingLink, restoringAuthentication, memberSession?.requestKey, librarySaveInProgress) {
+        if (!restoringAuthentication && !librarySaveInProgress) {
+            val source = backStack.last()
+            val credential = authPlatform.bookDetailCredential(authViewModel.memberSession.value?.requestKey)
+            linkViewModel.openPending(
+                currentIsbn = (source as? BookDetailKey)?.book?.isbn13,
+                credential = credential,
+                sourceIsCurrent = { backStack.isCurrentDestination(source) },
+                readyToOpen = {
+                    !linkViewModel.hasUnreadDelivery(bookDeepLinks.pending.value) &&
+                        !authViewModel.isRestoringSession.value &&
+                        !librarySaveViewModel.uiState.value.hasPendingSave &&
+                        librarySaveViewModel.errors.notice.value == null
+                },
+                openBook = { book ->
+                    val args = book.toBookDetailArgs(BookDetailArgs(id = book.isbn13, title = book.title))
+                    backStack.openExternalBookFromCurrent(source, args)?.let { destination ->
+                        linkedBookDetail = LinkedBookDetail(destination, book, credential)
+                    }
+                },
+            )
+        }
+    }
+        val publicLibraryRepository = remember { PublicLibraryRemoteRepository(authenticatedClient) }
     val profileErrors = remember { ErrorRecoveryState() }
     ErrorRecoveryEffect(profileErrors)
     fun openAuthorLibrary(source: NavKey, profile: AuthorProfile) {
@@ -514,7 +571,13 @@ private fun AppNavigationContent(
                     LaunchedEffect(key.book, waitingForInitialAuthentication) {
                         if (!waitingForInitialAuthentication) {
                             analytics.screenView("book_detail")
-                            viewModel.open(key.book, memberSession?.requestKey)
+                            val requestKey = memberSession?.requestKey
+                            val linked = linkedBookDetail?.takeIf { it.destination == key }
+                            if (linked != null) linkedBookDetail = null
+                            val initialDetail = linked?.book?.takeIf {
+                                linked.credential == authPlatform.bookDetailCredential(requestKey)
+                            }
+                            viewModel.open(key.book, requestKey, initialDetail)
                         }
                     }
                     LaunchedEffect(memberSession?.requestKey, restoringAuthentication) {
@@ -551,8 +614,8 @@ private fun AppNavigationContent(
                             coverContent = { book, modifier ->
                                 RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                             },
-                            resumedAuthenticatedAction = resumedAction,
-                            onAuthenticatedActionHandled = { resumedAction = null },
+                            resumedAuthenticatedAction = state.resumedAction.takeIf { backStack.isCurrentDestination(key) },
+                            onAuthenticatedActionHandled = viewModel::finishResumedAction,
                             onLoginRequired = viewModel::requestAuthentication,
                             onAddToLibrary = { librarySaveViewModel.save(displayBook) },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
@@ -616,7 +679,7 @@ private fun AppNavigationContent(
                                 authViewModel.clearError()
                                 authViewModel.requireAppleMemberAuthentication { token ->
                                     analytics.endAuthAttempt("success")
-                                    resumedAction = viewModel.authenticate(token)
+                                    viewModel.authenticate(token)
                                 }
                             },
                             onGoogleSignIn = {
@@ -624,7 +687,7 @@ private fun AppNavigationContent(
                                 authViewModel.clearError()
                                 authViewModel.requireMemberAuthentication { token ->
                                     analytics.endAuthAttempt("success")
-                                    resumedAction = viewModel.authenticate(token)
+                                    viewModel.authenticate(token)
                                 }
                             },
                         )
@@ -634,6 +697,7 @@ private fun AppNavigationContent(
         )
         com.chaekchaek.app.ui.archive.ShelfChoiceSheet(librarySaveViewModel)
     }
+    if (linkLoading) com.chaekchaek.app.ui.bookdetail.RequestLoadingOverlay(Modifier.fillMaxSize())
 }
 
 @Composable

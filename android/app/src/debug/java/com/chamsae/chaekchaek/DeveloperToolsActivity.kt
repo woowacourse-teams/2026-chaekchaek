@@ -98,7 +98,10 @@ class DeveloperToolsActivity : ComponentActivity() {
                 ) {
                     if (questionPreview) Box(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
                         BookQuestionAPreviewScreen(onExit = { questionPreview = false })
-                    } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true }, policy = AndroidRemotePolicy.get(this))
+                    } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true }, onOpenBookLink = { uri ->
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri).normalizeScheme()).setPackage(packageName))
+                        finish()
+                    }, policy = AndroidRemotePolicy.get(this))
                 }
             }
         }
@@ -115,6 +118,7 @@ private fun DeveloperToolsScreen(
     items: List<DeveloperInfoItem>,
     onBack: () -> Unit,
     onQuestionPreview: () -> Unit,
+    onOpenBookLink: (String) -> Unit,
     policy: AndroidRemotePolicy,
 ) {
     Column(
@@ -148,6 +152,7 @@ private fun DeveloperToolsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
+            com.chaekchaek.app.ui.common.BookDeepLinkDeveloperContent(onOpenBookLink)
             TextButton(onClick = onQuestionPreview) { Text("질문 A 개발 프리뷰") }
             DeveloperInfoCard(items)
             com.chaekchaek.app.ui.common.PolicyDeveloperContent(policy.controller) { policy.refresh(force = true) }

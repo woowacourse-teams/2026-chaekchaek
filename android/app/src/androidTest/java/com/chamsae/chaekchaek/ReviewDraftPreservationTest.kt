@@ -27,7 +27,7 @@ class ReviewDraftPreservationTest {
     @Test
     fun failedSubmissionKeepsEveryFieldForRetryWithoutReadingRecord() {
         val state = mutableStateOf(BookDetailUiState(
-            book = BookDetailArgs(id = "42", bookId = 42, title = "감상 보존 검증", totalPages = 224),
+            book = BookDetailArgs(id = "42", bookId = 42, title = "감상 보존 검증"),
             signedIn = true,
         ))
         val requests = mutableListOf<ReviewCreateRequest>()
@@ -92,7 +92,7 @@ class ReviewDraftPreservationTest {
         compose.runOnIdle {
             val expected = ReviewCreateRequest(
                 content = "사라지면 안 되는 감상", quote = "기억할 문장",
-                chapter = null, currentPage = null, totalPages = null, isSpoiler = true,
+                chapter = null, isSpoiler = true,
             )
             assertEquals(listOf(expected, expected), requests)
         }

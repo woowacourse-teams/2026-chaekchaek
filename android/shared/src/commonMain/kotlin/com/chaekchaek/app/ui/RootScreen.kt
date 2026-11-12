@@ -120,7 +120,7 @@ internal fun RootScreen(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
     var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
-    var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
+    var archiveScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     var archiveLoginOpensMyPage by rememberSaveable { mutableStateOf(false) }
     val memberSession by authViewModel.memberSession.collectAsState()

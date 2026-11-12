@@ -23,12 +23,13 @@ internal fun ChaekOverlayButton(
     secondary: Boolean = false,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodySmall,
+    minimumHeight: androidx.compose.ui.unit.Dp = ChaekOverlayTokens.buttonHeight,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = minimumHeight),
         shape = ChaekOverlayTokens.buttonShape,
         color = if (!enabled) colors.surfaceVariant else if (secondary) colors.surface else colors.onBackground,
         border = if (secondary) BorderStroke(1.dp, colors.outlineVariant) else null,

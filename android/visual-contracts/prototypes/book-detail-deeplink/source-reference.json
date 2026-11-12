@@ -1,0 +1,1431 @@
+{
+  "source": {
+    "name": "책췍.fig",
+    "sha256": "7d67ef6c3f48aee284cf82c4be35550e3414cc2661c1acf2ec073cf0f57d9fd1",
+    "exportedAt": "2026-11-09T10:15:25.751Z"
+  },
+  "roots": [
+    {
+      "id": "1099:174",
+      "type": "FRAME",
+      "name": "DEBUG-02 · 개발자 도구",
+      "visible": true,
+      "width": 390,
+      "height": 914,
+      "x": 0,
+      "y": 35,
+      "fill": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      },
+      "radius": 0,
+      "children": [
+        {
+          "id": "1099:175",
+          "type": "FRAME",
+          "name": "Status bar",
+          "visible": true,
+          "width": 390,
+          "height": 45,
+          "x": 0,
+          "y": 0,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1099:176",
+              "type": "FRAME",
+              "name": "Text",
+              "visible": true,
+              "width": 29,
+              "height": 30,
+              "x": 26,
+              "y": 15,
+              "radius": 0,
+              "children": [
+                {
+                  "id": "1099:177",
+                  "type": "TEXT",
+                  "name": "9:41",
+                  "visible": true,
+                  "width": 29,
+                  "height": 16,
+                  "x": 0,
+                  "y": 0,
+                  "fill": {
+                    "r": 0.09803921729326248,
+                    "g": 0.09803921729326248,
+                    "b": 0.09803921729326248,
+                    "a": 1
+                  },
+                  "radius": 0,
+                  "text": "9:41",
+                  "font": "SF Pro",
+                  "fontSize": 13,
+                  "lineHeight": {
+                    "value": 100,
+                    "units": "PERCENT"
+                  },
+                  "baselines": [
+                    {
+                      "x": 0,
+                      "y": 12.62109375,
+                      "start": 0,
+                      "end": 4
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "1099:178",
+              "type": "FRAME",
+              "name": "Text",
+              "visible": true,
+              "width": 73,
+              "height": 30,
+              "x": 291,
+              "y": 15,
+              "radius": 0,
+              "children": [
+                {
+                  "id": "1099:179",
+                  "type": "TEXT",
+                  "name": "▮▮▮ ◒ ▰",
+                  "visible": true,
+                  "width": 73,
+                  "height": 13,
+                  "x": 0,
+                  "y": 0,
+                  "fill": {
+                    "r": 0.09803921729326248,
+                    "g": 0.09803921729326248,
+                    "b": 0.09803921729326248,
+                    "a": 1
+                  },
+                  "radius": 0,
+                  "text": "▮▮▮ ◒ ▰",
+                  "font": "SF Pro",
+                  "fontSize": 11,
+                  "lineHeight": {
+                    "value": 100,
+                    "units": "PERCENT"
+                  },
+                  "baselines": [
+                    {
+                      "x": 0,
+                      "y": 10.41015625,
+                      "start": 0,
+                      "end": 7
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "1099:180",
+          "type": "FRAME",
+          "name": "Developer tools app bar",
+          "visible": true,
+          "width": 390,
+          "height": 70,
+          "x": 0,
+          "y": 45,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1099:181",
+              "type": "FRAME",
+              "name": "Button - 뒤로가기",
+              "visible": true,
+              "width": 44,
+              "height": 44,
+              "x": 24,
+              "y": 13,
+              "stroke": {
+                "r": 0.8666666746139526,
+                "g": 0.8666666746139526,
+                "b": 0.8823529481887817,
+                "a": 1
+              },
+              "radius": 20,
+              "children": [
+                {
+                  "id": "1099:182",
+                  "type": "TEXT",
+                  "name": "뒤로가기 아이콘",
+                  "visible": true,
+                  "width": 9,
+                  "height": 35,
+                  "x": 17.5,
+                  "y": 4.5,
+                  "fill": {
+                    "r": 0.09803921729326248,
+                    "g": 0.09803921729326248,
+                    "b": 0.09803921729326248,
+                    "a": 1
+                  },
+                  "radius": 0,
+                  "text": "‹",
+                  "textStyle": "책췍/Display/Page",
+                  "font": "Gowun Dodum",
+                  "fontSize": 29,
+                  "lineHeight": {
+                    "value": 34.79999923706055,
+                    "units": "PIXELS"
+                  },
+                  "baselines": [
+                    {
+                      "x": 0,
+                      "y": 30.04399871826172,
+                      "start": 0,
+                      "end": 1
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "1099:183",
+              "type": "TEXT",
+              "name": "제목",
+              "visible": true,
+              "width": 137,
+              "height": 35,
+              "x": 80,
+              "y": 17.5,
+              "fill": {
+                "r": 0.09803921729326248,
+                "g": 0.09803921729326248,
+                "b": 0.09803921729326248,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "개발자 도구",
+              "textStyle": "책췍/Display/Page",
+              "font": "Gowun Dodum",
+              "fontSize": 29,
+              "lineHeight": {
+                "value": 34.79999923706055,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 30.04399871826172,
+                  "start": 0,
+                  "end": 6
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "1099:184",
+          "type": "FRAME",
+          "name": "Developer tools content",
+          "visible": true,
+          "width": 390,
+          "height": 799,
+          "x": 0,
+          "y": 115,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1099:185",
+              "type": "FRAME",
+              "name": "DEBUG 전용 배지",
+              "visible": true,
+              "width": 79,
+              "height": 28,
+              "x": 24,
+              "y": 24,
+              "stroke": {
+                "r": 1,
+                "g": 0.5215686559677124,
+                "b": 0,
+                "a": 1
+              },
+              "radius": 20,
+              "children": [
+                {
+                  "id": "1099:186",
+                  "type": "TEXT",
+                  "name": "배지 문구",
+                  "visible": true,
+                  "width": 53,
+                  "height": 14,
+                  "x": 13,
+                  "y": 7,
+                  "fill": {
+                    "r": 1,
+                    "g": 0.5215686559677124,
+                    "b": 0,
+                    "a": 1
+                  },
+                  "radius": 0,
+                  "text": "DEBUG 전용",
+                  "textStyle": "책췍/Caption/Navigation",
+                  "font": "Gowun Dodum",
+                  "fontSize": 10,
+                  "lineHeight": {
+                    "value": 100,
+                    "units": "PERCENT"
+                  },
+                  "baselines": [
+                    {
+                      "x": 0,
+                      "y": 11.359999656677246,
+                      "start": 0,
+                      "end": 8
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "1099:187",
+              "type": "TEXT",
+              "name": "설명",
+              "visible": true,
+              "width": 342,
+              "height": 24,
+              "x": 24,
+              "y": 68,
+              "fill": {
+                "r": 0.46666666865348816,
+                "g": 0.46666666865348816,
+                "b": 0.46666666865348816,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "현재 설치된 앱과 연결된 서버 정보를 확인합니다.",
+              "textStyle": "책췍/Body/Compact",
+              "font": "Gowun Dodum",
+              "fontSize": 16,
+              "lineHeight": {
+                "value": 24,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 18.97599983215332,
+                  "start": 0,
+                  "end": 27
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "1099:188",
+              "type": "FRAME",
+              "name": "Build information",
+              "visible": true,
+              "width": 342,
+              "height": 333,
+              "x": 24,
+              "y": 108,
+              "fill": {
+                "r": 0.9529411792755127,
+                "g": 0.9529411792755127,
+                "b": 0.9607843160629272,
+                "a": 1
+              },
+              "radius": 16,
+              "children": [
+                {
+                  "id": "1099:189",
+                  "type": "FRAME",
+                  "name": "정보 - 앱 버전",
+                  "visible": true,
+                  "width": 342,
+                  "height": 85,
+                  "x": 0,
+                  "y": 0,
+                  "radius": 0,
+                  "children": [
+                    {
+                      "id": "1099:190",
+                      "type": "TEXT",
+                      "name": "앱 버전 라벨",
+                      "visible": true,
+                      "width": 310,
+                      "height": 16,
+                      "x": 16,
+                      "y": 16,
+                      "fill": {
+                        "r": 0.46666666865348816,
+                        "g": 0.46666666865348816,
+                        "b": 0.46666666865348816,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "앱 버전",
+                      "textStyle": "책췍/Caption/Meta",
+                      "font": "Gowun Dodum",
+                      "fontSize": 10,
+                      "lineHeight": {
+                        "value": 16,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 12.359999656677246,
+                          "start": 0,
+                          "end": 4
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:191",
+                      "type": "TEXT",
+                      "name": "앱 버전 값",
+                      "visible": true,
+                      "width": 310,
+                      "height": 24,
+                      "x": 16,
+                      "y": 38,
+                      "fill": {
+                        "r": 0.09803921729326248,
+                        "g": 0.09803921729326248,
+                        "b": 0.09803921729326248,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "1.1.1 (5)",
+                      "textStyle": "책췍/Body/Compact",
+                      "font": "Gowun Dodum",
+                      "fontSize": 16,
+                      "lineHeight": {
+                        "value": 24,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 18.97599983215332,
+                          "start": 0,
+                          "end": 9
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:192",
+                      "type": "ROUNDED_RECTANGLE",
+                      "name": "구분선",
+                      "visible": true,
+                      "width": 310,
+                      "height": 1,
+                      "x": 16,
+                      "y": 68,
+                      "fill": {
+                        "r": 0.8666666746139526,
+                        "g": 0.8666666746139526,
+                        "b": 0.8823529481887817,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "1099:193",
+                  "type": "FRAME",
+                  "name": "정보 - 빌드 타입",
+                  "visible": true,
+                  "width": 342,
+                  "height": 85,
+                  "x": 0,
+                  "y": 85,
+                  "radius": 0,
+                  "children": [
+                    {
+                      "id": "1099:194",
+                      "type": "TEXT",
+                      "name": "빌드 타입 라벨",
+                      "visible": true,
+                      "width": 310,
+                      "height": 16,
+                      "x": 16,
+                      "y": 16,
+                      "fill": {
+                        "r": 0.46666666865348816,
+                        "g": 0.46666666865348816,
+                        "b": 0.46666666865348816,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "빌드 타입",
+                      "textStyle": "책췍/Caption/Meta",
+                      "font": "Gowun Dodum",
+                      "fontSize": 10,
+                      "lineHeight": {
+                        "value": 16,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 12.359999656677246,
+                          "start": 0,
+                          "end": 5
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:195",
+                      "type": "TEXT",
+                      "name": "빌드 타입 값",
+                      "visible": true,
+                      "width": 310,
+                      "height": 24,
+                      "x": 16,
+                      "y": 38,
+                      "fill": {
+                        "r": 0.09803921729326248,
+                        "g": 0.09803921729326248,
+                        "b": 0.09803921729326248,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "debug",
+                      "textStyle": "책췍/Body/Compact",
+                      "font": "Gowun Dodum",
+                      "fontSize": 16,
+                      "lineHeight": {
+                        "value": 24,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 18.97599983215332,
+                          "start": 0,
+                          "end": 5
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:196",
+                      "type": "ROUNDED_RECTANGLE",
+                      "name": "구분선",
+                      "visible": true,
+                      "width": 310,
+                      "height": 1,
+                      "x": 16,
+                      "y": 68,
+                      "fill": {
+                        "r": 0.8666666746139526,
+                        "g": 0.8666666746139526,
+                        "b": 0.8823529481887817,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "1099:197",
+                  "type": "FRAME",
+                  "name": "정보 - 서버 환경",
+                  "visible": true,
+                  "width": 342,
+                  "height": 85,
+                  "x": 0,
+                  "y": 170,
+                  "radius": 0,
+                  "children": [
+                    {
+                      "id": "1099:198",
+                      "type": "TEXT",
+                      "name": "서버 환경 라벨",
+                      "visible": true,
+                      "width": 310,
+                      "height": 16,
+                      "x": 16,
+                      "y": 16,
+                      "fill": {
+                        "r": 0.46666666865348816,
+                        "g": 0.46666666865348816,
+                        "b": 0.46666666865348816,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "서버 환경",
+                      "textStyle": "책췍/Caption/Meta",
+                      "font": "Gowun Dodum",
+                      "fontSize": 10,
+                      "lineHeight": {
+                        "value": 16,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 12.359999656677246,
+                          "start": 0,
+                          "end": 5
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:199",
+                      "type": "TEXT",
+                      "name": "서버 환경 값",
+                      "visible": true,
+                      "width": 310,
+                      "height": 24,
+                      "x": 16,
+                      "y": 38,
+                      "fill": {
+                        "r": 0.09803921729326248,
+                        "g": 0.09803921729326248,
+                        "b": 0.09803921729326248,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "development",
+                      "textStyle": "책췍/Body/Compact",
+                      "font": "Gowun Dodum",
+                      "fontSize": 16,
+                      "lineHeight": {
+                        "value": 24,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 18.97599983215332,
+                          "start": 0,
+                          "end": 11
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:200",
+                      "type": "ROUNDED_RECTANGLE",
+                      "name": "구분선",
+                      "visible": true,
+                      "width": 310,
+                      "height": 1,
+                      "x": 16,
+                      "y": 68,
+                      "fill": {
+                        "r": 0.8666666746139526,
+                        "g": 0.8666666746139526,
+                        "b": 0.8823529481887817,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "1099:201",
+                  "type": "FRAME",
+                  "name": "정보 - API base URL",
+                  "visible": true,
+                  "width": 342,
+                  "height": 78,
+                  "x": 0,
+                  "y": 255,
+                  "radius": 0,
+                  "children": [
+                    {
+                      "id": "1099:202",
+                      "type": "TEXT",
+                      "name": "API base URL 라벨",
+                      "visible": true,
+                      "width": 310,
+                      "height": 16,
+                      "x": 16,
+                      "y": 16,
+                      "fill": {
+                        "r": 0.46666666865348816,
+                        "g": 0.46666666865348816,
+                        "b": 0.46666666865348816,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "API base URL",
+                      "textStyle": "책췍/Caption/Meta",
+                      "font": "Gowun Dodum",
+                      "fontSize": 10,
+                      "lineHeight": {
+                        "value": 16,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 12.359999656677246,
+                          "start": 0,
+                          "end": 12
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": "1099:203",
+                      "type": "TEXT",
+                      "name": "API base URL 값",
+                      "visible": true,
+                      "width": 310,
+                      "height": 24,
+                      "x": 16,
+                      "y": 38,
+                      "fill": {
+                        "r": 0.09803921729326248,
+                        "g": 0.09803921729326248,
+                        "b": 0.09803921729326248,
+                        "a": 1
+                      },
+                      "radius": 0,
+                      "text": "https://dev-api.chaekchaek.com",
+                      "textStyle": "책췍/Body/Compact",
+                      "font": "Gowun Dodum",
+                      "fontSize": 16,
+                      "lineHeight": {
+                        "value": 24,
+                        "units": "PIXELS"
+                      },
+                      "baselines": [
+                        {
+                          "x": 0,
+                          "y": 18.97599983215332,
+                          "start": 0,
+                          "end": 30
+                        }
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "905:160",
+      "type": "INSTANCE",
+      "name": "책췍/Button",
+      "visible": true,
+      "width": 350,
+      "height": 50,
+      "x": 0,
+      "y": 38,
+      "fill": {
+        "r": 0.10980392247438431,
+        "g": 0.10980392247438431,
+        "b": 0.10980392247438431,
+        "a": 1
+      },
+      "radius": 16,
+      "mainComponent": "903:18",
+      "children": []
+    },
+    {
+      "id": "903:18",
+      "type": "SYMBOL",
+      "name": "State=Default",
+      "visible": true,
+      "width": 350,
+      "height": 50,
+      "x": 32,
+      "y": 32,
+      "fill": {
+        "r": 0.10980392247438431,
+        "g": 0.10980392247438431,
+        "b": 0.10980392247438431,
+        "a": 1
+      },
+      "radius": 16,
+      "children": [
+        {
+          "id": "903:14",
+          "type": "FRAME",
+          "name": "Text",
+          "visible": true,
+          "width": 143,
+          "height": 21,
+          "x": 18,
+          "y": 14.5,
+          "radius": 0,
+          "children": [
+            {
+              "id": "903:15",
+              "type": "TEXT",
+              "name": "✎ 이 순간의 감상 남기기",
+              "visible": true,
+              "width": 143,
+              "height": 21,
+              "x": 0,
+              "y": 0,
+              "fill": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "✎ 이 순간의 감상 남기기",
+              "textStyle": "책췍/Label/Action",
+              "font": "Gowun Dodum",
+              "fontSize": 14,
+              "lineHeight": {
+                "value": 21,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 16.604000091552734,
+                  "start": 0,
+                  "end": 14
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "903:19",
+          "type": "INSTANCE",
+          "name": "책췍/Icon/Arrow",
+          "visible": true,
+          "width": 19,
+          "height": 30,
+          "x": 313,
+          "y": 10,
+          "radius": 0,
+          "mainComponent": "903:12",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "905:207",
+      "type": "INSTANCE",
+      "name": "책췍/SearchField",
+      "visible": true,
+      "width": 342,
+      "height": 54,
+      "x": 0,
+      "y": 38,
+      "fill": {
+        "r": 0.9529411792755127,
+        "g": 0.9529411792755127,
+        "b": 0.9607843160629272,
+        "a": 1
+      },
+      "radius": 15,
+      "mainComponent": "903:72",
+      "children": []
+    },
+    {
+      "id": "903:72",
+      "type": "SYMBOL",
+      "name": "State=Default",
+      "visible": true,
+      "width": 342,
+      "height": 54,
+      "x": 32,
+      "y": 32,
+      "fill": {
+        "r": 0.9529411792755127,
+        "g": 0.9529411792755127,
+        "b": 0.9607843160629272,
+        "a": 1
+      },
+      "radius": 15,
+      "children": [
+        {
+          "id": "903:64",
+          "type": "FRAME",
+          "name": "Icon",
+          "visible": true,
+          "width": 20,
+          "height": 20,
+          "x": 15,
+          "y": 17,
+          "radius": 0,
+          "children": [
+            {
+              "id": "903:65",
+              "type": "VECTOR",
+              "name": "Vector",
+              "visible": true,
+              "width": 11.666666030883789,
+              "height": 11.666666030883789,
+              "x": 3.3333334922790527,
+              "y": 3.3333334922790527,
+              "stroke": {
+                "r": 0.09803921729326248,
+                "g": 0.09803921729326248,
+                "b": 0.09803921729326248,
+                "a": 1
+              },
+              "radius": 0,
+              "children": []
+            },
+            {
+              "id": "903:66",
+              "type": "VECTOR",
+              "name": "Vector",
+              "visible": true,
+              "width": 3.3333332538604736,
+              "height": 3.3333332538604736,
+              "x": 13.75,
+              "y": 13.75,
+              "stroke": {
+                "r": 0.09803921729326248,
+                "g": 0.09803921729326248,
+                "b": 0.09803921729326248,
+                "a": 1
+              },
+              "radius": 0,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "903:67",
+          "type": "FRAME",
+          "name": "Search Input",
+          "visible": true,
+          "width": 238,
+          "height": 19,
+          "x": 45,
+          "y": 17.5,
+          "radius": 0,
+          "children": [
+            {
+              "id": "903:68",
+              "type": "TEXT",
+              "name": "책 제목이나 작가를 검색해요",
+              "visible": true,
+              "width": 234,
+              "height": 19,
+              "x": 2,
+              "y": 0,
+              "fill": {
+                "r": 0.5411764979362488,
+                "g": 0.5411764979362488,
+                "b": 0.5411764979362488,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "책 제목이나 작가를 검색해요",
+              "textStyle": "책췍/Source/02-14-Regular",
+              "font": "Gowun Dodum",
+              "fontSize": 14,
+              "lineHeight": {
+                "value": 100,
+                "units": "PERCENT"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 16.104000091552734,
+                  "start": 0,
+                  "end": 15
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "903:69",
+          "type": "FRAME",
+          "name": "Button - 검색",
+          "visible": true,
+          "width": 44,
+          "height": 44,
+          "x": 293,
+          "y": 5,
+          "radius": 14,
+          "children": [
+            {
+              "id": "903:70",
+              "type": "FRAME",
+              "name": "Icon",
+              "visible": true,
+              "width": 19,
+              "height": 19,
+              "x": 11.5,
+              "y": 11.5,
+              "radius": 0,
+              "children": [
+                {
+                  "id": "903:71",
+                  "type": "VECTOR",
+                  "name": "Vector",
+                  "visible": true,
+                  "width": 11.083333969116211,
+                  "height": 9.5,
+                  "x": 3.9583332538604736,
+                  "y": 4.75,
+                  "stroke": {
+                    "r": 0.09803921729326248,
+                    "g": 0.09803921729326248,
+                    "b": 0.09803921729326248,
+                    "a": 1
+                  },
+                  "radius": 0,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "914:7",
+      "type": "SYMBOL",
+      "name": "책췍/ButtonSecondary",
+      "visible": true,
+      "width": 310,
+      "height": 50,
+      "x": 844,
+      "y": 64,
+      "fill": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      },
+      "stroke": {
+        "r": 0.8666666746139526,
+        "g": 0.8666666746139526,
+        "b": 0.8823529481887817,
+        "a": 1
+      },
+      "radius": 15,
+      "children": [
+        {
+          "id": "914:8",
+          "type": "TEXT",
+          "name": "취소",
+          "visible": true,
+          "width": 276,
+          "height": 21,
+          "x": 17,
+          "y": 14.5,
+          "fill": {
+            "r": 0.09803921729326248,
+            "g": 0.09803921729326248,
+            "b": 0.09803921729326248,
+            "a": 1
+          },
+          "radius": 0,
+          "text": "취소",
+          "textStyle": "책췍/Label/Action",
+          "font": "Gowun Dodum",
+          "fontSize": 14,
+          "lineHeight": {
+            "value": 21,
+            "units": "PIXELS"
+          },
+          "baselines": [
+            {
+              "x": 125.61328125,
+              "y": 16.604000091552734,
+              "start": 0,
+              "end": 2
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "1394:5450",
+      "type": "SYMBOL",
+      "name": "Action=Confirm",
+      "visible": true,
+      "width": 358,
+      "height": 214,
+      "x": 414,
+      "y": 32,
+      "fill": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      },
+      "radius": 22,
+      "children": [
+        {
+          "id": "1394:5451",
+          "type": "FRAME",
+          "name": "우측 상단 닫기 행",
+          "visible": true,
+          "width": 326,
+          "height": 44,
+          "x": 24,
+          "y": 8,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1394:5453",
+              "type": "INSTANCE",
+              "name": "닫기 / 입력과 선택 유지",
+              "visible": true,
+              "width": 44,
+              "height": 44,
+              "x": 282,
+              "y": 0,
+              "radius": 15,
+              "mainComponent": "914:9",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "1415:5793",
+          "type": "FRAME",
+          "name": "본문과 행동",
+          "visible": true,
+          "width": 326,
+          "height": 138,
+          "x": 24,
+          "y": 52,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1394:5452",
+              "type": "TEXT",
+              "name": "Title",
+              "visible": true,
+              "width": 310,
+              "height": 32,
+              "x": 0,
+              "y": 0,
+              "fill": {
+                "r": 0.09803921729326248,
+                "g": 0.09803921729326248,
+                "b": 0.09803921729326248,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "불러오지 못했어요",
+              "textStyle": "책췍/Heading/Section",
+              "font": "Gowun Dodum",
+              "fontSize": 21,
+              "lineHeight": {
+                "value": 31.5,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 24.9060001373291,
+                  "start": 0,
+                  "end": 9
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "1394:5454",
+              "type": "TEXT",
+              "name": "Message",
+              "visible": true,
+              "width": 310,
+              "height": 24,
+              "x": 0,
+              "y": 48,
+              "fill": {
+                "r": 0.4000000059604645,
+                "g": 0.4000000059604645,
+                "b": 0.4000000059604645,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "연결 상태를 확인한 뒤 다시 시도해 주세요.",
+              "textStyle": "책췍/Body/Compact",
+              "font": "Gowun Dodum",
+              "fontSize": 16,
+              "lineHeight": {
+                "value": 24,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 18.97599983215332,
+                  "start": 0,
+                  "end": 24
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "1394:5455",
+              "type": "FRAME",
+              "name": "행동",
+              "visible": true,
+              "width": 310,
+              "height": 50,
+              "x": 0,
+              "y": 88,
+              "radius": 0,
+              "children": [
+                {
+                  "id": "1394:5457",
+                  "type": "INSTANCE",
+                  "name": "닫기",
+                  "visible": false,
+                  "width": 310,
+                  "height": 50,
+                  "x": 0,
+                  "y": 58,
+                  "fill": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "stroke": {
+                    "r": 0.8666666746139526,
+                    "g": 0.8666666746139526,
+                    "b": 0.8823529481887817,
+                    "a": 1
+                  },
+                  "radius": 15,
+                  "mainComponent": "914:7",
+                  "children": []
+                },
+                {
+                  "id": "1394:5456",
+                  "type": "INSTANCE",
+                  "name": "Primary action",
+                  "visible": true,
+                  "width": 310,
+                  "height": 50,
+                  "x": 0,
+                  "y": 0,
+                  "fill": {
+                    "r": 0.10980392247438431,
+                    "g": 0.10980392247438431,
+                    "b": 0.10980392247438431,
+                    "a": 1
+                  },
+                  "radius": 16,
+                  "mainComponent": "903:18",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1394:5436",
+      "type": "SYMBOL",
+      "name": "Action=Retry",
+      "visible": true,
+      "width": 358,
+      "height": 214,
+      "x": 24,
+      "y": 32,
+      "fill": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      },
+      "radius": 22,
+      "children": [
+        {
+          "id": "1394:5437",
+          "type": "FRAME",
+          "name": "우측 상단 닫기 행",
+          "visible": true,
+          "width": 326,
+          "height": 44,
+          "x": 24,
+          "y": 8,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1394:5439",
+              "type": "INSTANCE",
+              "name": "닫기 / 입력과 선택 유지",
+              "visible": true,
+              "width": 44,
+              "height": 44,
+              "x": 282,
+              "y": 0,
+              "radius": 15,
+              "mainComponent": "914:9",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "1415:5792",
+          "type": "FRAME",
+          "name": "본문과 행동",
+          "visible": true,
+          "width": 326,
+          "height": 138,
+          "x": 24,
+          "y": 52,
+          "radius": 0,
+          "children": [
+            {
+              "id": "1394:5438",
+              "type": "TEXT",
+              "name": "Title",
+              "visible": true,
+              "width": 310,
+              "height": 32,
+              "x": 0,
+              "y": 0,
+              "fill": {
+                "r": 0.09803921729326248,
+                "g": 0.09803921729326248,
+                "b": 0.09803921729326248,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "불러오지 못했어요",
+              "textStyle": "책췍/Heading/Section",
+              "font": "Gowun Dodum",
+              "fontSize": 21,
+              "lineHeight": {
+                "value": 31.5,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 24.9060001373291,
+                  "start": 0,
+                  "end": 9
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "1394:5441",
+              "type": "TEXT",
+              "name": "Message",
+              "visible": true,
+              "width": 310,
+              "height": 24,
+              "x": 0,
+              "y": 48,
+              "fill": {
+                "r": 0.4000000059604645,
+                "g": 0.4000000059604645,
+                "b": 0.4000000059604645,
+                "a": 1
+              },
+              "radius": 0,
+              "text": "연결 상태를 확인한 뒤 다시 시도해 주세요.",
+              "textStyle": "책췍/Body/Compact",
+              "font": "Gowun Dodum",
+              "fontSize": 16,
+              "lineHeight": {
+                "value": 24,
+                "units": "PIXELS"
+              },
+              "baselines": [
+                {
+                  "x": 0,
+                  "y": 18.97599983215332,
+                  "start": 0,
+                  "end": 24
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "1394:5442",
+              "type": "FRAME",
+              "name": "행동",
+              "visible": true,
+              "width": 310,
+              "height": 50,
+              "x": 0,
+              "y": 88,
+              "radius": 0,
+              "children": [
+                {
+                  "id": "1394:5448",
+                  "type": "INSTANCE",
+                  "name": "닫기",
+                  "visible": true,
+                  "width": 150,
+                  "height": 50,
+                  "x": 0,
+                  "y": 0,
+                  "fill": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "stroke": {
+                    "r": 0.8666666746139526,
+                    "g": 0.8666666746139526,
+                    "b": 0.8823529481887817,
+                    "a": 1
+                  },
+                  "radius": 15,
+                  "mainComponent": "914:7",
+                  "children": []
+                },
+                {
+                  "id": "1394:5443",
+                  "type": "INSTANCE",
+                  "name": "Primary action",
+                  "visible": true,
+                  "width": 152,
+                  "height": 50,
+                  "x": 158,
+                  "y": 0,
+                  "fill": {
+                    "r": 0.10980392247438431,
+                    "g": 0.10980392247438431,
+                    "b": 0.10980392247438431,
+                    "a": 1
+                  },
+                  "radius": 16,
+                  "mainComponent": "903:18",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
