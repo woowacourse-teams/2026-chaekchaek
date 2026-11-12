@@ -67,7 +67,12 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ### 1.4.0 (14)
 
-- 상태: iOS TestFlight 업로드 성공, Apple 처리 시작 확인. TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인. Android AAB 빌드와 Play 업로드는 사용자가 직접 진행하며 이 기록 작성 시점에 미확인
+- 상태: iOS TestFlight 업로드 성공, Apple 처리 시작 확인. TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인. Android 서명 AAB 빌드와 검증 완료, Play 업로드는 사용자가 직접 진행하며 미확인
+- Android 산출물: `android/app/release/chaekchaek-1.4.0-code14.aab` (`197ba338`에서 production 환경으로 빌드)
+- AAB SHA-256: `8299116560b8e66c4e2e6f7ec8a291d04abefb553943ab4133d076ffd3499081`
+- Android 검증: `:app:testDebugUnitTest :app:bundleRelease` 성공. `jarsigner -verify` 성공, 서명 인증서 SHA-1 `BE:94:81:DC:F5:22:F8:AC:A1:D0:A1:13:2E:40:FC:8D:88:CB:5B:5A`(업로드 키). 공식 bundletool 1.18.3(GitHub 릴리스 해시 일치)으로 패키지 `com.chamsae.chaekchaek`, `1.4.0 (14)`, minSdk 26, targetSdk 36, 아이콘 `@mipmap/ic_launcher`, cleartext 비활성 확인. 런처 아이콘 리소스 포함, dex에 production API 주소만 포함
+- Android PostHog: `android/.env.posthog`와 연결값 환경변수 없이 빌드해 Android 1.4.0은 PostHog 수집이 비활성이다. 사용자 결정에 따른 것이며 Firebase Analytics는 유지된다
+- 빌드 스크립트 참고: `build-signed-aab` 스크립트가 예전 AGP의 bundle manifest 경로를 찾지 못해 검증 단계에서 멈췄다. Gradle 빌드는 성공했고 위 검증은 AAB에 직접 수행했다
 - 기준 소스 커밋: `origin/an-develop` `51111bbb8` (#693 딥링크, #708 인증 만료, #724 계측 테스트 포함). 릴리즈 브랜치 `codex/release-1.4.0-14`에 1.3.2 배포 기록 커밋을 가져온 뒤 버전을 올렸다
 - 버전: `1.3.2 (12)` -> `1.4.0 (14)`, minor. Android와 iOS 공통. 2026-11-12 Play API의 최대 bundle versionCode는 12였지만, Play 기록에 없는 versionCode 13 빌드가 개발 기기에 설치된 것을 확인해 혼동을 피하려고 13을 건너뛰었다
 - production 호환성: 2026-11-12 production과 development OpenAPI의 엔드포인트 목록 일치. 차이는 검색 응답 `reviewCount`·`replyCount`의 nullable 여부뿐이며 production은 숫자를 반환해 앱의 `Int` 필드와 맞다. production 인증 오류 응답(`401 UNAUTHORIZED`, `401 INVALID_REFRESH_TOKEN`)도 확인했다
