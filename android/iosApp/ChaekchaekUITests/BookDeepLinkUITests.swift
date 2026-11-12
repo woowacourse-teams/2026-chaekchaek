@@ -93,7 +93,7 @@ final class BookDeepLinkUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, "link draft")
     }
 
-    private func deliverToRunningSimulator() async throws {
+    @MainActor private func deliverToRunningSimulator() async throws {
         let (_, response) = try await URLSession.shared.data(from: base.appendingPathComponent("__692/open-ios"))
         let status = (response as? HTTPURLResponse)?.statusCode
         if status == 501 { throw XCTSkip("fixture 실행 시 --ios-simulator UDID가 필요합니다") }
