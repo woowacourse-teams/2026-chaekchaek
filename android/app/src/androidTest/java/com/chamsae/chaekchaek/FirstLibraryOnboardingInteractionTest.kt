@@ -96,7 +96,7 @@ class FirstLibraryOnboardingInteractionTest {
 
     @Test
     fun bookRowExposesItsCheckboxRoleAndCheckedState() {
-        val book = BookSearchResult(title = "첫 책", creator = "작가", publisher = "출판사", year = "2026", coverUrl = "", isbn13 = "1", totalPages = 100)
+        val book = BookSearchResult(title = "첫 책", creator = "작가", publisher = "출판사", year = "2026", coverUrl = "", isbn13 = "1")
         compose.setContent {
             var selected by remember { mutableStateOf(false) }
             ChaekchaekTheme {
