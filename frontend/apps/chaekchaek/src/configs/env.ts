@@ -22,6 +22,8 @@ const ENV = {
   APP_GA_ID: process.env.APP_GA_ID,
   APP_GTM_ID: process.env.APP_GTM_ID,
   APP_SENTRY_DSN: process.env.APP_SENTRY_DSN,
+  APP_POSTHOG_KEY: process.env.APP_POSTHOG_KEY,
+  APP_POSTHOG_HOST: process.env.APP_POSTHOG_HOST,
   APP_ENV: getAppEnv(),
 } as const;
 
