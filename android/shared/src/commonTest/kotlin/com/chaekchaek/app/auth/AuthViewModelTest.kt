@@ -694,6 +694,49 @@ class AuthViewModelTest {
     currentTimeMillis = { testScheduler.currentTime },
   )
 
+  @Test
+  fun `개발자 도구에서 토큰 상태와 만료 남은 시간을 확인할 수 있다`() = runTest {
+    val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") {
+      tokens("reissued").copy(accessTokenExpiresIn = 3600)
+    }
+    val session = authSession(backend)
+    val info = session.tokenDebugInfo()
+    assertEquals(false, info.hasAccessToken)
+    assertEquals(true, info.hasRefreshToken)
+
+    session.refreshAccessTokenForRetry()
+    val restoredInfo = session.tokenDebugInfo()
+    assertEquals(true, restoredInfo.hasAccessToken)
+    assertEquals(true, restoredInfo.hasRefreshToken)
+    assertEquals(3600L, restoredInfo.accessTokenExpiresInSeconds)
+  }
+
+  @Test
+  fun `Access 토큰 강제 만료 시 만료 상태로 치환된다`() = runTest {
+    val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") { tokens("reissued") }
+    val session = authSession(backend)
+    session.refreshAccessTokenForRetry()
+    assertEquals("access-reissued", session.tokens.value?.accessToken)
+
+    session.expireAccessTokenForTesting()
+    assertEquals("expired-token-for-testing", session.tokens.value?.accessToken)
+    val debugInfo = session.tokenDebugInfo()
+    assertEquals(0L, debugInfo.accessTokenExpiresInSeconds)
+  }
+
+  @Test
+  fun `Refresh 토큰 강제 폐기 시 원격 폐기를 호출하되 로컬 토큰은 유지한다`() = runTest {
+    val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") { tokens("reissued") }
+    val session = authSession(backend)
+    session.refreshAccessTokenForRetry()
+    val tokenBefore = session.tokens.value
+
+    session.revokeRefreshTokenForTesting()
+    assertEquals(listOf("reissued"), backend.logoutRequests)
+    assertEquals(tokenBefore, session.tokens.value)
+    assertEquals(0, backend.clearCount)
+  }
+
   private fun tokens(refreshToken: String) = MobileAuthTokens(
     accessToken = "access-$refreshToken",
     refreshToken = refreshToken,

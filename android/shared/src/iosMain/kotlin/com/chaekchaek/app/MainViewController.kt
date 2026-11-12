@@ -85,6 +85,9 @@ fun MainViewController(
                 Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
                   com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
                   com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
+                  val devAuthViewModel = remember(authPlatform) { com.chaekchaek.app.auth.AuthViewModel(authPlatform, errorReporter = analytics.errors) }
+                  androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
+                  com.chaekchaek.app.ui.common.AuthDeveloperContent(devAuthViewModel)
                 }
               }
             }

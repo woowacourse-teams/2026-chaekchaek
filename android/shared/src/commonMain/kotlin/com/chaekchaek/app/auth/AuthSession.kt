@@ -16,6 +16,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+data class AuthTokenDebugInfo(
+  val hasAccessToken: Boolean,
+  val accessTokenExpiresInSeconds: Long?,
+  val hasRefreshToken: Boolean,
+)
+
 internal class AuthSession(
   private val readRefreshToken: () -> String?,
   private val writeRefreshToken: (String) -> Unit,
@@ -70,6 +76,44 @@ internal class AuthSession(
   }
 
   suspend fun refreshAccessTokenForRetry(): String? = renewTokensOnce()?.accessToken
+
+  fun tokenDebugInfo(): AuthTokenDebugInfo {
+    val current = _tokens.value
+    val hasRefresh = current?.refreshToken != null || readRefreshToken() != null
+    if (current == null) {
+      return AuthTokenDebugInfo(
+        hasAccessToken = false,
+        accessTokenExpiresInSeconds = null,
+        hasRefreshToken = hasRefresh,
+      )
+    }
+    val remaining = ((accessTokenExpiresAtMillis - currentTimeMillis()) / MILLIS_PER_SECOND).coerceAtLeast(0L)
+    return AuthTokenDebugInfo(
+      hasAccessToken = true,
+      accessTokenExpiresInSeconds = remaining,
+      hasRefreshToken = hasRefresh,
+    )
+  }
+
+  suspend fun expireAccessTokenForTesting() {
+    mutex.withLock {
+      renewalJob?.cancel()
+      val current = _tokens.value ?: return@withLock
+      accessTokenExpiresAtMillis = 0L
+      _tokens.value = current.copy(
+        accessToken = "expired-token-for-testing",
+        accessTokenExpiresIn = 0,
+      )
+    }
+  }
+
+  suspend fun revokeRefreshTokenForTesting() {
+    val refreshToken = mutex.withLock {
+      renewalJob?.cancel()
+      _tokens.value?.refreshToken ?: readRefreshToken()
+    } ?: return
+    logout(refreshToken)
+  }
 
   private fun startRenewal() {
     renewalJob?.cancel()

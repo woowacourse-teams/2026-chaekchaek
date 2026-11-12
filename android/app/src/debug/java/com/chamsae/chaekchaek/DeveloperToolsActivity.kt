@@ -147,6 +147,20 @@ private fun DeveloperToolsScreen(
             DeveloperInfoCard(items)
             com.chaekchaek.app.ui.common.PolicyDeveloperContent(policy.controller) { policy.refresh(force = true) }
             val context = androidx.compose.ui.platform.LocalContext.current
+            val tokenStore = remember(context) { com.chamsae.chaekchaek.auth.RefreshTokenStore(context) }
+            val authPlatform = remember(context, tokenStore) {
+                com.chaekchaek.app.auth.AuthPlatformCallbacks(
+                    requestGoogleIdToken = { it(null, null) },
+                    readRefreshToken = tokenStore::read,
+                    writeRefreshToken = tokenStore::write,
+                    clearRefreshToken = tokenStore::clear,
+                    readGuest = tokenStore::readGuest,
+                    writeGuest = tokenStore::writeGuest,
+                    clearGuest = tokenStore::clearGuest,
+                )
+            }
+            val devAuthViewModel = remember(authPlatform) { com.chaekchaek.app.auth.AuthViewModel(authPlatform) }
+            com.chaekchaek.app.ui.common.AuthDeveloperContent(devAuthViewModel)
             TextButton(onClick = { DebugAppUpdates.enable(context) }) { Text("FakeAppUpdateManager 사용") }
             TextButton(onClick = { DebugAppUpdates.fake?.userAcceptsUpdate() }) { Text("Fake 업데이트 수락") }
             TextButton(onClick = { DebugAppUpdates.fake?.userRejectsUpdate(); policy.controller.setUpdating(false) }) { Text("Fake 업데이트 취소") }

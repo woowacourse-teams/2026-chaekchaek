@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthTokens
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -283,6 +284,24 @@ class AuthViewModel private constructor(
   }
 
   suspend fun refreshAccessTokenForRetry(): String? = session.refreshAccessTokenForRetry()
+
+  val tokenDebugInfo: StateFlow<AuthTokenDebugInfo> = kotlinx.coroutines.flow.flow {
+    while (true) {
+      emit(session.tokenDebugInfo())
+      delay(1_000L)
+    }
+  }.stateIn(scope, SharingStarted.WhileSubscribed(5_000L), session.tokenDebugInfo())
+
+  fun expireAccessTokenForTesting() {
+    scope.launch { session.expireAccessTokenForTesting() }
+  }
+
+  fun revokeRefreshTokenForTesting(onResult: (Result<Unit>) -> Unit = {}) {
+    scope.launch {
+      val result = runCatching { session.revokeRefreshTokenForTesting() }
+      onResult(result)
+    }
+  }
 
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
     profileJob?.cancel()
