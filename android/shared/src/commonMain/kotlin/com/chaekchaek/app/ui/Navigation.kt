@@ -599,7 +599,7 @@ private fun AppNavigationContent(
                             coverContent = { book, modifier ->
                                 RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                             },
-                            resumedAuthenticatedAction = state.resumedAction,
+                            resumedAuthenticatedAction = state.resumedAction.takeIf { backStack.isCurrentDestination(key) },
                             onAuthenticatedActionHandled = viewModel::finishResumedAction,
                             onLoginRequired = viewModel::requestAuthentication,
                             onAddToLibrary = { librarySaveViewModel.save(displayBook) },
