@@ -99,6 +99,11 @@ final class BookDeepLinkUITests: XCTestCase {
         let status = (response as? HTTPURLResponse)?.statusCode
         if status == 501 { throw XCTSkip("fixture 실행 시 --ios-simulator UDID가 필요합니다") }
         XCTAssertEqual(status, 200)
+        // 앱 밖에서 연 사용자 지정 scheme은 시스템이 "'책췍'에서 열겠습니까?"를 묻기도 한다.
+        // 이 창은 앱이 아닌 SpringBoard에 있어 앱 요소 트리에 나타나지 않고, 실행마다 나타나지 않을 수도 있다.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let open = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["열기", "Open"])).firstMatch
+        if open.waitForExistence(timeout: 3) { open.tap() }
     }
 
     @MainActor func testOnboardingDefersLinkUntilCompleted() async throws {

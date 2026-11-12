@@ -84,6 +84,12 @@ class BookDeepLinkInteractionTest {
         compose.onNodeWithText("발견").performClick()
         compose.onNodeWithTag("search-query-field").performTextReplacement("보존할 검색어")
         link(); detail(); back()
+        // 뒤로가기 전환이 끝나기 전에는 발견 화면의 검색창이 아직 구성되지 않았을 수 있다.
+        try {
+            waitCondition(10_000) { compose.onAllNodesWithTag("search-query-field").fetchSemanticsNodes().isNotEmpty() }
+        } catch (error: Throwable) {
+            capture("warm-back-without-search"); throw error
+        }
         compose.onNodeWithTag("search-query-field").assertTextEquals("보존할 검색어")
         // 다른 Activity를 열어 앱을 백그라운드로 보낸 뒤 같은 암시적 URI를 수신한다.
         val pfd = instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_HOME")
