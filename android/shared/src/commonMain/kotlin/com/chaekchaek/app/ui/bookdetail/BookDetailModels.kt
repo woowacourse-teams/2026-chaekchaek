@@ -102,6 +102,7 @@ data class BookDetailUiState(
     val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),
     val signedIn: Boolean = false,
     val pendingAction: BookDetailAuthenticatedAction? = null,
+    val resumedAction: BookDetailAuthenticatedAction? = null,
     val requestError: String? = null,
     val guestNickname: String? = null,
 ) {

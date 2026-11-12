@@ -64,6 +64,7 @@ class BookDeepLinkInteractionTest {
     }
     private fun waitText(text: String) = waitCondition { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun detail() { waitText("딥링크 검증 도서") }
+    private fun home() { waitText("홈"); compose.onNodeWithText("홈").assertIsSelected() }
     private fun back() { instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK); compose.waitForIdle() }
     private fun main() = instrumentation.runOnMainSync {
         val activity = Stage.values().flatMap { ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(it) }.filterIsInstance<MainActivity>().first()
@@ -79,7 +80,7 @@ class BookDeepLinkInteractionTest {
     }
 
     @Test fun coldThenWarmAndBackgroundLinksPreserveDiscoverInput() {
-        link(); detail(); capture("detail"); back(); waitText("홈")
+        link(); detail(); capture("detail"); back(); home()
         compose.onNodeWithText("발견").performClick()
         compose.onNodeWithTag("search-query-field").performTextReplacement("보존할 검색어")
         link(); detail(); back()
@@ -105,12 +106,12 @@ class BookDeepLinkInteractionTest {
         compose.onNodeWithText("최신순").assertExists()
         assertEquals(before, compose.onNodeWithTag("book_detail_list").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value())
         assertEquals(requests, counts().getInt("/api/v1/books/by-isbn/9788937460449"))
-        back(); waitText("홈")
+        back(); home()
     }
 
     @Test fun invalidMissingAndRetryKeepPreviousScreen() {
         link("chaekchaek://books/not-a-book"); waitText("링크를 열 수 없어요")
-        compose.onNodeWithText("확인").performClick(); waitText("홈")
+        compose.onNodeWithText("확인").performClick(); home()
         compose.onNodeWithText("발견").performClick()
         compose.onNodeWithTag("search-query-field").performTextReplacement("이전 입력")
         link("chaekchaek://books/9791172376215"); waitText("책을 찾을 수 없어요")
@@ -123,18 +124,18 @@ class BookDeepLinkInteractionTest {
     }
 
     @Test fun recreationDoesNotReopenConsumedIntentButNewSameUriDoes() {
-        link(); detail(); back(); waitText("홈")
-        main(); waitText("홈")
+        link(); detail(); back(); home()
+        main(); home()
         compose.onNodeWithText("딥링크 검증 도서").assertDoesNotExist()
         link(); detail()
-        main(); detail(); back(); waitText("홈")
+        main(); detail(); back(); home()
     }
 
     @Test fun directLinkDoesNotReplayAfterReturningHomeAndRecreating() {
-        link(direct = true); detail(); back(); waitText("홈")
-        main(); waitText("홈")
+        link(direct = true); detail(); back(); home()
+        main(); home()
         compose.onNodeWithText("딥링크 검증 도서").assertDoesNotExist()
-        link(direct = true); detail(); back(); waitText("홈")
+        link(direct = true); detail(); back(); home()
     }
 
     @Test fun linkResumesIfActivityRecreatesDuringLookup() {
@@ -144,7 +145,7 @@ class BookDeepLinkInteractionTest {
         waitCondition { counts().optInt(isbnPath) == 1 }
         main()
         detail()
-        back(); waitText("홈")
+        back(); home()
     }
 
     @Test fun initialBookLookupIsUsedByTheDetailScreen() {
@@ -159,7 +160,7 @@ class BookDeepLinkInteractionTest {
         link(); waitText("건너뛰기")
         compose.onNodeWithText("딥링크 검증 도서").assertDoesNotExist()
         main(); waitText("건너뛰기")
-        compose.onNodeWithText("건너뛰기").performClick(); detail(); back(); waitText("홈")
+        compose.onNodeWithText("건너뛰기").performClick(); detail(); back(); home()
     }
 
     @Test fun developerToolKeepsInvalidInputAndOpensRealUri() {
@@ -171,6 +172,6 @@ class BookDeepLinkInteractionTest {
         compose.onNodeWithTag("developer-deeplink-uri").assertTextEquals("chaekchaek://books/not-a-book")
         compose.onNodeWithTag("developer-deeplink-uri").performTextReplacement("CHAEKCHAEK://BOOKS/9788937460449")
         compose.onNodeWithText("링크 실행").performClick()
-        detail(); back(); waitText("홈")
+        detail(); back(); home()
     }
 }

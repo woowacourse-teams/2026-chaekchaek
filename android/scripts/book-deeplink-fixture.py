@@ -2,6 +2,7 @@
 """#692 양 플랫폼 딥링크 검증용 읽기 전용 합성 API. 운영 API와 인증을 사용하지 않는다."""
 import argparse
 import json
+import subprocess
 import time
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -68,9 +69,13 @@ def response(path):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
-        with LOCK:
-            status, body = response(path)
-            delay = MODE == "delayed" and path == f"/api/v1/books/by-isbn/{VALID}" and COUNTS[path] == 1
+        if path == "/__692/open-ios":
+            status, body = self.open_ios()
+            delay = False
+        else:
+            with LOCK:
+                status, body = response(path)
+                delay = MODE == "delayed" and path == f"/api/v1/books/by-isbn/{VALID}" and COUNTS[path] == 1
         if delay:
             time.sleep(5)
         data = json.dumps(body, ensure_ascii=False).encode()
@@ -84,6 +89,15 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
 
+    def open_ios(self):
+        if not self.server.ios_simulator:
+            return 501, {"error": "start fixture with --ios-simulator UDID"}
+        result = subprocess.run(
+            ["xcrun", "simctl", "openurl", self.server.ios_simulator, f"chaekchaek://books/{VALID}"],
+            check=False, capture_output=True, timeout=15,
+        )
+        return (200, {"fixture": "692"}) if result.returncode == 0 else (500, {"error": "simctl openurl failed"})
+
     def log_message(self, *_):
         pass
 
@@ -91,4 +105,8 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=19092)
-    ThreadingHTTPServer(("127.0.0.1", parser.parse_args().port), Handler).serve_forever()
+    parser.add_argument("--ios-simulator")
+    arguments = parser.parse_args()
+    with ThreadingHTTPServer(("127.0.0.1", arguments.port), Handler) as server:
+        server.ios_simulator = arguments.ios_simulator
+        server.serve_forever()

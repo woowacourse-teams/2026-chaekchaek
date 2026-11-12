@@ -131,6 +131,7 @@ class BookDetailViewModel(
             signedIn = accessToken != null,
             reviewScope = reviewScope,
             pendingAction = null,
+            resumedAction = if (accessToken == null) null else pending ?: _uiState.value.resumedAction,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
             ratingComparison = emptyList(),
             isLoading = false,
@@ -142,6 +143,10 @@ class BookDetailViewModel(
         )
         reload()
         return pending
+    }
+
+    internal fun finishResumedAction() {
+        _uiState.value = _uiState.value.copy(resumedAction = null)
     }
 
     fun requestAuthentication(action: BookDetailAuthenticatedAction): Boolean {

@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -324,18 +325,19 @@ private fun AppNavigationContent(
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
     val bookshelfRepository = remember { com.chaekchaek.app.data.remote.BookshelfRemoteRepository() }
-    val bookshelfViewModel = remember { com.chaekchaek.app.ui.archive.BookshelfViewModel(bookshelfRepository) }
+    val bookshelfViewModel = viewModel { com.chaekchaek.app.ui.archive.BookshelfViewModel(bookshelfRepository) }
     val shelfPlatform = com.chaekchaek.app.ui.archive.rememberBookshelfPlatform()
-    val librarySaveViewModel = remember {
+    val librarySaveViewModel = viewModel {
         LibrarySaveViewModel(
             addBook = detailRepository::addToLibrary,
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
             onShelfCreated = bookshelfViewModel::refresh,
             shelves = bookshelfRepository,
-            readRecentShelf = shelfPlatform::readRecent,
-            writeRecentShelf = shelfPlatform::writeRecent,
             analytics = analytics,
         )
+    }
+    SideEffect {
+        librarySaveViewModel.attachRecentShelfStorage(shelfPlatform::readRecent, shelfPlatform::writeRecent)
     }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository, errorReporter = analytics.errors) }
     ErrorRecoveryEffect(bookshelfViewModel.errors)
@@ -355,9 +357,15 @@ private fun AppNavigationContent(
         val accessToken = authTokens?.accessToken
         surveyViewModel.authenticate(surveyRespondent())
         homeViewModel.authenticate(accessToken)
-        bookshelfViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
-        librarySaveViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
         memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
+    }
+    LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
+        if (!restoringAuthentication) {
+            val accessToken = authTokens?.accessToken
+            val memberId = authViewModel.memberIdFor(accessToken)
+            bookshelfViewModel.authenticate(accessToken, memberId)
+            librarySaveViewModel.authenticate(accessToken, memberId)
+        }
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
     var linkedBookDetail by remember { mutableStateOf<LinkedBookDetail?>(null) }
@@ -375,7 +383,9 @@ private fun AppNavigationContent(
                 credential = credential,
                 sourceIsCurrent = { backStack.isCurrentDestination(source) },
                 readyToOpen = {
-                    !librarySaveViewModel.uiState.value.hasPendingSave &&
+                    bookDeepLinks.pending.value == null &&
+                        !authViewModel.isRestoringSession.value &&
+                        !librarySaveViewModel.uiState.value.hasPendingSave &&
                         librarySaveViewModel.errors.notice.value == null
                 },
                 openBook = { book ->
@@ -546,9 +556,6 @@ private fun AppNavigationContent(
                     val state by viewModel.uiState.collectAsState()
                     val refreshState by viewModel.refreshState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
-                    var resumedAction by remember(key.book) {
-                        mutableStateOf<BookDetailAuthenticatedAction?>(null)
-                    }
                     LaunchedEffect(key.book, restoringAuthentication) {
                         if (!restoringAuthentication) {
                             analytics.screenView("book_detail")
@@ -563,10 +570,7 @@ private fun AppNavigationContent(
                     }
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
                         if (restoringAuthentication) return@LaunchedEffect
-                        val token = authTokens?.accessToken
-                        val pendingAction = viewModel.syncAuthentication(token)
-                        if (token == null) resumedAction = null
-                        else if (pendingAction != null) resumedAction = pendingAction
+                        viewModel.syncAuthentication(authTokens?.accessToken)
                     }
                     LaunchedEffect(viewModel) {
                         librarySaveViewModel.savesCompletedWhileObserving().collect { savedBook ->
@@ -595,8 +599,8 @@ private fun AppNavigationContent(
                             coverContent = { book, modifier ->
                                 RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                             },
-                            resumedAuthenticatedAction = resumedAction,
-                            onAuthenticatedActionHandled = { resumedAction = null },
+                            resumedAuthenticatedAction = state.resumedAction,
+                            onAuthenticatedActionHandled = viewModel::finishResumedAction,
                             onLoginRequired = viewModel::requestAuthentication,
                             onAddToLibrary = { librarySaveViewModel.save(displayBook) },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
@@ -660,7 +664,7 @@ private fun AppNavigationContent(
                                 authViewModel.clearError()
                                 authViewModel.requireAppleAuthentication { token ->
                                     analytics.endAuthAttempt("success")
-                                    resumedAction = viewModel.authenticate(token)
+                                    viewModel.authenticate(token)
                                 }
                             },
                             onGoogleSignIn = {
@@ -668,7 +672,7 @@ private fun AppNavigationContent(
                                 authViewModel.clearError()
                                 authViewModel.requireAuthentication { token ->
                                     analytics.endAuthAttempt("success")
-                                    resumedAction = viewModel.authenticate(token)
+                                    viewModel.authenticate(token)
                                 }
                             },
                         )

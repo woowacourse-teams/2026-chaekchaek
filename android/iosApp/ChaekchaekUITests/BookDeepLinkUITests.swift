@@ -37,6 +37,12 @@ final class BookDeepLinkUITests: XCTestCase {
         add(attachment)
     }
 
+    @MainActor private func home(_ app: XCUIApplication) {
+        let homeTab = app.buttons["홈"]
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5))
+        XCTAssertTrue(homeTab.isSelected)
+    }
+
     @MainActor func testColdLinkOpensDetailAndReturnsHome() async throws {
         let app = try await prepared()
         app.open(valid)
@@ -44,7 +50,7 @@ final class BookDeepLinkUITests: XCTestCase {
         capture(app, "딥링크 상세")
         try await assertOneInitialLookup()
         back(app)
-        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        home(app)
     }
 
     @MainActor private func assertOneInitialLookup() async throws {
@@ -71,11 +77,27 @@ final class BookDeepLinkUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
         field.typeText("link draft")
-        app.open(valid)
+        XCTAssertEqual(field.value as? String, "link draft")
+        try await deliverToRunningSimulator()
         detail(app)
         back(app)
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         XCTAssertEqual(field.value as? String, "link draft")
+        XCTAssertTrue(discover.isSelected)
+
+        XCUIDevice.shared.press(.home)
+        try await deliverToRunningSimulator()
+        detail(app)
+        back(app)
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertEqual(field.value as? String, "link draft")
+    }
+
+    private func deliverToRunningSimulator() async throws {
+        let (_, response) = try await URLSession.shared.data(from: base.appendingPathComponent("__692/open-ios"))
+        let status = (response as? HTTPURLResponse)?.statusCode
+        if status == 501 { throw XCTSkip("fixture 실행 시 --ios-simulator UDID가 필요합니다") }
+        XCTAssertEqual(status, 200)
     }
 
     @MainActor func testOnboardingDefersLinkUntilCompleted() async throws {
@@ -87,7 +109,7 @@ final class BookDeepLinkUITests: XCTestCase {
         detail(app)
         capture(app, "온보딩 후 상세 재개")
         back(app)
-        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        home(app)
     }
 
     @MainActor func testDeveloperToolExecutesLinksAndPreservesInput() async throws {
@@ -112,7 +134,7 @@ final class BookDeepLinkUITests: XCTestCase {
         app.buttons["링크 실행"].tap()
         detail(app)
         back(app)
-        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        home(app)
     }
 
     @MainActor func testMissingAndRetryLinksShowCommonErrorDialog() async throws {
@@ -129,7 +151,7 @@ final class BookDeepLinkUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["책을 찾을 수 없어요"].waitForExistence(timeout: 10))
         capture(app, "책 없음 오류")
         app.buttons["확인"].tap()
-        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        home(app)
 
         // 2. 일시 장애 (503 -> 200 재시도) -> 다시 개발자 도구 열고 실행
         _ = try await URLSession.shared.data(from: base.appendingPathComponent("__692/mode/retry"))
@@ -141,6 +163,6 @@ final class BookDeepLinkUITests: XCTestCase {
         app.buttons["다시 시도"].tap()
         detail(app)
         back(app)
-        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        home(app)
     }
 }

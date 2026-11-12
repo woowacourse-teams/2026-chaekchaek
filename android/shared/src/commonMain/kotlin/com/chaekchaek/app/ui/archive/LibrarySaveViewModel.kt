@@ -45,8 +45,8 @@ class LibrarySaveViewModel(
     private val onSaved: (BookDetailArgs, LibraryRecord) -> Unit,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val shelves: BookshelfRepository? = null,
-    private val readRecentShelf: (Long) -> Long? = { null },
-    private val writeRecentShelf: (Long, Long) -> Unit = { _, _ -> },
+    private var readRecentShelf: (Long) -> Long? = { null },
+    private var writeRecentShelf: (Long, Long) -> Unit = { _, _ -> },
     private val isSaved: (String) -> Boolean = { false },
     private val onShelfCreated: () -> Unit = {},
 ) : ViewModel() {
@@ -62,6 +62,11 @@ class LibrarySaveViewModel(
 
     /** 각 관찰자가 구독한 뒤 완료된 저장만 전달하며 이전 화면의 완료 상태는 재생하지 않는다. */
     fun savesCompletedWhileObserving(): Flow<SavedLibraryBook> = completedSaves.asSharedFlow()
+
+    internal fun attachRecentShelfStorage(read: (Long) -> Long?, write: (Long, Long) -> Unit) {
+        readRecentShelf = read
+        writeRecentShelf = write
+    }
 
     fun authenticate(token: String?, memberId: Long? = null) {
         val memberChanged = authenticatedMemberId != null && memberId != null && authenticatedMemberId != memberId

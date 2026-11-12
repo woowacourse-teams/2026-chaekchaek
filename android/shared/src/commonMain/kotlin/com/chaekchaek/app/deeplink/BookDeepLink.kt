@@ -13,7 +13,7 @@ object BookDeepLink {
     private val pattern = Regex("chaekchaek://books/((?:978|979)[0-9]{10})", RegexOption.IGNORE_CASE)
 
     fun isbn13(uri: String): String? {
-        if (uri.length > maximumUriLength) return null
+        if (uri.length > maximumUriLength || uri.any { it.code > 0x7f }) return null
         val isbn = pattern.matchEntire(uri)?.groupValues?.get(1) ?: return null
         return isbn.takeIf { value ->
             value.withIndex().sumOf { (index, digit) -> (digit - '0') * if (index % 2 == 0) 1 else 3 } % 10 == 0

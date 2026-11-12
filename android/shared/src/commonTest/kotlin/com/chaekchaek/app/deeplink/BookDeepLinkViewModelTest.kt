@@ -93,6 +93,26 @@ class BookDeepLinkViewModelTest {
         assertEquals(listOf(other), opened); assertNull(vm.errors.notice.value)
     }
 
+    @Test fun unreadPlatformDeliveryPreventsOlderLookupFromOpening() = scenario {
+        val inbox = BookDeepLinkInbox()
+        val response = CompletableDeferred<BookDetail>()
+        val vm = BookDeepLinkViewModel(SavedStateHandle(), { target, _ -> if (target == isbn) response.await() else book(target) })
+        vm.accept(delivery())
+        val ready = { inbox.pending.value == null }
+        startPending(vm, readyToOpen = ready) { fail("최신 링크가 수신되면 이전 책을 열면 안 된다") }
+        runCurrent()
+        inbox.submit("chaekchaek://books/$other")
+        response.complete(book())
+        runCurrent()
+        val next = assertNotNull(inbox.pending.value)
+        vm.accept(next)
+        inbox.acknowledge(next.id)
+        var opened: String? = null
+        startPending(vm, readyToOpen = ready) { opened = it.isbn13 }
+        runCurrent()
+        assertEquals(other, opened)
+    }
+
     @Test fun delayedResultCannotOpenOverAnotherScreenAndLoadingStartsAfter500ms() = scenario {
         val response = CompletableDeferred<BookDetail>()
         var current = true

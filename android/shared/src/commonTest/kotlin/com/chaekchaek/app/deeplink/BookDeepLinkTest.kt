@@ -12,6 +12,7 @@ class BookDeepLinkTest {
     @Test fun externalInputMustMatchTheWholeCanonicalRoute() {
         listOf(
             "https://books/9788937460449", "chaekchaek://other/9788937460449",
+            "chaekchaek://bookſ/9788937460449",
             "chaekchaek://books/9788937460448", "chaekchaek://books/1234567890128",
             "chaekchaek://user@books/9788937460449", "chaekchaek://books:80/9788937460449",
             "chaekchaek://books/%39%3788937460449", "chaekchaek://books/9788937460449/",
