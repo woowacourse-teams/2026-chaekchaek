@@ -42,9 +42,20 @@
 | URI 최종 형식과 양 플랫폼 수신 | 구현 완료 (`chaekchaek://books/{isbn13}`, Android Intent 필터 및 iOS URL 수신) |
 | 목적지 조회·오류·뒤로가기·온보딩 연결 | 구현 완료 (`BookDeepLinkViewModel`, 공통 오류 팝업 복귀, 온보딩 후 목적지 재개) |
 | debug 개발자 도구 시안 | 로컬 `.fig` 기반 [HTML v1](../android/visual-contracts/prototypes/book-detail-deeplink/index.html) 사용자 승인 완료 및 양 플랫폼 반영 |
-| 공통 단위 테스트와 Android·iOS 빌드 | 검증 완료 (`:shared:testAndroidHostTest` 23 actionable tasks 통과, `:app:assembleDebug` 통과) |
-| iOS 실제 실행 | 검증 완료 (iPhone 17 Pro iOS 26.2 시뮬레이터에서 `BookDeepLinkUITests` 4건 통과: 콜드 진입, 온보딩 후 재개, 개발자 도구 딥링크, 404/503 오류 안내) |
-| Android 실제 실행 | 검증 완료 (`medium_phone` AVD에서 `BookDeepLinkInteractionTest` 6건 통과: 콜드/웜/백그라운드 진입, 검색어 보존, 동일 도서 재진입 보존, 404/503 오류 안내, 온보딩 후 재개, 개발자 도구 실행) |
+| 공통 단위 테스트와 Android·iOS 빌드 | 2026-11-12 `54c5ba06` 기준 `:shared:testAndroidHostTest` 515개 통과, `:app:assembleDebug` 통과 |
+| iOS 실제 실행 | 2026-11-12 `54c5ba06` 기준 iPhone 17 Pro iOS 26.2 시뮬레이터에서 `BookDeepLinkUITests` 5건을 3회 반복해 15회 모두 통과 |
+| Android 실제 실행 | 2026-11-12 `54c5ba06` 기준 `medium_phone`(Android 17, API 37) AVD에서 `BookDeepLinkInteractionTest` 9건 통과 |
+
+### 2026-11-12 최종 검증
+
+모든 실행은 로컬 합성 API(`android/scripts/book-deeplink-fixture.py`)를 사용했다. 개발·운영 서버의 실제 도서 응답으로는 실행하지 않았다.
+
+- iOS 5건: 콜드 진입 후 홈 복귀, 실행 중·백그라운드 진입 후 발견 탭 검색어 보존, 온보딩 종료 후 목적지 재개, 개발자 도구 링크 실행과 입력 보존, 404·503 공통 오류 안내와 복귀.
+- Android 9건: 콜드·실행 중·백그라운드 진입과 검색어 보존, 동일 도서 재진입 상태 보존, 상세가 링크 조회 응답을 재사용, 조회 중 Activity 재생성 후 재개, 소비한 Intent의 재생성 재실행 방지, 직접 진입 후 홈 복귀와 재생성, 404·503 안내와 복귀, 온보딩 건너뛰기 후 재개, 개발자 도구 실행.
+- Android 계측 APK는 `an-develop`의 기존 계측 테스트가 #704 모델 변경으로 컴파일되지 않아, [PR #724](https://github.com/woowacourse-teams/2026-chaekchaek/pull/724)의 수정 `141065d8`을 임시 체크아웃에만 얹어 빌드했다. 이 PR에는 그 수정이 포함되지 않는다.
+- 같은 링크의 조회는 화면 효과가 다시 시작돼도 1회만 보낸다. 수정 전에는 iOS 콜드 진입 3회 중 1회에서 75ms 간격의 중복 조회가 재현됐고, 수정 후 3회 반복에서 재현되지 않았다.
+- `simctl openurl`로 실행 중인 앱에 링크를 보내면 iOS가 "'책췍'에서 열겠습니까?" 확인창을 띄울 때가 있다. 앱이 아닌 시스템 화면이므로 UI 테스트가 나타날 때만 `열기`를 누른다.
+- 미검증: 딥링크로 진입한 뒤 실제 공급업체 로그인을 거쳐 대기 작업을 재개하는 흐름, iOS 시스템 프로세스 종료 후 복원(저장 경로 미구현), 실제 기기.
 
 HTML v1은 데스크톱 너비 1120, 모바일 너비 390·320에서 브라우저로 확인했다. Gowun Dodum·Pretendard 로딩, 가로 넘침 없음, 정상 URI 형식 확인, 잘못된 링크·책 없음·연결 오류 안내, 오류 닫기 후 입력 보존, 재시도 버튼과 조회 중 상태를 확인했다. HTML의 동작은 시뮬레이션이며 실제 앱·서버 동작의 검증 결과가 아니다. 로컬 원본의 파일 해시·내보낸 시각·사용한 노드와 승인 절차는 [로컬 디자인 기록](local-figma-html-workflow.md)에 둔다.
 
