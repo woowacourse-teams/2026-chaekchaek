@@ -184,6 +184,7 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 - 레벨4 과제 제출에 필요한 LMS 안내와 제출 양식은
   [레벨4 과제 제출 문서](docs/level4-submission/README.md)를 먼저 참고한다.
+- 레벨4 요구사항 5(외부 진입점·딥링크)나 6(인증 만료 처리)의 구현, 시연 또는 제출 증거를 다룰 때는 [외부 진입점과 인증 만료 처리 제출 문서](docs/level4-submission/auth-expiry-and-deep-link.md)를 먼저 읽는다. 증거 현황표와 미확인 항목을 함께 갱신한다.
 - Android 개발자 도구와 상태 보존 요구사항을 제출하거나 완료 근거를 갱신할 때는
   [Android 개발자 도구와 상태 보존 제출 문서](docs/level4-submission/android-developer-tools-state-preservation.md)를 먼저 읽는다.
 

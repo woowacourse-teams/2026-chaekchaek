@@ -12,6 +12,7 @@
 | 스프린트 1 제출 전 제출물과 필드를 확인 | [스프린트 1 제출 기준](sprint-1-submission.md) |
 | 안드로이드 정식 출시 수행 결과와 증빙 확인 | [Play Store 정식 출시 제출 문서](android-play-store-release.md) |
 | 안드로이드 개발자 도구와 상태 보존 요구사항 제출 | [Android 개발자 도구와 상태 보존 제출 문서](android-developer-tools-state-preservation.md) |
+| 외부 진입점(요구사항 5)과 인증 만료 처리(요구사항 6) 제출 증거 | [외부 진입점과 인증 만료 처리 제출 문서](auth-expiry-and-deep-link.md) |
 
 ## 제출 순서
 
