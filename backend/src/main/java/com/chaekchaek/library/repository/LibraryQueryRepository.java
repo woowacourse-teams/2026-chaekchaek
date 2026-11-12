@@ -1,18 +1,15 @@
 package com.chaekchaek.library.repository;
 
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryBookDetailResponse;
 import com.chaekchaek.library.dto.LibraryBookSummaryResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -39,17 +36,15 @@ public class LibraryQueryRepository {
     public List<PlacedBook> findAllBooksByMemberId(long memberId) {
         List<PlacedBook> placedBooks = jdbcTemplate.query(
                 """
-                select lb.library_id, lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13,
-                       li.status, li.current_page, li.reading_updated_at
+                select lb.library_id, lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13
                 from library l
                 join library_book lb on lb.library_id = l.id
                 left join book b on b.id = lb.book_id
-                left join library_item li on li.member_id = l.member_id and li.book_id = lb.book_id
                 where l.member_id = ?
                 order by l.display_order, l.id, lb.display_order, lb.id
                 """,
                 (rs, row) -> {
-                    assertReadingState(rs);
+                    assertBookMetadata(rs);
                     return new PlacedBook(
                             rs.getLong("library_id"),
                             new LibraryBookSummaryResponse(
@@ -102,28 +97,22 @@ public class LibraryQueryRepository {
     public List<LibraryBookDetailResponse> findBooksByLibraryId(long libraryId) {
         List<LibraryBookDetailResponse> books = jdbcTemplate.query(
                 """
-                select lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13, b.total_pages,
-                       li.status, li.current_page, li.reading_updated_at
+                select lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13
                 from library_book lb
                 join library l on l.id = lb.library_id
                 left join book b on b.id = lb.book_id
-                left join library_item li on li.member_id = l.member_id and li.book_id = lb.book_id
                 where lb.library_id = ?
                 order by lb.display_order, lb.id
                 """,
                 (rs, row) -> {
-                    assertReadingState(rs);
+                    assertBookMetadata(rs);
                     return new LibraryBookDetailResponse(
                             rs.getLong("book_id"),
                             rs.getString("title"),
                             rs.getString("cover_image_url"),
                             rs.getString("spine_image_url"),
                             rs.getString("isbn13"),
-                            List.of(),
-                            rs.getObject("total_pages", Integer.class),
-                            ReadingStatus.valueOf(rs.getString("status")),
-                            rs.getInt("current_page"),
-                            rs.getTimestamp("reading_updated_at", Calendar.getInstance(TimeZone.getTimeZone("UTC"))).toInstant()
+                            List.of()
                     );
                 },
                 libraryId
@@ -166,10 +155,9 @@ public class LibraryQueryRepository {
         );
     }
 
-    private void assertReadingState(ResultSet rs) throws SQLException {
-        if (rs.getString("isbn13") == null || rs.getString("status") == null
-                || rs.getObject("current_page") == null || rs.getObject("reading_updated_at") == null) {
-            throw new IllegalStateException("Placed books must have book metadata and the owner's reading state");
+    private void assertBookMetadata(ResultSet rs) throws SQLException {
+        if (rs.getString("isbn13") == null) {
+            throw new IllegalStateException("Placed books must have book metadata");
         }
     }
 

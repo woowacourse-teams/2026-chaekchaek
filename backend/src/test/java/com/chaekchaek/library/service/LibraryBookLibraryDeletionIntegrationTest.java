@@ -1,7 +1,6 @@
 package com.chaekchaek.library.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
@@ -9,7 +8,6 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -51,8 +49,8 @@ class LibraryBookLibraryDeletionIntegrationTest {
     private BookRepository bookRepository;
 
     @Test
-    @DisplayName("도서 공유 기록이 누락되면 책장 삭제와 배치 삭제를 함께 롤백한다")
-    void should_RollBackLibraryAndPlacements_When_SharedItemIsMissing() {
+    @DisplayName("공유 항목이 없는 도서가 있어도 책장과 배치를 삭제한다")
+    void should_DeleteLibraryAndPlacements_When_SharedItemIsMissing() {
         // given
         Member member = memberRepository.saveAndFlush(Member.create(
                 "삭제 검증 " + UUID.randomUUID(),
@@ -66,7 +64,7 @@ class LibraryBookLibraryDeletionIntegrationTest {
         ));
         Book recordedBook = bookRepository.saveAndFlush(book(9788936433598L));
         Book missingRecordBook = bookRepository.saveAndFlush(book(9788936433599L));
-        LibraryItem item = LibraryItem.create(member.getId(), recordedBook.getId(), ReadingStatus.READING, 368, NOW);
+        LibraryItem item = LibraryItem.create(member.getId(), recordedBook.getId(), NOW);
         item.rate(new BigDecimal("4.5"), NOW.plusSeconds(1));
         libraryItemRepository.saveAndFlush(item);
         libraryBookRepository.saveAllAndFlush(List.of(
@@ -75,17 +73,13 @@ class LibraryBookLibraryDeletionIntegrationTest {
         ));
 
         // when & then
-        assertThatThrownBy(() -> libraryBookService.deleteLibrary(member.getId(), library.getId()))
-                .isInstanceOf(IllegalStateException.class);
+        libraryBookService.deleteLibrary(member.getId(), library.getId());
 
-        assertThat(libraryRepository.findById(library.getId())).isPresent();
-        assertThat(libraryBookRepository.findAllByLibraryId(library.getId()))
-                .extracting(LibraryBook::getBookId)
-                .containsExactlyInAnyOrder(recordedBook.getId(), missingRecordBook.getId());
+        assertThat(libraryRepository.findById(library.getId())).isEmpty();
+        assertThat(libraryBookRepository.findAllByLibraryId(library.getId())).isEmpty();
         assertThat(libraryItemRepository.findByMemberIdAndBookId(member.getId(), recordedBook.getId()))
                 .get()
                 .satisfies(saved -> {
-                    assertThat(saved.getStatus()).isEqualTo(ReadingStatus.READING);
                     assertThat(saved.getRating()).isEqualByComparingTo("4.5");
                 });
     }
@@ -103,7 +97,6 @@ class LibraryBookLibraryDeletionIntegrationTest {
                 "출판사",
                 "분류",
                 null,
-                368,
                 null,
                 null
         );

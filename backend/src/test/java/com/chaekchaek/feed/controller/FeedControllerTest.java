@@ -61,7 +61,6 @@ class FeedControllerTest {
                 123L,
                 "감상 내용",
                 "인용 문장",
-                120,
                 true,
                 Instant.parse("2026-09-28T10:00:00Z"),
                 author,
@@ -142,8 +141,6 @@ class FeedControllerTest {
                 fieldWithPath("reviews[].reviewId").type(JsonFieldType.NUMBER).description("감상 ID"),
                 fieldWithPath("reviews[].content").type(JsonFieldType.STRING).description("감상 내용. 스포일러도 포함"),
                 fieldWithPath("reviews[].quote").type(JsonFieldType.STRING).description("인용 문장").optional(),
-                fieldWithPath("reviews[].currentPage").type(JsonFieldType.NUMBER).description("감상 작성 시 읽은 페이지")
-                        .optional(),
                 fieldWithPath("reviews[].isSpoiler").type(JsonFieldType.BOOLEAN).description("스포일러 여부"),
                 fieldWithPath("reviews[].createdAt").type(JsonFieldType.STRING).description("감상 작성 시각(UTC)"),
                 fieldWithPath("reviews[].author").type(JsonFieldType.OBJECT).description("작성자 정보"),

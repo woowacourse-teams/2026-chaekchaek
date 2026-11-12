@@ -5,10 +5,8 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibrarySort;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.AddLibraryItemRequest;
 import com.chaekchaek.library.dto.BulkDeleteLibraryItemsRequest;
-import com.chaekchaek.library.dto.BulkUpdateLibraryStatusRequest;
 import com.chaekchaek.library.dto.CreateLibraryRequest;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
@@ -17,7 +15,6 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.RenameLibraryRequest;
-import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
 import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
@@ -78,9 +75,7 @@ public class LibraryController {
         LibraryItemResponse response = libraryBookService.addByIsbn13(
                 writeMemberId(),
                 libraryId,
-                new Isbn13(request.isbn13()),
-                request.status(),
-                request.totalPages()
+                new Isbn13(request.isbn13())
         );
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/books/{bookId}")
@@ -107,47 +102,29 @@ public class LibraryController {
     @GetMapping("/library")
     public ResponseEntity<LibraryListResponse> getLibrary(
             @RequestParam @Positive int page,
-            @RequestParam(required = false) ReadingStatus status,
             @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
     ) {
-        return ResponseEntity.ok(libraryService.getLibrary(memberId(), page, status, sort));
+        return ResponseEntity.ok(libraryService.getLibrary(memberId(), page, sort));
     }
 
     @GetMapping("/members/{memberId}/library")
     public ResponseEntity<PublicLibraryListResponse> getPublicLibrary(
             @PathVariable @Positive long memberId,
             @RequestParam @Positive int page,
-            @RequestParam(required = false) ReadingStatus status,
             @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
     ) {
-        return ResponseEntity.ok(libraryService.getPublicLibrary(memberId, page, status, sort));
+        return ResponseEntity.ok(libraryService.getPublicLibrary(memberId, page, sort));
     }
 
     @PostMapping("/library")
     public ResponseEntity<LibraryItemResponse> add(@Valid @RequestBody AddLibraryItemRequest request) {
         LibraryItemResponse response = libraryService.addByIsbn13(
                 writeMemberId(),
-                new Isbn13(request.isbn13()),
-                request.status(),
-                request.totalPages()
+                new Isbn13(request.isbn13())
         );
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{bookId}").buildAndExpand(response.bookId()).toUri())
                 .body(response);
-    }
-
-    @PatchMapping("/library/{bookId}")
-    public ResponseEntity<LibraryItemResponse> update(
-            @PathVariable long bookId,
-            @Valid @RequestBody UpdateLibraryItemRequest request
-    ) {
-        return ResponseEntity.ok(libraryService.update(
-                writeMemberId(),
-                bookId,
-                request.status(),
-                request.currentPage(),
-                request.totalPages()
-        ));
     }
 
     @DeleteMapping("/library/{bookId}")
@@ -162,15 +139,6 @@ public class LibraryController {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         libraryService.bulkDelete(writeMemberId(), request.bookIds());
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/library/bulk-status")
-    public ResponseEntity<Void> bulkChangeStatus(@Valid @RequestBody BulkUpdateLibraryStatusRequest request) {
-        if (request.hasDuplicateBookIds()) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        libraryService.bulkChangeStatus(writeMemberId(), request.bookIds(), request.status());
         return ResponseEntity.noContent().build();
     }
 

@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryBookDetailResponse;
 import com.chaekchaek.library.dto.LibraryBookSummaryResponse;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
@@ -54,7 +53,7 @@ class LibraryQueryControllerTest {
             """;
     private static final String DETAIL_DESCRIPTION = """
             책장에 담긴 모든 도서를 설정한 순서대로 조회한다. 로그인 없이 이용할 수 있다.
-            도서별 표지, 저자, 독서 상태와 현재 쪽수를 포함한다. 독서 기록은 책장 소유자의 기록이다.
+            도서별 표지와 저자를 포함한다.
             저자가 없으면 authors는 빈 배열이다. totalCount는 items에 포함된 도서 수다.
             빈 책장은 totalCount가 0이고 items는 빈 배열이다. 기존에 30권을 넘게 담은 책장도 모두 조회한다.
             없는 책장이나 비활성 회원의 책장을 조회하면 `404`, `LIBRARY_NOT_FOUND`를 반환한다.
@@ -91,10 +90,6 @@ class LibraryQueryControllerTest {
                     .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("items[].spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL, 없으면 null").optional(),
             fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
-            fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지, 모르면 null").optional(),
-            fieldWithPath("items[].status").type(JsonFieldType.STRING).description("소유자의 공유 독서 상태"),
-            fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER).description("소유자의 공유 현재 페이지"),
-            fieldWithPath("items[].readingUpdatedAt").type(JsonFieldType.STRING).description("소유자의 독서 갱신 시각")
     };
     private static final FieldDescriptor[] PROBLEM_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
@@ -158,8 +153,8 @@ class LibraryQueryControllerTest {
     }
 
     @Test
-    @DisplayName("책장 상세는 소유자와 공유 독서 기록을 포함하고 nullable 값을 명시한다")
-    void should_ReturnOwnerRecords_When_FindingLibraryDetail() throws Exception {
+    @DisplayName("책장 상세는 소유자와 도서 정보를 반환한다")
+    void should_ReturnBooks_When_FindingLibraryDetail() throws Exception {
         // given
         LibraryBookDetailResponse book = new LibraryBookDetailResponse(
                 42L,
@@ -167,12 +162,7 @@ class LibraryQueryControllerTest {
                 "https://example.com/cover.jpg",
                 null,
                 "9788925568683",
-                List.of("두 번째 저자", "첫 번째 저자"),
-                null,
-                ReadingStatus.READING,
-                23,
-                Instant.parse("2026-10-23T03:00:00Z")
-        );
+                List.of("두 번째 저자", "첫 번째 저자"));
         when(service.findLibrary(7L)).thenReturn(new LibraryDetailResponse(
                 7L,
                 1L,
@@ -188,8 +178,6 @@ class LibraryQueryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.memberId").value(1L))
                 .andExpect(jsonPath("$.nextPage").doesNotExist())
-                .andExpect(jsonPath("$.items[0].totalPages").value(nullValue()))
-                .andExpect(jsonPath("$.items[0].currentPage").value(23))
                 .andExpect(jsonPath("$.items[0].coverImageUrl").value("https://example.com/cover.jpg"))
                 .andExpect(jsonPath("$.items[0].authors[0]").value("두 번째 저자"))
                 .andExpect(jsonPath("$.items[0].authors[1]").value("첫 번째 저자"))
@@ -213,12 +201,7 @@ class LibraryQueryControllerTest {
                 "https://example.com/cover.jpg",
                 null,
                 "9788925568683",
-                List.of(),
-                null,
-                ReadingStatus.READING,
-                0,
-                Instant.parse("2026-10-23T03:00:00Z")
-        );
+                List.of());
         when(service.findLibrary(7L)).thenReturn(new LibraryDetailResponse(
                 7L,
                 1L,

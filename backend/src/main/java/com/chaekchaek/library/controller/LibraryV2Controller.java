@@ -2,7 +2,6 @@ package com.chaekchaek.library.controller;
 
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibrarySort;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
 import com.chaekchaek.library.dto.LibraryDetailResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
@@ -30,21 +29,19 @@ public class LibraryV2Controller {
     @GetMapping("/library")
     public ResponseEntity<LibraryListResponse> getLibrary(
             @RequestParam @Positive int page,
-            @RequestParam(required = false) ReadingStatus status,
             @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
     ) {
         long memberId = currentMemberIdProvider.getCurrentMemberId();
-        return ResponseEntity.ok(libraryService.getLibrary(memberId, page, status, sort));
+        return ResponseEntity.ok(libraryService.getLibrary(memberId, page, sort));
     }
 
     @GetMapping("/members/{memberId}/library")
     public ResponseEntity<PublicLibraryListResponse> getPublicLibrary(
             @PathVariable @Positive long memberId,
             @RequestParam @Positive int page,
-            @RequestParam(required = false) ReadingStatus status,
             @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
     ) {
-        return ResponseEntity.ok(libraryService.getPublicLibrary(memberId, page, status, sort));
+        return ResponseEntity.ok(libraryService.getPublicLibrary(memberId, page, sort));
     }
 
     @GetMapping("/libraries")

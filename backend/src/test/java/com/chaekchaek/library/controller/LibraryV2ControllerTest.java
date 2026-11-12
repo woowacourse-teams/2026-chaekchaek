@@ -15,7 +15,6 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibrarySort;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryBookDetailResponse;
 import com.chaekchaek.library.dto.LibraryBookSummaryResponse;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
@@ -92,7 +91,7 @@ class LibraryV2ControllerTest {
     @DisplayName("v2 내 서재는 책등이 없는 도서의 spineImageUrl을 null로 반환한다")
     void should_ReturnNullSpine_When_GettingLibrary() throws Exception {
         // given
-        when(libraryService.getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RECENT))
+        when(libraryService.getLibrary(MEMBER_ID, 1, LibrarySort.RECENT))
                 .thenReturn(new LibraryListResponse(
                         2,
                         MAX_SIZE,
@@ -104,7 +103,7 @@ class LibraryV2ControllerTest {
         // when & then
         mockMvc.perform(get("/api/v2/library")
                         .param("page", "1")
-                        .param("status", "READING"))
+                        )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].spineImageUrl").value(nullValue()))
                 .andExpect(jsonPath("$.items[1].spineImageUrl").value(SPINE_URL))
@@ -152,7 +151,7 @@ class LibraryV2ControllerTest {
     @DisplayName("v2 공개 서재는 책등이 없는 도서의 spineImageUrl을 null로 반환한다")
     void should_ReturnNullSpine_When_GettingPublicLibrary() throws Exception {
         // given
-        when(libraryService.getPublicLibrary(MEMBER_ID, 1, null, LibrarySort.RECENT))
+        when(libraryService.getPublicLibrary(MEMBER_ID, 1, LibrarySort.RECENT))
                 .thenReturn(new PublicLibraryListResponse(
                         new PublicMemberResponse(
                                 MEMBER_ID,
@@ -184,7 +183,7 @@ class LibraryV2ControllerTest {
     @DisplayName("v2 공개 서재의 대상 회원이 없으면 LIBRARY_NOT_FOUND로 응답한다")
     void should_ReturnNotFound_When_PublicLibraryIsUnavailable() throws Exception {
         // given
-        when(libraryService.getPublicLibrary(MEMBER_ID, 1, null, LibrarySort.RECENT))
+        when(libraryService.getPublicLibrary(MEMBER_ID, 1, LibrarySort.RECENT))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
 
         // when
@@ -290,7 +289,6 @@ class LibraryV2ControllerTest {
                 .description("인증된 사용자의 기본 책장 도서를 조회한다. " + SPINE_NOTICE)
                 .queryParameters(
                         parameterWithName("page").type(SimpleType.INTEGER).description("1부터 시작하는 페이지 번호"),
-                        parameterWithName("status").type(SimpleType.STRING).description("읽기 상태 필터").optional(),
                         parameterWithName("sort").type(SimpleType.STRING).description("정렬 기준").optional()
                 );
     }
@@ -303,7 +301,6 @@ class LibraryV2ControllerTest {
                 .pathParameters(parameterWithName("memberId").type(SimpleType.INTEGER).description("조회할 회원 ID"))
                 .queryParameters(
                         parameterWithName("page").type(SimpleType.INTEGER).description("1부터 시작하는 페이지 번호"),
-                        parameterWithName("status").type(SimpleType.STRING).description("읽기 상태 필터").optional(),
                         parameterWithName("sort").type(SimpleType.STRING).description("정렬 기준").optional()
                 );
     }
@@ -344,13 +341,9 @@ class LibraryV2ControllerTest {
                 fieldWithPath("items[].publisher").type(JsonFieldType.STRING).description("출판사"),
                 fieldWithPath("items[].category").type(JsonFieldType.STRING).description("도서 카테고리"),
                 fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING).description("출판일"),
-                fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
                 fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
-                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("읽기 상태"),
-                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER).description("현재 읽은 페이지"),
                 fieldWithPath("items[].rating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
-                fieldWithPath("items[].addedAt").type(JsonFieldType.STRING).description("서재 추가 시각"),
-                fieldWithPath("items[].readingUpdatedAt").type(JsonFieldType.STRING).description("읽기 정보 갱신 시각")
+                fieldWithPath("items[].addedAt").type(JsonFieldType.STRING).description("서재 추가 시각")
         };
     }
 
@@ -378,10 +371,7 @@ class LibraryV2ControllerTest {
                 fieldWithPath("items[].publisher").type(JsonFieldType.STRING).description("출판사"),
                 fieldWithPath("items[].category").type(JsonFieldType.STRING).description("도서 카테고리"),
                 fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING).description("출판일"),
-                fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
                 fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
-                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("읽기 상태"),
-                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER).description("현재 읽은 페이지"),
                 fieldWithPath("items[].rating").type(JsonFieldType.NUMBER).description("별점").optional()
         };
     }
@@ -422,10 +412,6 @@ class LibraryV2ControllerTest {
                 fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지, 모르면 null").optional(),
-                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("소유자의 공유 독서 상태"),
-                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER).description("소유자의 공유 현재 페이지"),
-                fieldWithPath("items[].readingUpdatedAt").type(JsonFieldType.STRING).description("소유자의 독서 갱신 시각")
         };
     }
 
@@ -442,13 +428,9 @@ class LibraryV2ControllerTest {
                 "출판사",
                 "국내도서>소설",
                 LocalDate.parse("2007-10-30"),
-                300,
                 2L,
-                ReadingStatus.READING,
-                100,
                 new BigDecimal("4.5"),
-                Instant.parse("2026-08-14T03:00:00Z"),
-                Instant.parse("2026-08-14T03:30:00Z")
+                Instant.parse("2026-08-14T03:00:00Z")
         );
     }
 
@@ -481,11 +463,6 @@ class LibraryV2ControllerTest {
                 "https://example.com/cover.jpg",
                 spineImageUrl,
                 "9788925568683",
-                List.of("저자"),
-                300,
-                ReadingStatus.READING,
-                100,
-                Instant.parse("2026-08-14T03:30:00Z")
-        );
+                List.of("저자"));
     }
 }

@@ -16,7 +16,6 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -133,8 +132,8 @@ class LibraryBookLibraryDeletionServiceTest {
     }
 
     @Test
-    @DisplayName("책장 배치를 일괄 삭제하고 마지막 배치 도서의 독서 상태만 초기화한다")
-    void should_DeletePlacementsAndClearOnlyLastReadingStates() {
+    @DisplayName("책장 배치를 일괄 삭제하고 공유 항목을 보존한다")
+    void should_DeletePlacementsAndPreserveLibraryItems() {
         // given
         Library library = library(MEMBER_ID, false);
         List<LibraryBook> placements = List.of(
@@ -151,9 +150,6 @@ class LibraryBookLibraryDeletionServiceTest {
         context.service().deleteLibrary(MEMBER_ID, LIBRARY_ID);
 
         // then
-        assertThat(lastItem.getStatus()).isNull();
-        assertThat(lastItem.getCurrentPage()).isNull();
-        assertThat(lastItem.getReadingUpdatedAt()).isNull();
         assertThat(lastItem.getRating()).isEqualByComparingTo("4.5");
         assertThat(lastItem.getRatingUpdatedAt()).isEqualTo(ratingUpdatedAt);
         assertThat(lastItem.getAddedAt()).isEqualTo(addedAt);
@@ -167,16 +163,8 @@ class LibraryBookLibraryDeletionServiceTest {
         order.verify(context.libraryRepository()).findById(LIBRARY_ID);
         order.verify(context.libraryBookRepository()).findAllByLibraryId(LIBRARY_ID);
         order.verify(context.libraryBookRepository()).deleteAll(placements);
-        order.verify(context.libraryBookRepository()).flush();
-        order.verify(context.libraryBookRepository()).findPlacedBookIdsByMemberIdAndBookIdIn(
-                MEMBER_ID,
-                List.of(10L, 20L, 30L)
-        );
-        order.verify(context.libraryItemRepository()).findAllByMemberIdAndBookIdInForUpdate(
-                MEMBER_ID,
-                List.of(10L)
-        );
         order.verify(context.libraryRepository()).delete(library);
+        verifyNoInteractions(context.libraryItemRepository());
     }
 
     private TestContext context(
@@ -230,8 +218,7 @@ class LibraryBookLibraryDeletionServiceTest {
     }
 
     private LibraryItem libraryItem(long bookId) {
-        LibraryItem item = LibraryItem.create(MEMBER_ID, bookId, ReadingStatus.READING, 368, NOW.minusSeconds(120));
-        item.changeCurrentPage(120, 368, NOW.minusSeconds(60));
+        LibraryItem item = LibraryItem.create(MEMBER_ID, bookId, NOW.minusSeconds(120));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(30));
         return item;
     }

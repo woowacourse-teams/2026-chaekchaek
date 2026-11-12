@@ -50,7 +50,7 @@ class LibraryOrderControllerTest {
             ID를 중복해서 보내거나 잘못된 형식으로 보내면 `400`, `INVALID_REQUEST`를 반환한다.
             현재 목록의 ID가 빠지거나 다른 ID가 포함되면 `409`, `ORDER_CONFLICT`를 반환한다. 목록을 다시 조회한 뒤 요청한다.
             실패하면 기존 순서를 유지한다. 같은 목록을 동시에 변경하면 마지막으로 저장한 순서를 따른다.
-            다른 책장, 독서 기록과 별점은 변경하지 않는다.
+            책장 순서 외에 도서 배치와 별점은 변경하지 않는다.
             """;
     private static final String LIBRARY_ORDER_DESCRIPTION =
             "인증 회원의 모든 책장 ID를 기본 책장까지 포함해 원하는 순서대로 전달한다. "

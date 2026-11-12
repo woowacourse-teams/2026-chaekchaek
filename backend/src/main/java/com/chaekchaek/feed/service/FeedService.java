@@ -50,7 +50,6 @@ public class FeedService {
                 review.getId(),
                 review.getContent(),
                 review.getQuote(),
-                review.getCurrentPage(),
                 review.isSpoiler(),
                 review.getCreatedAt(),
                 summary.author(),

@@ -16,7 +16,6 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -78,7 +77,7 @@ class LibraryBookDeletionServiceTest {
     }
 
     @Test
-    @DisplayName("배치가 없으면 공유 독서 기록을 바꾸지 않고 종료한다")
+    @DisplayName("배치가 없으면 공유 도서 정보를 바꾸지 않고 종료한다")
     void should_DoNothing_When_PlacementDoesNotExist() {
         // given
         TestContext context = context(library(MEMBER_ID), Optional.empty(), 0L, null);
@@ -93,8 +92,8 @@ class LibraryBookDeletionServiceTest {
     }
 
     @Test
-    @DisplayName("다른 책장에 배치가 남아 있으면 공유 독서 기록을 유지한다")
-    void should_PreserveSharedReadingRecord_When_AnotherPlacementRemains() {
+    @DisplayName("다른 책장에 배치가 남아 있으면 공유 별점 정보를 유지한다")
+    void should_PreserveSharedBookItem_When_AnotherPlacementRemains() {
         // given
         LibraryBook placement = LibraryBook.create(LIBRARY_ID, BOOK_ID, 1L);
         TestContext context = context(library(MEMBER_ID), Optional.of(placement), 1L, null);
@@ -105,18 +104,15 @@ class LibraryBookDeletionServiceTest {
         // then
         InOrder order = inOrder(context.libraryBookRepository());
         order.verify(context.libraryBookRepository()).delete(placement);
-        order.verify(context.libraryBookRepository()).flush();
-        verify(context.libraryBookRepository()).countByMemberIdAndBookId(MEMBER_ID, BOOK_ID);
         verifyNoInteractions(context.libraryItemRepository());
     }
 
     @Test
-    @DisplayName("마지막 배치를 삭제하면 독서 상태만 초기화하고 별점과 최초 시각을 보존한다")
-    void should_ClearReadingStateAndPreserveRating_When_DeletingLastPlacement() {
+    @DisplayName("마지막 배치를 삭제해도 별점과 최초 시각을 보존한다")
+    void should_PreserveRating_When_DeletingLastPlacement() {
         // given
         LibraryBook placement = LibraryBook.create(LIBRARY_ID, BOOK_ID, 1L);
-        LibraryItem item = LibraryItem.create(MEMBER_ID, BOOK_ID, ReadingStatus.READING, 368, NOW.minusSeconds(120));
-        item.changeCurrentPage(120, 368, NOW.minusSeconds(60));
+        LibraryItem item = LibraryItem.create(MEMBER_ID, BOOK_ID, NOW.minusSeconds(120));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(30));
         Instant addedAt = item.getAddedAt();
         Instant ratingUpdatedAt = item.getRatingUpdatedAt();
@@ -126,9 +122,6 @@ class LibraryBookDeletionServiceTest {
         context.service().delete(MEMBER_ID, LIBRARY_ID, BOOK_ID);
 
         // then
-        assertThat(item.getStatus()).isNull();
-        assertThat(item.getCurrentPage()).isNull();
-        assertThat(item.getReadingUpdatedAt()).isNull();
         assertThat(item.getRating()).isEqualByComparingTo("4.5");
         assertThat(item.getRatingUpdatedAt()).isEqualTo(ratingUpdatedAt);
         assertThat(item.getAddedAt()).isEqualTo(addedAt);
@@ -138,9 +131,7 @@ class LibraryBookDeletionServiceTest {
         order.verify(context.libraryRepository()).findById(LIBRARY_ID);
         order.verify(context.libraryBookRepository()).findByLibraryIdAndBookId(LIBRARY_ID, BOOK_ID);
         order.verify(context.libraryBookRepository()).delete(placement);
-        order.verify(context.libraryBookRepository()).flush();
-        order.verify(context.libraryBookRepository()).countByMemberIdAndBookId(MEMBER_ID, BOOK_ID);
-        order.verify(context.libraryItemRepository()).findByMemberIdAndBookIdForUpdate(MEMBER_ID, BOOK_ID);
+        verifyNoInteractions(context.libraryItemRepository());
     }
 
     private TestContext context(
