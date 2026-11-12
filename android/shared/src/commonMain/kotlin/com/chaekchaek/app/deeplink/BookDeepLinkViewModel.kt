@@ -2,6 +2,7 @@ package com.chaekchaek.app.deeplink
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.UserErrorReporter
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.MobileLoginException
@@ -11,6 +12,8 @@ import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,9 +29,14 @@ internal class BookDeepLinkViewModel(
     private val loading = MutableStateFlow(false)
     val showLoading = loading.asStateFlow()
     private var activeLookup: Any? = null
+    private var sharedLookup: SharedLookup? = null
+
+    /** 링크 하나의 조회. 화면 효과가 다시 시작돼도 같은 링크와 자격 증명이면 진행 중인 요청을 기다린다. */
+    private class SharedLookup(val request: String, val credential: WriteCredential?, val result: Deferred<BookDetail>)
 
     fun accept(delivery: BookDeepLinkDelivery) {
         activeLookup = null
+        releaseLookup()
         loading.value = false
         errors.dismiss()
         savedState[PENDING] = "${delivery.id}|${delivery.isbn13.orEmpty()}"
@@ -62,7 +70,7 @@ internal class BookDeepLinkViewModel(
         try {
             val book = withDelayedApiLoading(
                 onLoadingChanged = { if (activeLookup === lookupIdentity) loading.value = it },
-            ) { lookup(isbn, credential) }
+            ) { lookupOnce(request, isbn, credential).await() }
             coroutineContext.ensureActive()
             if (pending.value != request || !readyToOpen()) return
             consume(request)
@@ -98,7 +106,22 @@ internal class BookDeepLinkViewModel(
         }
     }
 
+    private fun lookupOnce(request: String, isbn: String, credential: WriteCredential?): Deferred<BookDetail> {
+        sharedLookup?.takeIf { it.request == request && it.credential == credential && !it.result.isCancelled }
+            ?.let { return it.result }
+        releaseLookup()
+        // 화면 효과의 수명이 아니라 ViewModel 수명에 묶어, 효과가 취소돼도 요청을 다시 보내지 않는다.
+        return viewModelScope.async { lookup(isbn, credential) }
+            .also { sharedLookup = SharedLookup(request, credential, it) }
+    }
+
+    private fun releaseLookup() {
+        sharedLookup?.result?.cancel()
+        sharedLookup = null
+    }
+
     private fun consume(request: String) {
+        if (sharedLookup?.request == request) sharedLookup = null
         if (pending.value == request) savedState[PENDING] = null
     }
 

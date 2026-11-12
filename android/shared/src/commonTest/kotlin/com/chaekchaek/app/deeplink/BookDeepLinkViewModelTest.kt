@@ -32,6 +32,39 @@ class BookDeepLinkViewModelTest {
         openBook: (BookDetail) -> Unit,
     ) = launch { vm.openPending(currentIsbn, sourceIsCurrent = sourceIsCurrent, readyToOpen = readyToOpen, openBook = openBook) }
 
+    @Test fun restartedEffectWaitsForTheSameLookupInsteadOfSendingAnother() = scenario {
+        var requests = 0
+        val gate = CompletableDeferred<Unit>()
+        val vm = BookDeepLinkViewModel(SavedStateHandle(), { isbn, _ -> requests++; gate.await(); book(isbn) })
+        vm.accept(delivery())
+        val first = startPending(vm) { fail("취소된 효과가 화면을 열면 안 된다") }
+        runCurrent()
+        first.cancel()
+        var opened = 0
+        startPending(vm) { opened++ }
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(1, requests); assertEquals(1, opened); assertNull(vm.pending.value)
+    }
+
+    @Test fun changedCredentialLooksUpAgainForTheSameLink() = scenario {
+        val credentials = mutableListOf<com.chaekchaek.app.data.remote.WriteCredential?>()
+        val gate = CompletableDeferred<Unit>()
+        val vm = BookDeepLinkViewModel(SavedStateHandle(), { isbn, credential -> credentials += credential; gate.await(); book(isbn) })
+        vm.accept(delivery())
+        val first = launch { vm.openPending(null, credential = null, sourceIsCurrent = { true }) { fail("이전 자격 증명의 응답으로 열면 안 된다") } }
+        runCurrent()
+        first.cancel()
+        val member = com.chaekchaek.app.data.remote.WriteCredential.Member("member-token")
+        var opened = 0
+        launch { vm.openPending(null, credential = member, sourceIsCurrent = { true }) { opened++ } }
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(listOf<com.chaekchaek.app.data.remote.WriteCredential?>(null, member), credentials); assertEquals(1, opened)
+    }
+
     @Test fun sameBookRetainsItsEntryWithoutFetching() = scenario {
         var requests = 0
         val vm = BookDeepLinkViewModel(SavedStateHandle(), { isbn, _ -> requests++; book(isbn) })
