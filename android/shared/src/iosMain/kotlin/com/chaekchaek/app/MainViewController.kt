@@ -45,6 +45,8 @@ fun MainViewController(
   onUpdate: () -> Unit,
   showPolicyDeveloperTools: Boolean = false,
   onPolicyRefresh: () -> Unit = {},
+  bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox,
+  openBookDeepLink: (String) -> Unit,
 ): UIViewController {
   val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent, analyticsCollection, errorSink = logUserError)
   return ComposeUIViewController {
@@ -64,6 +66,7 @@ fun MainViewController(
         }
       } else {
         App(
+        bookDeepLinks = bookDeepLinks,
         authPlatform = authPlatform,
         recentSearchStorage = recentSearchStorage,
         onboardingStorage = onboardingStorage,
@@ -84,6 +87,10 @@ fun MainViewController(
               androidx.compose.material3.Surface {
                 Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
                   com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
+                  com.chaekchaek.app.ui.common.BookDeepLinkDeveloperContent { uri ->
+                    showPolicy = false
+                    openBookDeepLink(uri)
+                  }
                   com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
                 }
               }

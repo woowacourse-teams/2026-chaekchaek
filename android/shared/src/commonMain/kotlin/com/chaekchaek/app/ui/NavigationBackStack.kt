@@ -1,5 +1,14 @@
 package com.chaekchaek.app.ui
 
+import androidx.navigation3.runtime.NavKey
+import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
+
+internal fun MutableList<NavKey>.openExternalBookFromCurrent(source: NavKey, book: BookDetailArgs): BookDetailKey? {
+    if (lastOrNull() != source) return null
+    if (source is BookDetailKey && source.book.isbn13 == book.isbn13) return null
+    return BookDetailKey(book).also { add(it) }
+}
+
 internal fun <T : Any> MutableList<T>.navigateFromCurrent(
     current: T,
     destination: T,

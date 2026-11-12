@@ -10,6 +10,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
+import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.PersonalRating
@@ -75,7 +76,7 @@ class BookDetailViewModel(
         this.authPlatform = authPlatform
     }
 
-    fun open(book: BookDetailArgs, accessToken: String?) {
+    fun open(book: BookDetailArgs, accessToken: String?, initialDetail: BookDetail? = null) {
         if (_uiState.value.book == book) {
             syncAuthentication(accessToken)
             return
@@ -91,6 +92,7 @@ class BookDetailViewModel(
         savedStateHandle[BookDetailSavedStateKeys.Opened] = true
         _uiState.value = BookDetailUiState(
             book = book,
+            detail = initialDetail,
             reviewScope = reviewScope,
             reviewSort = restoredReviewSort,
             signedIn = accessToken != null,
@@ -99,7 +101,7 @@ class BookDetailViewModel(
         )
         detailReadyLogged = false
         analytics.ensureFlow("book_detail")
-        reload()
+        reload(initialDetail = initialDetail)
     }
 
     fun authenticate(accessToken: String): BookDetailAuthenticatedAction? {
@@ -129,6 +131,7 @@ class BookDetailViewModel(
             signedIn = accessToken != null,
             reviewScope = reviewScope,
             pendingAction = null,
+            resumedAction = if (accessToken == null) null else pending ?: _uiState.value.resumedAction,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
             ratingComparison = emptyList(),
             isLoading = false,
@@ -140,6 +143,10 @@ class BookDetailViewModel(
         )
         reload()
         return pending
+    }
+
+    internal fun finishResumedAction() {
+        _uiState.value = _uiState.value.copy(resumedAction = null)
     }
 
     fun requestAuthentication(action: BookDetailAuthenticatedAction): Boolean {
@@ -610,7 +617,11 @@ class BookDetailViewModel(
         }
     }
 
-    private fun reload(retryingReviews: Boolean = false, pullRefresh: Boolean = false) {
+    private fun reload(
+        retryingReviews: Boolean = false,
+        pullRefresh: Boolean = false,
+        initialDetail: BookDetail? = null,
+    ) {
         val book = _uiState.value.book ?: return
         val retainedPageState = _uiState.value.reviewPageLoadState.takeIf { it.canRetry }
             ?: ReviewPageLoadState.Idle
@@ -643,7 +654,7 @@ class BookDetailViewModel(
                         }
                     },
                 ) {
-                    val detail = book.isbn13.takeIf(String::isNotBlank)
+                    val detail = initialDetail ?: book.isbn13.takeIf(String::isNotBlank)
                         ?.let { repository.detail(it, credential) }
                     val reviews = detail?.bookId?.let { bookId ->
                         restoreReviewPages(
@@ -998,9 +1009,7 @@ class BookDetailViewModel(
 
     private fun requireToken(): String = requireNotNull(accessToken)
 
-    private fun readCredential(): WriteCredential? =
-        accessToken?.let { WriteCredential.Member(it) }
-            ?: authPlatform.readGuest()?.token?.let { WriteCredential.Guest(it) }
+    private fun readCredential(): WriteCredential? = authPlatform.bookDetailCredential(accessToken)
 
     private suspend fun writeCredential(): WriteCredential = readCredential() ?: issueGuestCredential()
 
@@ -1118,3 +1127,7 @@ private fun RatingComparison.toUiModels(): List<RatingComparisonBookUiModel> =
 
 private fun Throwable.isUnauthorized(): Boolean =
     this is ResponseException && response.status == HttpStatusCode.Unauthorized
+
+internal fun AuthPlatformCallbacks.bookDetailCredential(accessToken: String?): WriteCredential? =
+    accessToken?.let { WriteCredential.Member(it) }
+        ?: readGuest()?.token?.let { WriteCredential.Guest(it) }

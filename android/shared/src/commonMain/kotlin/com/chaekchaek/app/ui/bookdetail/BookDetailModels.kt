@@ -102,6 +102,7 @@ data class BookDetailUiState(
     val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),
     val signedIn: Boolean = false,
     val pendingAction: BookDetailAuthenticatedAction? = null,
+    val resumedAction: BookDetailAuthenticatedAction? = null,
     val requestError: String? = null,
     val guestNickname: String? = null,
 ) {
@@ -109,7 +110,7 @@ data class BookDetailUiState(
         get() = detail?.toBookDetailArgs(book ?: return null) ?: book
 }
 
-private fun BookDetail.toBookDetailArgs(fallback: BookDetailArgs) =
+internal fun BookDetail.toBookDetailArgs(fallback: BookDetailArgs) =
     fallback.copy(
         isbn13 = isbn13,
         bookId = bookId,

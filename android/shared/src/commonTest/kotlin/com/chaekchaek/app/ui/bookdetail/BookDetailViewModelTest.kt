@@ -724,6 +724,23 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `다른 화면에 가린 상세의 로그인 후 작업은 화면이 처리할 때까지 유지한다`() = runViewModelTest {
+    val client = testClient(MockEngine { error("네트워크 요청") })
+    val vm = viewModel(client, client, platform(readGuest = { null }))
+    val book = book()
+    val action = BookDetailAuthenticatedAction.AddToLibrary
+    vm.open(book, null)
+    assertFalse(vm.requestAuthentication(action))
+    vm.authenticate("member-test")
+    assertNull(vm.uiState.value.pendingAction)
+    vm.open(book, "member-test")
+    assertEquals(action, vm.uiState.value.resumedAction)
+    vm.finishResumedAction()
+    vm.open(book, "member-test")
+    assertNull(vm.uiState.value.resumedAction)
+  }
+
+  @Test
   fun `빠른 추가 조회 실패는 자동 반복하지 않고 명시적 재시도로 복구한다`() =
     verifyFailedPageRetry(showDelayedLoader = false)
 

@@ -59,10 +59,29 @@ internal fun BookshelfRoute(
     var deleting by remember { mutableStateOf<Bookshelf?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
     var sharingShelfId by rememberSaveable { mutableStateOf<Long?>(null) }
-    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; adding = false; sharingShelfId = null; editing = false }
+    var previousSignedIn by rememberSaveable { mutableStateOf(signedIn) }
+    var previousMemberId by rememberSaveable { mutableStateOf(state.memberId) }
+    LaunchedEffect(signedIn, state.memberId) {
+        if (previousSignedIn != signedIn || previousMemberId != state.memberId) {
+            previousSignedIn = signedIn
+            previousMemberId = state.memberId
+            creating = false
+            namingId = null
+            deleting = null
+            adding = false
+            sharingShelfId = null
+            editing = false
+        }
+    }
     val listState = rememberLazyListState()
     val detailListState = rememberLazyListState()
-    LaunchedEffect(scrollTopRequest) { if (state.selectedId == null) listState.scrollToItem(0) else detailListState.scrollToItem(0) }
+    var handledScrollTopRequest by rememberSaveable { mutableIntStateOf(scrollTopRequest) }
+    LaunchedEffect(scrollTopRequest) {
+        if (scrollTopRequest > handledScrollTopRequest) {
+            handledScrollTopRequest = scrollTopRequest
+            if (state.selectedId == null) listState.scrollToItem(0) else detailListState.scrollToItem(0)
+        }
+    }
     val canOrder = !state.mutating && !state.refreshing && !state.collectionStale && !state.detailRefreshing &&
         (state.selectedId == null || !state.detailStale)
     val detail = state.detail

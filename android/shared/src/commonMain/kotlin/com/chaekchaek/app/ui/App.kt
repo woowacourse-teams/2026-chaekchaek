@@ -3,6 +3,7 @@ package com.chaekchaek.app.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
@@ -24,6 +25,7 @@ fun App(
     onExitRequested: () -> Unit = {},
     policyController: com.chaekchaek.app.config.MobilePolicyController? = null,
     onUpdate: () -> Unit = {},
+    bookDeepLinks: com.chaekchaek.app.deeplink.BookDeepLinkInbox = remember { com.chaekchaek.app.deeplink.BookDeepLinkInbox() },
 ) {
     com.chaekchaek.app.analytics.AnalyticsLifecycleEffect(analytics, refreshAnalyticsConfiguration)
     ChaekchaekTheme {
@@ -40,6 +42,7 @@ fun App(
                     uiTestingMyPage = uiTestingMyPage,
                     homeHeaderAction = homeHeaderAction,
                     onExitRequested = onExitRequested,
+                    bookDeepLinks = bookDeepLinks,
                 )
                 policyController?.let {
                     com.chaekchaek.app.ui.common.UpdatePolicyHost(it, onUpdate)

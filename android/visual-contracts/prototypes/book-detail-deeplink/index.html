@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>책췍 개발자 도구 - 딥링크 시안 v1</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:'Gowun Dodum';src:url('../../../shared/src/commonMain/composeResources/font/gowun_dodum_regular.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:Pretendard;src:url('../../../shared/src/commonMain/composeResources/font/pretendard_regular.otf') format('opentype');font-weight:400;font-display:swap}
+:root{--canvas:#fff;--ink:#191919;--action:#1c1c1c;--accent:#ff8500;--muted:#f3f3f5;--secondary:#666;--meta:#777;--border:#dddde1}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--muted);font:16px/1.5 'Gowun Dodum',sans-serif}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button{transition:none}h1,h2,h3,p{margin:0;font-weight:400}main{max-width:1160px;margin:0 auto;padding:40px 24px 48px}.review-title{font-size:28px;line-height:1.25}.intro{margin-top:12px;color:var(--secondary)}.review-badge{display:inline-block;padding:4px 10px;border:1px solid var(--border);border-radius:12px;font:12px/18px Pretendard,sans-serif;margin-bottom:12px;background:white}.board{display:grid;grid-template-columns:390px 390px;justify-content:space-between;gap:32px;margin-top:28px}.column-title{font-size:20px;line-height:30px;margin-bottom:8px}.column-note{font-size:13px;line-height:20px;color:var(--secondary);min-height:40px;margin-bottom:16px}.phone{width:390px;height:914px;background:white;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:20px}.reference svg{display:block;width:390px;height:914px}.status{height:45px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font:13px/20px Pretendard,sans-serif}.signals{font-size:11px}.appbar{display:flex;align-items:center;gap:12px;height:70px;padding:0 24px}.icon{font-family:Pretendard,sans-serif}.back{width:44px;height:44px;flex-shrink:0;border:1px solid var(--border);border-radius:20px;background:white;display:grid;place-items:center;font-size:30px;line-height:1}.appbar h2{font-size:29px;line-height:35px}.content{height:calc(100% - 115px);overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin}.debug{align-self:flex-start;min-height:28px;border:1px solid var(--accent);border-radius:20px;padding:6px 12px;color:var(--accent);font-size:10px;line-height:14px}.description{font-size:16px;line-height:24px;color:var(--meta);letter-spacing:-.4px}.link-section{display:flex;flex-direction:column;gap:12px;padding:8px 0 16px}.link-section h3{font-size:21px;line-height:32px}.hint{font-size:14px;line-height:21px;color:var(--secondary)}label{font-size:13px;line-height:18px;color:var(--secondary)}.uri{width:100%;height:54px;border:0;border-radius:15px;background:var(--muted);color:var(--ink);padding:0 16px;font-size:14px;line-height:21px;letter-spacing:-.2px}.example-buttons{display:flex;gap:8px}.secondary{height:44px;flex:1;border:1px solid var(--border);background:var(--canvas);border-radius:15px;font-size:14px;line-height:21px;color:var(--ink)}.primary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;width:100%;padding:12px 16px;border:0;border-radius:16px;background:var(--action);color:white;font-size:14px;line-height:21px}.primary:disabled{background:var(--muted);color:var(--meta)}.info{border-radius:16px;background:var(--muted);overflow:hidden;flex-shrink:0}.info-row{padding:16px;position:relative;display:flex;flex-direction:column;gap:6px;min-height:78px}.info-row:not(:last-child)::after{content:'';position:absolute;left:16px;right:16px;bottom:0;border-bottom:1px solid var(--border)}.info-label{font-size:10px;line-height:16px;color:var(--meta)}.info-value{font-size:16px;line-height:24px;overflow-wrap:anywhere;letter-spacing:-.4px}.notice{border-top:1px solid var(--border);padding-top:16px;font-size:13px;line-height:20px;color:var(--secondary)}.states{margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}.state{padding:8px 12px;min-height:40px;background:white;border:1px solid var(--border);border-radius:12px;color:var(--secondary);font-size:14px;line-height:21px}.state[aria-pressed=true]{background:var(--action);border-color:var(--action);color:white}.review-status{min-height:44px;font-size:14px;line-height:21px;margin-top:16px;color:var(--secondary)}.overlay{position:absolute;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center;padding:16px}.overlay[hidden]{display:none}.dialog{background:white;width:100%;max-width:358px;border-radius:22px;padding:8px 8px 24px 24px}.close-row{display:flex;justify-content:flex-end;height:44px}.close{width:44px;height:44px;border:0;background:transparent;font:22px/30px Pretendard,sans-serif;color:var(--ink)}.dialog-body{padding-right:16px;display:flex;flex-direction:column;gap:16px}.dialog h3{font-size:21px;line-height:31.5px}.dialog p{font-size:16px;line-height:24px;color:var(--secondary)}.dialog-actions{display:flex;gap:8px}.dialog-actions button{flex:1;min-height:50px}.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--meta);border-radius:50%;animation:spin 1s linear infinite}.spinner[hidden]{display:none}@keyframes spin{to{transform:rotate(360deg)}}.provenance{border-top:1px solid var(--border);padding-top:24px;margin-top:32px;font-size:13px;line-height:21px;color:var(--secondary)}.provenance a{color:var(--ink)}.provenance code{overflow-wrap:anywhere;font-size:12px}.provenance h2{color:var(--ink);font-size:17px;margin-bottom:8px}.checklist{padding-left:20px}.checklist li{margin:4px 0}@media(max-width:880px){main{padding:24px 16px}.board{grid-template-columns:390px;justify-content:center;gap:28px}.review-title{font-size:24px}}@media(max-width:421px){.phone{width:100%;height:844px;border-radius:0}.board{grid-template-columns:minmax(0,390px)}.reference svg{width:100%;height:auto}.column-note{min-height:0}.content{padding:24px}.appbar{padding:0 24px}}
+</style>
+</head>
+<body>
+<main>
+  <span class="review-badge">HTML 시안 v1 · 승인 대기</span>
+  <h1 class="review-title">개발자 도구에서 책 상세 딥링크 실행</h1>
+  <p class="intro">로컬 Figma의 화면과 공통 컨트롤을 기준으로 딥링크 테스트 영역을 추가했습니다.</p>
+  <div class="board">
+    <section aria-labelledby="reference-heading">
+      <h2 class="column-title" id="reference-heading">기존 원본</h2>
+      <p class="column-note">책췍.fig · 1099:174<br>내보낸 노드·텍스트 스타일을 HTML/SVG로 재구성</p>
+      <div class="phone reference"><svg viewBox="0 0 390 914" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="로컬 Figma에서 추출한 기존 개발자 도구"><g transform="translate(0 0)" data-source-node="1099:174"><rect width="390" height="914" rx="0" fill="rgba(255,255,255,1)" stroke="none"/><g transform="translate(0 0)" data-source-node="1099:175"><g transform="translate(26 15)" data-source-node="1099:176"><g transform="translate(0 0)" data-source-node="1099:177"><text x="0" y="12.62109375" fill="rgba(25,25,25,1)" font-family="Pretendard" font-size="13">9:41</text></g></g><g transform="translate(291 15)" data-source-node="1099:178"><g transform="translate(0 0)" data-source-node="1099:179"><text x="0" y="10.41015625" fill="rgba(25,25,25,1)" font-family="Pretendard" font-size="11">▮▮▮ ◒ ▰</text></g></g></g><g transform="translate(0 45)" data-source-node="1099:180"><g transform="translate(24 13)" data-source-node="1099:181"><rect width="44" height="44" rx="20" fill="none" stroke="rgba(221,221,225,1)"/><g transform="translate(17.5 4.5)" data-source-node="1099:182"><text x="0" y="30.04399871826172" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="29">‹</text></g></g><g transform="translate(80 17.5)" data-source-node="1099:183"><text x="0" y="30.04399871826172" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="29">개발자 도구</text></g></g><g transform="translate(0 115)" data-source-node="1099:184"><g transform="translate(24 24)" data-source-node="1099:185"><rect width="79" height="28" rx="20" fill="none" stroke="rgba(255,133,0,1)"/><g transform="translate(13 7)" data-source-node="1099:186"><text x="0" y="11.359999656677246" fill="rgba(255,133,0,1)" font-family="Gowun Dodum" font-size="10">DEBUG 전용</text></g></g><g transform="translate(24 68)" data-source-node="1099:187"><text x="0" y="18.97599983215332" fill="rgba(119,119,119,1)" font-family="Gowun Dodum" font-size="16">현재 설치된 앱과 연결된 서버 정보를 확인합니다.</text></g><g transform="translate(24 108)" data-source-node="1099:188"><rect width="342" height="333" rx="16" fill="rgba(243,243,245,1)" stroke="none"/><g transform="translate(0 0)" data-source-node="1099:189"><g transform="translate(16 16)" data-source-node="1099:190"><text x="0" y="12.359999656677246" fill="rgba(119,119,119,1)" font-family="Gowun Dodum" font-size="10">앱 버전</text></g><g transform="translate(16 38)" data-source-node="1099:191"><text x="0" y="18.97599983215332" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="16">1.1.1 (5)</text></g><g transform="translate(16 68)" data-source-node="1099:192"><rect width="310" height="1" rx="0" fill="rgba(221,221,225,1)" stroke="none"/></g></g><g transform="translate(0 85)" data-source-node="1099:193"><g transform="translate(16 16)" data-source-node="1099:194"><text x="0" y="12.359999656677246" fill="rgba(119,119,119,1)" font-family="Gowun Dodum" font-size="10">빌드 타입</text></g><g transform="translate(16 38)" data-source-node="1099:195"><text x="0" y="18.97599983215332" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="16">debug</text></g><g transform="translate(16 68)" data-source-node="1099:196"><rect width="310" height="1" rx="0" fill="rgba(221,221,225,1)" stroke="none"/></g></g><g transform="translate(0 170)" data-source-node="1099:197"><g transform="translate(16 16)" data-source-node="1099:198"><text x="0" y="12.359999656677246" fill="rgba(119,119,119,1)" font-family="Gowun Dodum" font-size="10">서버 환경</text></g><g transform="translate(16 38)" data-source-node="1099:199"><text x="0" y="18.97599983215332" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="16">development</text></g><g transform="translate(16 68)" data-source-node="1099:200"><rect width="310" height="1" rx="0" fill="rgba(221,221,225,1)" stroke="none"/></g></g><g transform="translate(0 255)" data-source-node="1099:201"><g transform="translate(16 16)" data-source-node="1099:202"><text x="0" y="12.359999656677246" fill="rgba(119,119,119,1)" font-family="Gowun Dodum" font-size="10">API base URL</text></g><g transform="translate(16 38)" data-source-node="1099:203"><text x="0" y="18.97599983215332" fill="rgba(25,25,25,1)" font-family="Gowun Dodum" font-size="16">https://dev-api.chaekchaek.com</text></g></g></g></g></g></svg></div>
+    </section>
+    <section aria-labelledby="proposal-heading">
+      <h2 class="column-title" id="proposal-heading">추가할 UI</h2>
+      <p class="column-note">URI 입력 → 예시 선택 → 실행<br>아래 상태 버튼으로 공통 오류 안내도 확인할 수 있습니다.</p>
+      <div class="phone" id="proposal">
+        <div class="status"><span>9:41</span><span class="signals">▮▮▮ ◒ ▰</span></div>
+        <header class="appbar"><button class="back icon" type="button" aria-label="뒤로가기 시연">‹</button><h2>개발자 도구</h2></header>
+        <div class="content">
+          <span class="debug">DEBUG 전용</span>
+          <p class="description">현재 설치된 앱과 연결된 서버 정보를 확인합니다.</p>
+          <form class="link-section" id="link-form">
+            <h3>책 상세 딥링크</h3>
+            <p class="hint">링크로 책 상세를 열고<br>뒤로가기 경로를 확인해요.</p>
+            <label for="uri">딥링크 URI</label>
+            <input class="uri" id="uri" name="uri" type="text" inputmode="url" maxlength="128" autocapitalize="off" autocomplete="off" spellcheck="false" value="chaekchaek://books/9788937460449">
+            <div class="example-buttons"><button class="secondary" type="button" id="valid-example">정상 링크</button><button class="secondary" type="button" id="invalid-example">잘못된 링크</button></div>
+            <button class="primary" type="submit" id="open-link"><span class="spinner" id="loading" hidden></span><span id="open-label">링크 실행</span></button>
+          </form>
+          <div class="info" aria-label="기존 빌드 정보 예시">
+            <div class="info-row"><span class="info-label">앱 버전</span><span class="info-value">1.1.1 (5)</span></div>
+            <div class="info-row"><span class="info-label">빌드 타입</span><span class="info-value">debug</span></div>
+            <div class="info-row"><span class="info-label">서버 환경</span><span class="info-value">development</span></div>
+            <div class="info-row"><span class="info-label">API base URL</span><span class="info-value">https://dev-api.chaekchaek.com</span></div>
+          </div>
+        </div>
+        <div class="overlay" id="error-overlay" hidden>
+          <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="error-title" aria-describedby="error-message">
+            <div class="close-row"><button class="close" type="button" aria-label="오류 안내 닫기">×</button></div>
+            <div class="dialog-body"><h3 id="error-title">링크를 열 수 없어요</h3><p id="error-message">책 링크를 확인한 뒤 다시 열어 주세요.</p>
+              <div class="dialog-actions"><button class="secondary" type="button" id="error-dismiss">닫기</button><button class="primary" type="button" id="error-action">확인</button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="states" aria-label="시안 상태 선택">
+        <button class="state" type="button" data-state="default" aria-pressed="true">기본</button>
+        <button class="state" type="button" data-state="loading" aria-pressed="false">조회 중</button>
+        <button class="state" type="button" data-state="invalid" aria-pressed="false">잘못된 링크</button>
+        <button class="state" type="button" data-state="missing" aria-pressed="false">책 없음</button>
+        <button class="state" type="button" data-state="network" aria-pressed="false">연결 오류</button>
+      </div>
+      <p class="review-status" id="review-status" role="status" aria-live="polite">입력창과 예시 버튼을 눌러 보세요. 이 HTML은 앱이나 서버에 요청하지 않습니다.</p>
+    </section>
+  </div>
+  <section class="provenance">
+    <h2>이번 승인 범위</h2>
+    <ul class="checklist">
+      <li>기존 개발자 도구에 딥링크 URI 입력, 정상·잘못된 링크 예시, 실행 버튼을 추가합니다.</li>
+      <li>오류는 기존 책췍/ErrorDialog를 재사용합니다. 예시의 배경은 배치 확인용이며 앱에서는 원래 화면을 유지합니다.</li>
+      <li>정상 실행은 해당 책 상세로 이동합니다. 새 실행의 뒤로가기는 홈, 실행 중이면 기존 화면으로 돌아갑니다.</li>
+    </ul>
+    <p>기준: <a href="source-reference.json">로컬 원본 추출값</a> · 개발자 도구 1099:174 · 버튼 903:18 · 입력창 903:72 · 공통 오류 1394:5478</p>
+    <p>폰트: Gowun Dodum, 문자 아이콘: Pretendard. 기존 앱 버전·서버 값은 원본의 예시이며 현재 설치 상태를 뜻하지 않습니다.</p>
+    <p>원본 SHA-256: <code>7d67ef6c3f48aee284cf82c4be35550e3414cc2661c1acf2ec073cf0f57d9fd1</code></p>
+  </section>
+</main>
+<script>
+'use strict';
+const uri = document.querySelector('#uri');
+const overlay = document.querySelector('#error-overlay');
+const openButton = document.querySelector('#open-link');
+const openLabel = document.querySelector('#open-label');
+const spinner = document.querySelector('#loading');
+const reviewStatus = document.querySelector('#review-status');
+let previousFocus = null;
+function selectState(state) {
+  const wasOpen = !overlay.hidden;
+  overlay.hidden = true;
+  const loading = state === 'loading';
+  openButton.disabled = loading;
+  spinner.hidden = !loading;
+  openLabel.textContent = loading ? '책 확인 중' : '링크 실행';
+  document.querySelectorAll('[data-state]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.state === state)));
+  const errors = {
+    invalid:['링크를 열 수 없어요','책 링크를 확인한 뒤 다시 열어 주세요.'],
+    missing:['책을 찾을 수 없어요','삭제되었거나 더 이상 볼 수 없는 책이에요.'],
+    network:['책을 불러오지 못했어요','연결 상태를 확인한 뒤 다시 시도해 주세요.']
+  };
+  if (errors[state]) {
+    if (!wasOpen) previousFocus = document.activeElement;
+    document.querySelector('#error-title').textContent = errors[state][0];
+    document.querySelector('#error-message').textContent = errors[state][1];
+    document.querySelector('#error-dismiss').hidden = state !== 'network';
+    document.querySelector('#error-action').textContent = state === 'network' ? '다시 시도' : '확인';
+    overlay.hidden = false;
+    document.querySelector('#proposal').scrollIntoView({block:'start'});
+    document.querySelector('.close').focus({preventScroll:true});
+    reviewStatus.textContent = '기존 공통 오류 다이얼로그를 사용하는 시안입니다. 닫아도 입력은 유지됩니다.';
+  } else {
+    if (wasOpen && previousFocus) previousFocus.focus({preventScroll:true});
+    reviewStatus.textContent = loading ? '조회가 500ms 이상 걸릴 때의 버튼 상태 예시입니다.' : '입력창과 예시 버튼을 눌러 보세요. 이 HTML은 앱이나 서버에 요청하지 않습니다.';
+  }
+}
+document.querySelectorAll('[data-state]').forEach(button => button.addEventListener('click',() => selectState(button.dataset.state)));
+document.querySelector('#valid-example').addEventListener('click',() => {uri.value='chaekchaek://books/9788937460449';uri.focus();});
+document.querySelector('#invalid-example').addEventListener('click',() => {uri.value='chaekchaek://books/not-a-book';uri.focus();});
+document.querySelector('#link-form').addEventListener('submit',event => {
+  event.preventDefault();
+  const match = /^chaekchaek:\/\/books\/((?:978|979)[0-9]{10})$/.exec(uri.value);
+  const checksum = match && [...match[1]].reduce((sum,digit,index) => sum + Number(digit) * (index%2 ? 3 : 1),0) % 10 === 0;
+  if (!checksum) {selectState('invalid');return;}
+  selectState('default');
+  reviewStatus.textContent = '형식 확인 완료. 실제 앱에서는 ISBN '+match[1]+'의 책 상세를 엽니다. HTML에서는 이동을 시뮬레이션합니다.';
+});
+document.querySelector('.close').addEventListener('click',() => selectState('default'));
+document.querySelector('#error-dismiss').addEventListener('click',() => selectState('default'));
+document.querySelector('#error-action').addEventListener('click',() => {
+  const retry = document.querySelector('#error-action').textContent === '다시 시도';
+  selectState(retry ? 'loading' : 'default');
+});
+document.querySelector('.back').addEventListener('click',() => {reviewStatus.textContent='앱에서는 개발자 도구를 닫고 기존 화면으로 돌아갑니다.';});
+document.addEventListener('keydown',event => {
+  if (overlay.hidden) return;
+  if (event.key==='Escape') {event.preventDefault();selectState('default');}
+  if (event.key==='Tab') {
+    const buttons=[...overlay.querySelectorAll('button')].filter(button=>!button.hidden);
+    const first=buttons[0],last=buttons[buttons.length-1];
+    if (event.shiftKey && document.activeElement===first) {event.preventDefault();last.focus();}
+    else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first.focus();}
+  }
+});
+</script>
+</body>
+</html>
