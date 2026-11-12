@@ -49,8 +49,8 @@ android {
         applicationId = "com.chamsae.chaekchaek"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.3.2"
+        versionCode = 14
+        versionName = "1.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         externalNativeBuild {

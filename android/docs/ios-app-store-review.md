@@ -1,19 +1,19 @@
 # iOS App Store 심사 준비
 
-## 최신 TestFlight 업로드: 1.3.2 (12)
+## 최신 TestFlight 업로드: 1.4.0 (14)
 
-- 확인일: 2026-10-28
-- 상태: 2026-10-28 19:44 KST App Store Connect CLI 업로드 성공. Apple 처리 시작 확인, TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인
-- 기준 소스 커밋: `6824ca2750b86e070919e09546f6befda4e23e12`
-- Archive: `android/iosApp/release/Chaekchaek-1.3.2-12.xcarchive`
+- 확인일: 2026-11-12
+- 상태: 2026-11-12 18:32 KST App Store Connect CLI 업로드 성공. Apple 처리 시작 확인, TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인
+- 기준 소스 커밋: `51111bbb8` (`origin/an-develop`), 릴리즈 브랜치 `codex/release-1.4.0-14`
+- Archive: `android/iosApp/release/Chaekchaek-1.4.0-14.xcarchive`
 - 업로드: `xcodebuild -exportArchive`, `method=app-store-connect`, `destination=upload`, `manageAppVersionAndBuildNumber=false`. 기존 Xcode 계정 인증 사용. `Upload succeeded`, `EXPORT SUCCEEDED` 및 `Uploaded package is processing` 확인
+- 첫 시도 실패: `PLA Update available`과 `No signing certificate "iOS Distribution" found`. Apple 개발자 프로그램 사용권 계약 갱신에 Account Holder가 동의한 뒤 같은 Archive로 성공했다
 - 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport의 dSYM 누락 4건. 앱 자체 dSYM은 UUID 일치
-- Archive 버전: `1.3.2 (12)`, 번들 ID `com.chamsae.chaekchaek`
-- `codesign --verify --deep --strict` 성공. Apple 로그인 entitlement 포함. 앱 바이너리와 dSYM UUID 일치
-- 앱 바이너리와 dSYM UUID: `4E5360CF-F662-3291-A156-AA403DC1F898`
-- 앱 바이너리 SHA-256: `ab610be2950a85d9e5b649afc6194f8c6b8df23b9a7d28471b48ee0b580d9c94`
-- Simulator: iOS 26.2에서 UI 테스트 50개 전체 회귀를 시작했으나 배포 요청에 비해 범위가 과도해 사용자 확인 후 중단했다. fixture 의존 책장 계약 테스트 2개는 건너뛰었고 온보딩 분석 테스트 1개는 기대 화면을 찾지 못해 실패했다. 나머지는 미검증
-- 이전 업로드 기록: `1.3.1 (10)`, 2026-10-21 App Store Connect CLI 업로드 성공, TestFlight 처리 상태 미확인
+- Archive 버전: `1.4.0 (14)`, 번들 ID `com.chamsae.chaekchaek`
+- `codesign --verify --deep --strict` 성공. Apple 로그인 entitlement 포함. 앱 바이너리와 dSYM UUID `45C7EE47-5260-3511-A9EB-6CAD84BEF20E` 일치
+- 앱 바이너리 SHA-256: `399773fca01e2b58107017990872ea5bf780fb507b69ee8882a5ba4828c8a9c3`
+- Simulator: iOS 26.2에서 `BookDeepLinkUITests`, `LoginRequiredSheetUITests` 22개 실행, 20개 통과, 실패 0개, fixture 전용 2개 건너뜀
+- 이전 업로드 기록: `1.3.2 (12)` 2026-10-28, `1.3.1 (10)` 2026-10-21 App Store Connect CLI 업로드 성공
 - 이번 작업은 TestFlight 업로드이며 App Store 심사 제출은 포함하지 않음
 - 아래 제출 기록은 과거 심사 이력이며 최신 배포 상태와 구분함
 

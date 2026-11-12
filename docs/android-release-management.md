@@ -6,13 +6,14 @@
 
 ## 현재 상태
 
-확인일: 2026-10-28
+확인일: 2026-11-12
 
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1.3.0 준비 당시 스토어 사용 버전(사용자 확인) | `1.2.2` | `8` | 미확인 | 과거 사용자 확인값. 당시 Play API의 번들 최대 코드는 `7`이었음 |
 | 직전 Android 내부 테스트 | `1.3.0` | `9` | 없음 | 2026-10-16 API로 내부 테스트 completed 확인 |
-| 현재 소스 및 Android 내부 테스트 | `1.3.2` | `12` | `android-v1.3.2-code12` | Play API internal completed 및 TestFlight 업로드 성공, Apple 처리 시작 확인 |
+| 직전 배포 | `1.3.2` | `12` | `android-v1.3.2-code12` | 2026-11-12 Play API 조회 기준 production·internal 모두 completed. Play 최대 bundle versionCode 12 |
+| 현재 소스 | `1.4.0` | `14` | 없음 | iOS TestFlight 업로드 성공. Android AAB 빌드와 Play 업로드는 사용자가 직접 진행 |
 
 직전 1.3.0 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
 Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
@@ -63,6 +64,25 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
    큰 값이 있으면 그 값 다음 번호를 사용한다.
 
 ## 릴리스 기록
+
+### 1.4.0 (14)
+
+- 상태: iOS TestFlight 업로드 성공, Apple 처리 시작 확인. TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인. Android AAB 빌드와 Play 업로드는 사용자가 직접 진행하며 이 기록 작성 시점에 미확인
+- 기준 소스 커밋: `origin/an-develop` `51111bbb8` (#693 딥링크, #708 인증 만료, #724 계측 테스트 포함). 릴리즈 브랜치 `codex/release-1.4.0-14`에 1.3.2 배포 기록 커밋을 가져온 뒤 버전을 올렸다
+- 버전: `1.3.2 (12)` -> `1.4.0 (14)`, minor. Android와 iOS 공통. 2026-11-12 Play API의 최대 bundle versionCode는 12였지만, Play 기록에 없는 versionCode 13 빌드가 개발 기기에 설치된 것을 확인해 혼동을 피하려고 13을 건너뛰었다
+- production 호환성: 2026-11-12 production과 development OpenAPI의 엔드포인트 목록 일치. 차이는 검색 응답 `reviewCount`·`replyCount`의 nullable 여부뿐이며 production은 숫자를 반환해 앱의 `Int` 필드와 맞다. production 인증 오류 응답(`401 UNAUTHORIZED`, `401 INVALID_REFRESH_TOKEN`)도 확인했다
+- iOS Simulator: iPhone 17 Pro iOS 26.2에서 `BookDeepLinkUITests`, `LoginRequiredSheetUITests` 22개 실행, 20개 통과, 실패 0개. fixture 전용 2개(`testReplyResponseWithoutDeletedRoundTripAndReentry`, `testReviewDraftSurvivesFailureAndClosesAfterRetry`)는 건너뜀
+- iOS 산출물: `android/iosApp/release/Chaekchaek-1.4.0-14.xcarchive`. 번들 ID `com.chamsae.chaekchaek`, `1.4.0 (14)`, `codesign --verify --deep --strict` 성공, Apple 로그인 entitlement 포함, 앱과 dSYM UUID `45C7EE47-5260-3511-A9EB-6CAD84BEF20E` 일치, 앱 바이너리에 production API 주소만 포함
+- iOS 앱 바이너리 SHA-256: `399773fca01e2b58107017990872ea5bf780fb507b69ee8882a5ba4828c8a9c3`
+- iOS 업로드: 2026-11-12 18:32 KST `xcodebuild -exportArchive` App Store Connect 경로 성공. `Upload succeeded`, `EXPORT SUCCEEDED`, `Uploaded package is processing` 확인. 첫 시도(18:27)는 Apple 개발자 프로그램 사용권 계약 갱신 미동의(`PLA Update available`)로 실패했고, 사용자가 동의한 뒤 같은 Archive로 다시 올렸다
+- iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport의 dSYM 누락 4건. 앱 자체 dSYM은 UUID 일치
+- 사용자 업데이트 내역 초안:
+  - 오랜만에 앱을 열어도 로그인이 그대로 유지돼요. 다시 로그인해야 할 때도 쓰던 글과 보던 화면이 사라지지 않아요.
+  - 링크를 눌러 책 페이지를 바로 열 수 있어요.
+  - 책장 순서를 바꿀 때 옮기는 책과 놓일 자리가 보여요.
+  - 책등 이미지가 없는 책도 표지 색으로 책장에 보기 좋게 표시돼요.
+  - 책장 이미지 공유가 책장만 깔끔하게 담도록 바뀌었어요.
+- App Store 심사 제출과 Google Play 프로덕션 게시는 수행하지 않음
 
 ### 1.3.2 (12)
 
