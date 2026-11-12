@@ -61,14 +61,12 @@ export const AddBooksToLibraryDialog = ({
         postLibrariesLibraryIdMutate({
           libraryId,
           isbn13: isbn,
-          status: 'READING',
         }),
       ),
     );
 
     track('library_add', {
       source: 'library',
-      status: 'reading',
     });
 
     await onBookAdded();

@@ -17,12 +17,12 @@ import type { PostLibrariesLibraryIdRequestDto, PostLibrariesLibraryIdResponseDt
 
 export const postLibrariesLibraryId = async ({
   pathParams: [{ value: libraryId }],
-  data: { isbn13, totalPages, status },
+  data: { isbn13 },
 }: PostLibrariesLibraryIdRequestDto): Promise<PostLibrariesLibraryIdResponseDto> => {
   const response = await instance('/api/v1/libraries', {
     method: 'post',
     pathParams: [{ name: 'libraryId', value: libraryId }],
-    data: { isbn13, totalPages, status },
+    data: { isbn13 },
   });
 
   return response.data;

@@ -50,7 +50,6 @@ export interface PostBooksBookIdReviewsRequestDto {
     content: string | undefined;
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
-    totalPages?: number | undefined;
   };
   headers?: {
     'X-Guest-Token'?: string;

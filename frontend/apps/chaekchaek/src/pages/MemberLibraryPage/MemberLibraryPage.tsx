@@ -49,7 +49,6 @@ export const MemberLibraryPage = () => {
       memberId,
       page: defaultPage,
       sort,
-      status: READING_STATUS.ALL,
     });
   }, [defaultPage, sort]);
   const {
@@ -106,11 +105,6 @@ export const MemberLibraryPage = () => {
                 </IconButton>
               </Title>
             </Split.Top>
-            <Split.Side>
-              <Title style={{ height: '800px' }} level="main" orientation="vertical">
-                독서 상태
-              </Title>
-            </Split.Side>
             <Split.Content>
               <Title
                 level="caption"
@@ -131,7 +125,7 @@ export const MemberLibraryPage = () => {
                   </>
                 }
               >
-                독서 상태
+                도서 목록
               </Title>
 
               <div className={styles.bookShelf}>

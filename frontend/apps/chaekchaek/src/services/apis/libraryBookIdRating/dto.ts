@@ -10,16 +10,13 @@ export type PutLibraryBookIdRatingResponseDto = ResponseDto<{
   coverImageUrl: string;
   rating: number;
   title: string;
-  readingUpdatedAt: string;
   commentCount: number;
   bookId: number;
   translators: string[];
   isbn13: string;
-  totalPages: number;
   publisher: string;
   publishedDate: string;
   category: string;
-  status: string;
   authors: string[];
 }>;
 export interface DeleteLibraryBookIdRatingRequestDto {

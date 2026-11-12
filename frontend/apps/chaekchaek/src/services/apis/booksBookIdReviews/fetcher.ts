@@ -24,7 +24,7 @@ import type { PostBooksBookIdReviewsRequestDto, PostBooksBookIdReviewsResponseDt
 
 export const postBooksBookIdReviews = async ({
   pathParams: [{ value: bookId }],
-  data: { isSpoiler, quote, totalPages, content },
+  data: { isSpoiler, quote, content },
   headers,
 }: PostBooksBookIdReviewsRequestDto): Promise<PostBooksBookIdReviewsResponseDto> => {
   const guestToken = headers?.['X-Guest-Token'];
@@ -33,7 +33,7 @@ export const postBooksBookIdReviews = async ({
   const response = await instance(`/api/v1/books/${bookId}/reviews`, {
     method: 'post',
     // pathParams: [{ name: 'bookId', value: bookId }],
-    data: { isSpoiler, quote, totalPages, content },
+    data: { isSpoiler, quote, content },
     ...(guestToken && { headers: requestHeaders }),
   });
 

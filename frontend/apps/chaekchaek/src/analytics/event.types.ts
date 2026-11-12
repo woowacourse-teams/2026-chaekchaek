@@ -15,7 +15,6 @@ export type AnalyticsEventMap = {
   rating_select: undefined;
   library_add: {
     source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';
-    status: 'want_to_read' | 'reading' | 'finished';
   };
   library_remove: {
     source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';

@@ -24,7 +24,6 @@ export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   };
   averageRating: number;
   isbn13: string;
-  totalPages: number;
   publisher: string;
   publishedDate: string;
   isRegisteredInMyLibrary: boolean;

@@ -13,18 +13,3 @@ export const mapDeleteLibraryBookIdResponseDTOToModel = (
 ) => {
   return response;
 };
-import type { PatchLibraryBookIdResponseDto } from './dto';
-import type { PatchLibraryBookIdParams } from './repository.types';
-
-// PatchLibraryBookId
-export const mapPatchLibraryBookIdModelToRequestDTO = (
-  model: PatchLibraryBookIdParams,
-): PatchLibraryBookIdParams => {
-  return model;
-};
-
-export const mapPatchLibraryBookIdResponseDTOToModel = (
-  response: PatchLibraryBookIdResponseDto,
-) => {
-  return response;
-};

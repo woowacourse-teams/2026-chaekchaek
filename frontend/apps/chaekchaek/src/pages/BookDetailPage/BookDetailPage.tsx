@@ -144,13 +144,13 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
+
   const handleBookRegistered = async ({ added, removed }: { added: boolean; removed: boolean }) => {
     await refetchGetBooksIsbnLoadData();
 
     if (added) {
       track('library_add', {
         source: 'detail_info',
-        status: 'reading',
       });
     }
 

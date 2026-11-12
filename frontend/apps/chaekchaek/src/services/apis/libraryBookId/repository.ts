@@ -15,20 +15,3 @@ export const deleteLibraryBookId: DeleteLibraryBookId = async (model) => {
 
   return mapDeleteLibraryBookIdResponseDTOToModel(responseDTO);
 };
-import {
-  mapPatchLibraryBookIdModelToRequestDTO,
-  mapPatchLibraryBookIdResponseDTOToModel,
-} from './mapper';
-
-import type { PatchLibraryBookId } from './repository.types';
-
-export const patchLibraryBookId: PatchLibraryBookId = async (model) => {
-  const { bookId, status } = mapPatchLibraryBookIdModelToRequestDTO(model);
-
-  const responseDTO = await fetcher.patchLibraryBookId({
-    pathParams: [{ name: 'bookId', value: bookId }],
-    data: { status },
-  });
-
-  return mapPatchLibraryBookIdResponseDTOToModel(responseDTO);
-};

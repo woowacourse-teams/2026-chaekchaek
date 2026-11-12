@@ -1,6 +1,5 @@
 export interface GetLibraryParams {
   page: number;
-  status: 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
   sort: string;
 }
 
@@ -20,18 +19,13 @@ export type GetLibrary = (params: GetLibraryParams) => Promise<{
     publisher: string;
     category: string;
     publishedDate: string;
-    totalPages: number;
     commentCount: number;
-    status: string;
     rating: number;
     addedAt: string;
-    readingUpdatedAt: string;
   }[];
 }>;
 export interface PostLibraryCommand {
   isbn13: string;
-  totalPages?: number;
-  status: string;
 }
 
 export type PostLibrary = (command: PostLibraryCommand) => Promise<undefined>;

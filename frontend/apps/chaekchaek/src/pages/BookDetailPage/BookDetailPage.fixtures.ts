@@ -9,7 +9,6 @@ export const bookNotInLibraryResponse = {
   category: '소설',
   description: '화성에 홀로 남은 우주비행사의 생존 이야기',
   coverImageUrl: 'https://static.example.com/books/47/cover.jpg',
-  totalPages: 600,
   averageRating: 0,
   ratingCount: 0,
   myRatingCount: 0,
@@ -23,8 +22,6 @@ export const bookInLibraryResponse = {
   ...bookNotInLibraryResponse,
   isRegisteredInMyLibrary: true,
   myRecord: {
-    status: 'WANT_TO_READ',
-    currentPage: 0,
     myRating: 0,
   },
 };

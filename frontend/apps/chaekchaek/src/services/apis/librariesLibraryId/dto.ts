@@ -13,12 +13,8 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
   items: {
     coverImageUrl: string;
     isbn13: string;
-    totalPages: number;
     spineImageUrl: string | null;
-    currentPage: number;
     title: string;
-    readingUpdatedAt: string;
-    status: string;
     authors: string[];
     bookId: number;
   }[];
@@ -26,7 +22,7 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
 }>;
 export interface PostLibrariesLibraryIdRequestDto {
   pathParams: [{ name: 'libraryId'; value: number }];
-  data: { isbn13: string; totalPages?: number | undefined; status: string };
+  data: { isbn13: string };
 }
 
 export type PostLibrariesLibraryIdResponseDto = ResponseDto<undefined>;

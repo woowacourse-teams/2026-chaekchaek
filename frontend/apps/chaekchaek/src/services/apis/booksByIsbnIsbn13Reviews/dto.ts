@@ -5,7 +5,6 @@ export interface PostBooksByIsbnIsbn13ReviewsRequestDto {
   data: {
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
-    totalPages?: number | undefined;
     content: string;
   };
   headers?: {
