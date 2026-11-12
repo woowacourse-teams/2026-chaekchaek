@@ -64,35 +64,37 @@ fun MainViewController(
         }
       } else {
         App(
-        authPlatform = authPlatform,
-        recentSearchStorage = recentSearchStorage,
-        onboardingStorage = onboardingStorage,
-        analytics = analytics,
-        refreshAnalyticsConfiguration = refreshAnalyticsConfiguration,
-        uiTestingMyPage = uiTestingMyPage,
-        policyController = policyController,
-        onUpdate = onUpdate,
-        homeHeaderAction = {
-          if (showPolicyDeveloperTools) Box(Modifier.width(64.dp)) {
-            com.chaekchaek.app.ui.common.ChaekOverlayButton("개발", { showPolicy = true })
-          }
-        },
-      )
-        if (showPolicy && showPolicyDeveloperTools) {
-          ChaekchaekTheme {
-            androidx.compose.ui.window.Dialog(onDismissRequest = { showPolicy = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-              androidx.compose.material3.Surface {
-                Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
-                  com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
-                  com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
-                  val devAuthViewModel = remember(authPlatform) { com.chaekchaek.app.auth.AuthViewModel(authPlatform, errorReporter = analytics.errors) }
-                  androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
-                  com.chaekchaek.app.ui.common.AuthDeveloperContent(devAuthViewModel)
+          authPlatform = authPlatform,
+          recentSearchStorage = recentSearchStorage,
+          onboardingStorage = onboardingStorage,
+          analytics = analytics,
+          refreshAnalyticsConfiguration = refreshAnalyticsConfiguration,
+          uiTestingMyPage = uiTestingMyPage,
+          policyController = policyController,
+          onUpdate = onUpdate,
+          homeHeaderAction = {
+            if (showPolicyDeveloperTools) Box(Modifier.width(64.dp)) {
+              com.chaekchaek.app.ui.common.ChaekOverlayButton("개발", { showPolicy = true })
+            }
+          },
+          authDeveloperOverlay = { authViewModel ->
+            if (showPolicy && showPolicyDeveloperTools) {
+              androidx.compose.ui.window.Dialog(
+                onDismissRequest = { showPolicy = false },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+              ) {
+                androidx.compose.material3.Surface {
+                  Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
+                    com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
+                    com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
+                    Spacer(Modifier.height(16.dp))
+                    com.chaekchaek.app.ui.common.AuthDeveloperContent(authViewModel)
+                  }
                 }
               }
             }
-          }
-        }
+          },
+        )
       }
     }
   }

@@ -17,6 +17,7 @@ import com.chaekchaek.app.analytics.AnalyticsEventDispatcher
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.AnalyticsCollectionController
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
+import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.ui.App
 import com.chaekchaek.app.ui.search.RecentSearchStorage
 import com.chaekchaek.app.ui.onboarding.OnboardingStorage
@@ -32,6 +33,9 @@ abstract class ChaekchaekActivity : ComponentActivity() {
 
     @Composable
     protected open fun HomeHeaderAction() = Unit
+
+    @Composable
+    protected open fun AuthDeveloperOverlay(authViewModel: AuthViewModel) = Unit
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +113,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 analytics = analytics,
                 refreshAnalyticsConfiguration = { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
                 homeHeaderAction = { HomeHeaderAction() },
+                authDeveloperOverlay = { AuthDeveloperOverlay(it) },
                 onExitRequested = { finish() },
                 recentSearchStorage = RecentSearchStorage(
                     read = recentSearchPreferences::read,

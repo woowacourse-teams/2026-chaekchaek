@@ -19,15 +19,12 @@ import com.chaekchaek.app.auth.AuthViewModel
 fun AuthDeveloperContent(authViewModel: AuthViewModel) {
     val debugInfo by authViewModel.tokenDebugInfo.collectAsState()
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    var actionInProgress by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("인증과 토큰 만료", style = MaterialTheme.typography.titleMedium)
-        val accessState = if (debugInfo.hasAccessToken) {
-            "유효 (남은 시간: ${debugInfo.accessTokenExpiresInSeconds ?: 0}초)"
-        } else {
-            "없음 / 만료됨"
-        }
-        val refreshState = if (debugInfo.hasRefreshToken) "있음" else "없음"
+        val accessState = tokenState(debugInfo.hasAccessToken, debugInfo.accessTokenExpiresInSeconds)
+        val refreshState = tokenState(debugInfo.hasRefreshToken, debugInfo.refreshTokenExpiresInSeconds)
         Text(
             "Access 토큰: $accessState\nRefresh 토큰: $refreshState",
             style = MaterialTheme.typography.bodyMedium,
@@ -41,24 +38,38 @@ fun AuthDeveloperContent(authViewModel: AuthViewModel) {
         }
         ChaekOverlayButton(
             label = "Access 토큰 강제 만료",
+            enabled = debugInfo.hasAccessToken && !actionInProgress,
             onClick = {
-                authViewModel.expireAccessTokenForTesting()
-                statusMessage = "Access 토큰이 즉시 만료 상태로 치환되었습니다. 다음 API 요청 시 Silent Refresh가 동작합니다."
+                actionInProgress = true
+                authViewModel.expireAccessTokenForTesting { result ->
+                    actionInProgress = false
+                    statusMessage = if (result.isSuccess) "Access 토큰을 강제 만료했습니다." else "Access 토큰을 만료하지 못했습니다."
+                }
             },
             modifier = Modifier.fillMaxWidth(),
         )
         ChaekOverlayButton(
             label = "Refresh 토큰 서버 폐기 (로컬 유지)",
+            enabled = debugInfo.hasRefreshToken && !actionInProgress,
             onClick = {
+                actionInProgress = true
                 authViewModel.revokeRefreshTokenForTesting { result ->
+                    actionInProgress = false
                     statusMessage = if (result.isSuccess) {
                         "서버 측 Refresh 토큰이 폐기되었습니다. (로컬 세션 유지됨)"
                     } else {
-                        "Refresh 토큰 폐기 요청 실패: ${result.exceptionOrNull()?.message}"
+                        "Refresh 토큰 폐기 요청에 실패했습니다."
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
         )
     }
+}
+
+private fun tokenState(present: Boolean, secondsRemaining: Long?): String = when {
+    !present -> "없음"
+    secondsRemaining == null -> "만료 시간 확인 중"
+    secondsRemaining == 0L -> "만료 또는 폐기됨"
+    else -> "남은 시간 ${secondsRemaining}초"
 }

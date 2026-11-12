@@ -6,15 +6,15 @@
 
 Access 토큰 만료 시 사용자 개입 없이 조용히 토큰을 재발급(Silent Refresh)하고 원래 요청을 재시도하여 앱 사용 흐름을 유지한다. 다중 동시 요청 환경에서 중복 갱신으로 인한 Refresh Token Rotation 충돌을 방지하며, Refresh 토큰이 폐기된 경우에도 작업 위치와 초안을 보존한 뒤 재로그인 후 복구한다.
 
-## 2. 서버 응답 계약 (백엔드 합의)
+## 2. 서버 응답 계약
 
-백엔드 인증 모바일 API 계약(`origin/be-dev`) 기준:
+2026-11-12에 개발·운영 OpenAPI와 백엔드 `be-dev@b8d26f52`의 `AuthTokenService`, `RestAuthenticationEntryPoint`, `ApiExceptionHandler`를 대조했다. 배포된 두 OpenAPI는 재발급의 200과 400, 폐기의 204와 400을 문서화한다. 재발급 401의 오류 코드와 회전 동작은 백엔드 소스에서 확인했다. 별도의 백엔드 합의 기록과 개발 서버 계정 시연은 확인이 필요하다. [개발 OpenAPI](https://dev-api.chaekchaek.com/docs/openapi3.yaml) · [운영 OpenAPI](https://api.chaekchaek.com/docs/openapi3.yaml)
 
 | 상황 | HTTP 상태 코드 | 에러 코드 / 응답 본문 | 앱의 처리 정책 |
 | --- | --- | --- | --- |
 | Access 토큰 만료 | `401 Unauthorized` | `UNAUTHORIZED` | 조용히 갱신(Silent Refresh) 후 실패했던 요청 1회 자동 재시도 |
-| Refresh 토큰 만료·폐기 | `401 Unauthorized` | `UNUSABLE_REFRESH_TOKEN` | 로컬 세션 정리, 로그인 UI 표시, 하던 작업·위치 보존 후 복구 |
-| 유효하지 않은 Refresh 토큰 | `401 Unauthorized` | `INVALID_REFRESH_TOKEN` | 로컬 세션 정리, 로그인 UI 표시 |
+| Refresh 토큰 만료·폐기 | `401 Unauthorized` | `UNUSABLE_REFRESH_TOKEN` | 저장한 인증 토큰 정리, 로그인 안내, 작업과 위치 보존 |
+| 유효하지 않은 Refresh 토큰 | `401 Unauthorized` | `INVALID_REFRESH_TOKEN` | 저장한 인증 토큰 정리, 로그인 안내, 작업과 위치 보존 |
 | 권한 없음 (로그인은 정상) | `403 Forbidden` | `FORBIDDEN` | 갱신하지 않음. 접근 권한 없음 안내 |
 | 네트워크 오류 | 타임아웃 / 연결 실패 | (응답 없음) | 세션 보존 (로그아웃 금지), 재시도 옵션 제공 |
 
@@ -42,32 +42,24 @@ flowchart TD
 
 ### 3.1. 다중 동시 401 중복 갱신 방지 (Single Flight Reissue)
 - 여러 API 요청이 동시에 401을 받더라도 서버로 발송되는 `reissue` 요청은 반드시 단 1회만 실행되어야 한다.
-- `AuthSession`의 `Mutex`와 `Deferred`를 활용하여 후속 요청들은 첫 번째 갱신 결과를 대기하고 공유한다. 이를 통해 Rotation 규칙에 따른 Refresh 토큰 무효화 충돌을 방지한다.
+- 각 요청은 발송 시점의 인증 세션과 재발급 결과를 공유한다. 이전 토큰의 401이 갱신이 끝난 뒤 도착해도 같은 세션의 최신 Access 토큰으로 한 번만 다시 보낸다. 발송한 세션이 교체된 요청은 취소한다.
+- 연결 실패 시 저장한 토큰을 유지하며, 사용자의 다음 요청으로 다시 재발급할 수 있다. 서버에서 회전한 뒤 응답만 유실된 경우의 복구는 서버 계약에서 확인하지 못했다.
 
 ### 3.2. 갱신 포기 조건
 - 새 토큰으로 원래 요청을 재시도했음에도 다시 401이 반환되는 경우, 무한 갱신 루프를 방지하기 위해 재시도를 1회로 제한하고 즉시 중단한다.
 
 ### 3.3. 위치 및 입력 보존 (State Preservation)
-- Refresh 토큰 만료 또는 서버 폐기로 재로그인이 필요한 경우:
-  - 현재 열려 있던 화면 스택, 스크롤 위치, 입력 필드 텍스트 및 임시 저장 초안을 초기화하지 않는다.
-  - 로그인 완료 시 사용자가 머물던 화면으로 즉시 복귀한다.
+- 화면은 로그인 때 확인한 회원과 로컬 세션 식별자로 작업을 유지한다. 실제 토큰은 HTTP 요청에 연결할 때만 사용한다.
+- Refresh 토큰 만료 또는 서버 폐기 시 실제 토큰을 정리하고 기존 공통 오류창에서 로그인을 안내한다. 같은 회원으로 로그인하면 화면과 초안을 유지한 채 대기 중이던 작업을 이어간다. 다른 회원의 로그인으로 기존 작업을 제출하지 않는다.
 
 ## 4. 개발자 도구 디버그 기능
 
-개발자 도구 화면(`DeveloperToolsActivity` 및 iOS DeveloperTools)에서 다음 조작을 지원한다:
+Android와 iOS의 개발자 도구에서 앱이 현재 사용하는 인증 세션을 확인하고 조작한다.
 - **토큰 정보 확인**: 현재 Access 토큰 및 Refresh 토큰의 만료 일시(남은 시간) 표시.
 - **Access 토큰 강제 만료**: 현재 Access 토큰의 유효 기간을 즉시 만료 상태로 전환하여 다음 API 호출 시 Silent Refresh 및 재시도 동작 검증.
 - **Refresh 토큰 강제 폐기**: 서버의 `POST /api/v1/auth/mobile/logout`을 호출하여 앱의 로컬 세션을 유지한 채 서버 토큰만 무효화하고, 이후 API 호출 시 로그인 유도 및 위치 복귀 동작 검증.
 
 ## 5. 구현 및 검증 상태
 
-작업 브랜치 `707-auth-expiry-recovery` 기준.
-
-| 구분 | 상태 |
-| --- | --- |
-| 정책 문서 작성 | 완료 (이 문서) |
-| Ktor Client 401 Silent Refresh 인터셉터 | 완료 (`AuthenticatedHttpClient.kt`) |
-| 동시 401 요청 단일 재발급 공유 | 완료 (`AuthSession.kt`, Single Flight) |
-| Refresh 폐기 시 세션 정리 및 작업 보존 복귀 | 완료 (`AuthViewModel.kt`, 세션 정리 및 상태 보존) |
-| 개발자 도구 토큰 만료-폐기 기능 | 완료 (`AuthDeveloperContent.kt`, Android 및 iOS 연계) |
-| 단위 테스트 검증 (`:shared:testAndroidHostTest`) | 완료 (504개 테스트 전체 통과) |
+- 검증할 자동 경로는 `SilentRefreshClientTest`의 1회 재전송, 지연 401, 일시적 갱신 실패, 세션 교체, 403이다. 실제 `AuthSession`과 MockEngine으로 지연 401을 검증한다.
+- 개발 서버에서 Android와 iOS 각각 확인할 항목은 저장 중 조용한 갱신, 동시 401의 서버 재발급 횟수, Refresh 폐기 후 같은 회원의 입력·위치 복구, 다른 회원 로그인 시 대기 작업 차단, 재발급 중 연결 실패와 재시도다. 개발자 도구에 진입만 했을 때 재발급이 발생하는지도 확인한다.

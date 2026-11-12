@@ -5,6 +5,7 @@ import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthTokens
+import com.chaekchaek.app.data.remote.createHttpClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
@@ -24,6 +26,10 @@ import com.chaekchaek.app.data.remote.RemoteMemberProfile
 import com.chaekchaek.app.domain.reader.Nickname
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+internal data class MemberSession(val memberId: Long, val requestKey: String)
 
 data class AuthUiState(
   val signingIn: Boolean = false,
@@ -35,8 +41,8 @@ data class AuthUiState(
 
 class AuthViewModel private constructor(
   private val callbacks: AuthPlatformCallbacks,
-  private val getProfile: suspend (String) -> RemoteMemberProfile,
-  private val updateNickname: suspend (String, String) -> RemoteMemberProfile,
+  private val getProfile: (suspend (String) -> RemoteMemberProfile)?,
+  private val updateNickname: (suspend (String, String) -> RemoteMemberProfile)?,
   private val loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
   private val loginWithApple: suspend (AppleSignInCredential, String?) -> MobileAuthTokens,
   reissue: suspend (String) -> MobileAuthTokens,
@@ -49,12 +55,12 @@ class AuthViewModel private constructor(
   constructor(
     callbacks: AuthPlatformCallbacks,
     remoteRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
-    memberRepository: MemberRemoteRepository = MemberRemoteRepository(),
+    memberRepository: MemberRemoteRepository? = null,
     errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
   ) : this(
     callbacks = callbacks,
-    getProfile = memberRepository::get,
-    updateNickname = memberRepository::updateNickname,
+    getProfile = memberRepository?.let { it::get },
+    updateNickname = memberRepository?.let { it::updateNickname },
     loginWithGoogle = remoteRepository::loginWithGoogle,
     loginWithApple = { credential, guestToken ->
       remoteRepository.loginWithApple(
@@ -99,6 +105,12 @@ class AuthViewModel private constructor(
   )
   private val readyTokens = MutableStateFlow<MobileAuthTokens?>(null)
   val tokens: StateFlow<MobileAuthTokens?> = readyTokens.asStateFlow()
+  private val activeMember = MutableStateFlow<MemberSession?>(null)
+  internal val memberSession = activeMember.asStateFlow()
+  internal val requiresLogin = session.requiresLogin
+  private val authenticatedClientDelegate = lazy { createHttpClient(session::prepareRequest) }
+  internal val authenticatedClient by authenticatedClientDelegate
+  private val memberRepository by lazy { MemberRemoteRepository(authenticatedClient) }
   val appleSignInAvailable: Boolean = callbacks.requestAppleCredential != null
 
   private val _uiState = MutableStateFlow(AuthUiState())
@@ -114,13 +126,13 @@ class AuthViewModel private constructor(
   private var confirmedMemberId: Long? = null
 
   fun memberIdFor(accessToken: String?): Long? =
-    confirmedMemberId.takeIf { accessToken != null && readyTokens.value?.accessToken == accessToken }
+    activeMember.value?.takeIf { it.requestKey == accessToken }?.memberId
+      ?: confirmedMemberId.takeIf { accessToken != null && readyTokens.value?.accessToken == accessToken }
 
   private var profileReady = false
   private var profileJob: Job? = null
 
   init {
-    com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler = session::refreshAccessTokenForRetry
     scope.launch {
       session.tokens.collectLatest { current ->
         if (current == null) {
@@ -140,7 +152,7 @@ class AuthViewModel private constructor(
   private suspend fun checkProfile(current: MobileAuthTokens) {
     _uiState.value = _uiState.value.copy(checkingProfile = true)
     try {
-      val profile = getProfile(current.accessToken)
+      val profile = getProfile?.invoke(current.accessToken) ?: memberRepository.get(current.accessToken)
       if (session.tokens.value != current) return
       if (profile.nickname.isBlank()) {
         _uiState.value = AuthUiState(requiresNickname = true)
@@ -167,7 +179,8 @@ class AuthViewModel private constructor(
     _uiState.value = AuthUiState(requiresNickname = true, savingNickname = true)
     profileJob = scope.launch {
       try {
-        val profile = updateNickname(value, current.accessToken)
+        val profile = updateNickname?.invoke(value, current.accessToken)
+          ?: memberRepository.updateNickname(value, current.accessToken)
         if (session.tokens.value != current) return@launch
         check(profile.nickname.isNotBlank())
         completeAuthentication(current, profile.memberId)
@@ -184,10 +197,15 @@ class AuthViewModel private constructor(
     }
   }
 
+  @OptIn(ExperimentalUuidApi::class)
   private suspend fun completeAuthentication(current: MobileAuthTokens, memberId: Long) {
+    val member = activeMember.value?.takeIf { it.memberId == memberId }
+      ?: MemberSession(memberId, Uuid.random().toString())
+    if (!session.bindMemberRequestKey(member.requestKey, current.accessToken)) return
     confirmedMemberId = memberId
     profileReady = true
     readyTokens.value = current
+    activeMember.value = member
     _uiState.value = AuthUiState()
     val resume = pendingAction
     pendingAction = null
@@ -209,6 +227,17 @@ class AuthViewModel private constructor(
       loginWithApple(credential, callbacks.readGuest()?.token)
     }
   }
+
+  internal fun requireMemberAuthentication(force: Boolean = false, action: suspend (String) -> Unit) {
+    requireAuthentication(force) { token -> memberRequestKeyFor(token)?.let { action(it) } }
+  }
+
+  internal fun requireAppleMemberAuthentication(force: Boolean = false, action: suspend (String) -> Unit) {
+    requireAppleAuthentication(force) { token -> memberRequestKeyFor(token)?.let { action(it) } }
+  }
+
+  private fun memberRequestKeyFor(accessToken: String): String? =
+    activeMember.value?.takeIf { it.memberId == memberIdFor(accessToken) }?.requestKey
 
   private fun <Credential> requestAuthentication(
     action: suspend (accessToken: String) -> Unit,
@@ -285,20 +314,29 @@ class AuthViewModel private constructor(
 
   suspend fun refreshAccessTokenForRetry(): String? = session.refreshAccessTokenForRetry()
 
-  val tokenDebugInfo: StateFlow<AuthTokenDebugInfo> = kotlinx.coroutines.flow.flow {
+  val tokenDebugInfo: StateFlow<AuthTokenDebugInfo> = flow {
     while (true) {
       emit(session.tokenDebugInfo())
       delay(1_000L)
     }
   }.stateIn(scope, SharingStarted.WhileSubscribed(5_000L), session.tokenDebugInfo())
 
-  fun expireAccessTokenForTesting() {
-    scope.launch { session.expireAccessTokenForTesting() }
-  }
+  fun expireAccessTokenForTesting(onResult: (Result<Unit>) -> Unit) =
+    runDebugAction(session::expireAccessTokenForTesting, onResult)
 
-  fun revokeRefreshTokenForTesting(onResult: (Result<Unit>) -> Unit = {}) {
+  fun revokeRefreshTokenForTesting(onResult: (Result<Unit>) -> Unit) =
+    runDebugAction(session::revokeRefreshTokenForTesting, onResult)
+
+  private fun runDebugAction(action: suspend () -> Unit, onResult: (Result<Unit>) -> Unit) {
     scope.launch {
-      val result = runCatching { session.revokeRefreshTokenForTesting() }
+      val result = try {
+        action()
+        Result.success(Unit)
+      } catch (error: CancellationException) {
+        throw error
+      } catch (error: Exception) {
+        Result.failure(error)
+      }
       onResult(result)
     }
   }
@@ -308,16 +346,15 @@ class AuthViewModel private constructor(
     profileReady = false
     confirmedMemberId = null
     readyTokens.value = null
+    activeMember.value = null
     _uiState.value = AuthUiState()
     cancelPendingAuthentication()
     scope.launch { session.signOut(onLocalSessionCleared) }
   }
 
   fun close() {
-    if (com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler === session::refreshAccessTokenForRetry) {
-      com.chaekchaek.app.data.remote.AuthTokenProvider.refreshHandler = null
-    }
     if (ownsScope) scope.cancel()
+    if (authenticatedClientDelegate.isInitialized()) authenticatedClient.close()
   }
 
   override fun onCleared() {

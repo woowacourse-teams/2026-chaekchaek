@@ -1,5 +1,6 @@
 package com.chaekchaek.app.auth
 
+import com.chaekchaek.app.data.remote.AuthenticatedRequest
 import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CancellationException
@@ -20,6 +21,7 @@ data class AuthTokenDebugInfo(
   val hasAccessToken: Boolean,
   val accessTokenExpiresInSeconds: Long?,
   val hasRefreshToken: Boolean,
+  val refreshTokenExpiresInSeconds: Long?,
 )
 
 internal class AuthSession(
@@ -35,12 +37,21 @@ internal class AuthSession(
   val tokens: StateFlow<MobileAuthTokens?> = _tokens.asStateFlow()
   private val _isRestoring = MutableStateFlow(readRefreshToken() != null)
   val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
+  private val _requiresLogin = MutableStateFlow(false)
+  val requiresLogin = _requiresLogin.asStateFlow()
   private val mutex = Mutex()
-  private val renewalRequestMutex = Mutex()
+  private val debugOperationMutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
+  private var refreshTokenExpiresAtMillis = 0L
   private var renewalJob: Job? = null
   private var sessionGeneration = 0L
-  private var renewalRequest: Deferred<Result<MobileAuthTokens?>>? = null
+  private var renewal = Renewal()
+  private var memberRequestKey: String? = null
+  private var debugOperationInProgress = false
+
+  private class Renewal {
+    var request: Deferred<Result<MobileAuthTokens?>>? = null
+  }
 
   init {
     startRenewal()
@@ -48,19 +59,23 @@ internal class AuthSession(
 
   suspend fun signIn(tokens: MobileAuthTokens) {
     mutex.withLock {
+      sessionGeneration++
+      memberRequestKey = null
+      _requiresLogin.value = false
+      renewal = Renewal()
       updateTokens(tokens)
       startRenewal()
     }
   }
 
   suspend fun signOut(onLocalSessionCleared: () -> Unit = {}) {
-    renewalJob?.cancel()
-    renewalRequestMutex.withLock {
-      renewalRequest?.cancel()
-      renewalRequest = null
-    }
     val refreshToken = mutex.withLock {
       renewalJob?.cancel()
+      renewal.request?.cancel()
+      renewal = Renewal()
+      sessionGeneration++
+      memberRequestKey = null
+      _requiresLogin.value = false
       val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
       clear()
       refreshToken
@@ -77,6 +92,24 @@ internal class AuthSession(
 
   suspend fun refreshAccessTokenForRetry(): String? = renewTokensOnce()?.accessToken
 
+  suspend fun bindMemberRequestKey(key: String, expectedAccessToken: String? = null): Boolean = mutex.withLock {
+    if (expectedAccessToken != null && _tokens.value?.accessToken != expectedAccessToken) return@withLock false
+    memberRequestKey = key
+    _requiresLogin.value = false
+    true
+  }
+
+  suspend fun prepareRequest(key: String): AuthenticatedRequest = mutex.withLock {
+    val accessToken = _tokens.value?.accessToken
+    if (key != memberRequestKey && key != accessToken) throw CancellationException("인증 세션이 변경되었습니다")
+    if (accessToken == null) throw MobileLoginException("UNAUTHORIZED", 401)
+    val generation = sessionGeneration
+    val attempt = renewal
+    AuthenticatedRequest(accessToken) {
+      renewTokensOnce(generation, attempt, accessToken)?.accessToken
+    }
+  }
+
   fun tokenDebugInfo(): AuthTokenDebugInfo {
     val current = _tokens.value
     val hasRefresh = current?.refreshToken != null || readRefreshToken() != null
@@ -85,6 +118,7 @@ internal class AuthSession(
         hasAccessToken = false,
         accessTokenExpiresInSeconds = null,
         hasRefreshToken = hasRefresh,
+        refreshTokenExpiresInSeconds = null,
       )
     }
     val remaining = ((accessTokenExpiresAtMillis - currentTimeMillis()) / MILLIS_PER_SECOND).coerceAtLeast(0L)
@@ -92,13 +126,15 @@ internal class AuthSession(
       hasAccessToken = true,
       accessTokenExpiresInSeconds = remaining,
       hasRefreshToken = hasRefresh,
+      refreshTokenExpiresInSeconds = ((refreshTokenExpiresAtMillis - currentTimeMillis()) / MILLIS_PER_SECOND)
+        .coerceAtLeast(0L),
     )
   }
 
-  suspend fun expireAccessTokenForTesting() {
+  suspend fun expireAccessTokenForTesting() = withDebugOperation { generation ->
     mutex.withLock {
-      renewalJob?.cancel()
-      val current = _tokens.value ?: return@withLock
+      check(generation == sessionGeneration) { "인증 세션이 변경되었습니다" }
+      val current = checkNotNull(_tokens.value) { "만료시킬 Access 토큰이 없습니다" }
       accessTokenExpiresAtMillis = 0L
       _tokens.value = current.copy(
         accessToken = "expired-token-for-testing",
@@ -107,12 +143,34 @@ internal class AuthSession(
     }
   }
 
-  suspend fun revokeRefreshTokenForTesting() {
+  suspend fun revokeRefreshTokenForTesting() = withDebugOperation { generation ->
     val refreshToken = mutex.withLock {
-      renewalJob?.cancel()
-      _tokens.value?.refreshToken ?: readRefreshToken()
-    } ?: return
+      check(generation == sessionGeneration) { "인증 세션이 변경되었습니다" }
+      checkNotNull(_tokens.value?.refreshToken ?: readRefreshToken()) { "폐기할 Refresh 토큰이 없습니다" }
+    }
     logout(refreshToken)
+    mutex.withLock {
+      if (generation == sessionGeneration) refreshTokenExpiresAtMillis = 0L
+    }
+  }
+
+  private suspend fun withDebugOperation(action: suspend (Long) -> Unit) = debugOperationMutex.withLock {
+    val (generation, pendingRenewal) = mutex.withLock {
+      debugOperationInProgress = true
+      renewalJob?.cancel()
+      sessionGeneration to renewal.request
+    }
+    var completed = false
+    try {
+      pendingRenewal?.join()
+      action(generation)
+      completed = true
+    } finally {
+      mutex.withLock {
+        debugOperationInProgress = false
+        if (!completed && generation == sessionGeneration && _tokens.value != null) startRenewal()
+      }
+    }
   }
 
   private fun startRenewal() {
@@ -131,66 +189,94 @@ internal class AuthSession(
     }
   }
 
-  private suspend fun renewTokensOnce(): MobileAuthTokens? {
-    val request = renewalRequestMutex.withLock {
-      renewalRequest?.takeUnless { it.isCompleted } ?: scope.async {
-        try {
-          Result.success(renewCurrentSessionTokens())
-        } catch (error: CancellationException) {
-          throw error
-        } catch (error: Throwable) {
-          Result.failure(error)
-        }
-      }.also { renewalRequest = it }
+  private suspend fun renewTokensOnce(
+    expectedGeneration: Long? = null,
+    requestAttempt: Renewal? = null,
+    rejectedAccessToken: String? = null,
+  ): MobileAuthTokens? {
+    val (generation, request) = mutex.withLock {
+      val generation = sessionGeneration
+      if (expectedGeneration != null && generation != expectedGeneration) {
+        throw CancellationException("인증 세션이 변경되었습니다")
+      }
+      val current = _tokens.value
+      if (rejectedAccessToken != null && current?.accessToken != rejectedAccessToken) return current
+      val attempt = requestAttempt ?: renewal
+      val request = attempt.request ?: run {
+        if (debugOperationInProgress) return null
+        scope.async {
+          try {
+            Result.success(renewCurrentSessionTokens(generation))
+          } catch (error: CancellationException) {
+            throw error
+          } catch (error: Throwable) {
+            Result.failure(error)
+          } finally {
+            mutex.withLock {
+              if (renewal === attempt) renewal = Renewal()
+            }
+          }
+        }.also { attempt.request = it }
+      }
+      generation to request
     }
-    return try {
-      request.await().getOrThrow()
-    } finally {
-      renewalRequestMutex.withLock {
-        if (renewalRequest === request && request.isCompleted) renewalRequest = null
+    val result = request.await()
+    return mutex.withLock {
+      if (generation != sessionGeneration) {
+        if (expectedGeneration != null) throw CancellationException("인증 세션이 변경되었습니다")
+        null
+      }
+      else {
+        result.getOrThrow()
+        _tokens.value
       }
     }
   }
 
-  private suspend fun renewCurrentSessionTokens(): MobileAuthTokens? {
-    val snapshot = mutex.withLock {
+  private suspend fun renewCurrentSessionTokens(generation: Long): MobileAuthTokens? {
+    val refreshToken = mutex.withLock {
+      if (generation != sessionGeneration) return null
       val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
       if (refreshToken == null) {
         _isRestoring.value = false
         return null
       }
-      refreshToken to sessionGeneration
+      refreshToken
     }
     return try {
-      val renewed = reissue(snapshot.first)
+      val renewed = reissue(refreshToken)
       mutex.withLock {
-        if (sessionGeneration == snapshot.second) updateTokens(renewed)
-        _tokens.value
+        if (sessionGeneration != generation) return@withLock null
+        updateTokens(renewed)
+        if (renewalJob?.isActive != true && !debugOperationInProgress) startRenewal()
+        renewed
       }
     } catch (error: MobileLoginException) {
       mutex.withLock {
-        if (sessionGeneration != snapshot.second) return@withLock _tokens.value
+        if (sessionGeneration != generation) return@withLock null
         if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
         clear()
+        _requiresLogin.value = memberRequestKey != null
         null
       }
     }
   }
 
   private fun updateTokens(tokens: MobileAuthTokens) {
-    sessionGeneration += 1
+    val now = currentTimeMillis()
+    accessTokenExpiresAtMillis = now + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
+    refreshTokenExpiresAtMillis = now + tokens.refreshTokenExpiresIn * MILLIS_PER_SECOND
+    writeRefreshToken(tokens.refreshToken)
     _tokens.value = tokens
     _isRestoring.value = false
-    accessTokenExpiresAtMillis = currentTimeMillis() + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
-    writeRefreshToken(tokens.refreshToken)
   }
 
   private fun clear() {
-    sessionGeneration += 1
+    accessTokenExpiresAtMillis = 0L
+    refreshTokenExpiresAtMillis = 0L
+    clearRefreshToken()
     _tokens.value = null
     _isRestoring.value = false
-    accessTokenExpiresAtMillis = 0L
-    clearRefreshToken()
   }
 
   internal companion object {

@@ -5,7 +5,6 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.plugin
-import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -14,9 +13,10 @@ import kotlinx.serialization.json.Json
 
 internal val authRetriedKey = AttributeKey<Boolean>("AuthRetriedKey")
 
-internal object AuthTokenProvider {
-    var refreshHandler: (suspend () -> String?)? = null
-}
+internal class AuthenticatedRequest(
+    val accessToken: String,
+    val refreshAfterRejection: suspend () -> String?,
+)
 
 internal fun HttpClientConfig<*>.configureChaekchaek() {
     expectSuccess = true
@@ -26,19 +26,21 @@ internal fun HttpClientConfig<*>.configureChaekchaek() {
 }
 
 internal fun HttpClient.installSilentRefresh(
-    refreshAccessToken: suspend () -> String?,
+    prepareRequest: suspend (String) -> AuthenticatedRequest,
 ): HttpClient {
     plugin(HttpSend).intercept { request ->
-        val originalCall = execute(request)
         val authHeader = request.headers[HttpHeaders.Authorization]
         val isAuthEndpoint = request.url.buildString().contains("/api/v1/auth/mobile/")
-        if (originalCall.response.status == HttpStatusCode.Unauthorized &&
-            authHeader != null &&
-            !isAuthEndpoint &&
-            !request.attributes.contains(authRetriedKey)
-        ) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ", ignoreCase = true) ||
+            isAuthEndpoint || request.attributes.contains(authRetriedKey)
+        ) return@intercept execute(request)
+
+        val credentials = prepareRequest(authHeader.substringAfter(' '))
+        request.headers[HttpHeaders.Authorization] = "Bearer ${credentials.accessToken}"
+        val originalCall = execute(request)
+        if (originalCall.response.status == HttpStatusCode.Unauthorized) {
             request.attributes.put(authRetriedKey, true)
-            val refreshed = refreshAccessToken()
+            val refreshed = credentials.refreshAfterRejection()
             if (refreshed != null) {
                 request.headers[HttpHeaders.Authorization] = "Bearer $refreshed"
                 execute(request)

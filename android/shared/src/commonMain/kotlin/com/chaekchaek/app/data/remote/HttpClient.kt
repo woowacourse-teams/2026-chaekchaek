@@ -3,5 +3,5 @@ package com.chaekchaek.app.data.remote
 import io.ktor.client.HttpClient
 
 internal expect fun createHttpClient(
-    refreshAccessToken: (suspend () -> String?)? = AuthTokenProvider.refreshHandler,
+    prepareRequest: (suspend (String) -> AuthenticatedRequest)? = null,
 ): HttpClient

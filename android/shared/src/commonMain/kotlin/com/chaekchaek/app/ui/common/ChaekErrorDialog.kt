@@ -14,8 +14,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.chaekchaek.app.auth.AuthViewModel
+import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.presentation.common.ErrorAction
 import com.chaekchaek.app.presentation.common.ErrorNotice
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
@@ -44,17 +46,26 @@ fun ErrorRecoveryEffect(recovery: ErrorRecoveryState) {
 @Composable
 internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> Unit) {
     val sources = remember { ErrorSources() }
-    var authenticating by remember { mutableStateOf<Pair<ErrorRecoveryState, Long>?>(null) }
+    val sessionExpiry = remember { ErrorRecoveryState() }
+    val requiresLogin by auth.requiresLogin.collectAsState()
+    val expiryNotice by sessionExpiry.notice.collectAsState()
+    var authenticating by remember { mutableStateOf<AuthenticationRecovery?>(null) }
     val authState by auth.uiState.collectAsState()
+    LaunchedEffect(requiresLogin) {
+        if (requiresLogin) {
+            sessionExpiry.report(MobileLoginException("UNAUTHORIZED", 401), ErrorOperation.Request) {}
+        } else {
+            sessionExpiry.dismiss()
+        }
+    }
     CompositionLocalProvider(LocalErrorSources provides sources) {
         content()
         ErrorRecoveryEffect(auth.errors)
-        authenticating?.let { (owner, id) ->
-            val originalMemberId = auth.memberIdFor(auth.tokens.value?.accessToken)
+        authenticating?.let { (owner, id, originalMemberId) ->
             val resume: suspend (String) -> Unit = { token ->
                 authenticating = null
                 if (originalMemberId != null && auth.memberIdFor(token) != originalMemberId) owner.dismiss(id)
-                else if (owner in sources.states) owner.takeRecovery(id)?.invoke(token)
+                else if (owner in sources.states || owner === sessionExpiry) owner.takeRecovery(id)?.invoke(token)
             }
             LoginRequiredSheet(
                 signingIn = authState.signingIn,
@@ -65,8 +76,8 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
                     authenticating = null
                     owner.dismiss(id)
                 },
-                onAppleSignIn = { auth.requireAppleAuthentication(force = true, action = resume) },
-                onGoogleSignIn = { auth.requireAuthentication(force = true, action = resume) },
+                onAppleSignIn = { auth.requireAppleMemberAuthentication(force = true, action = resume) },
+                onGoogleSignIn = { auth.requireMemberAuthentication(force = true, action = resume) },
             )
         }
         if (authState.requiresNickname) {
@@ -86,14 +97,23 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
         }.lastOrNull { (owner, notice) ->
             notice != null && (authenticating == null || owner === auth.errors)
         }?.let { (owner, notice) -> owner to requireNotNull(notice) }
+            ?: expiryNotice?.takeIf { authenticating == null }?.let { sessionExpiry to it }
         active?.let { (owner, notice) ->
             ChaekErrorDialog(notice, { owner.dismiss(notice.id) }) {
-                if (notice.action == ErrorAction.Login) authenticating = owner to notice.id
-                else owner.takeRecovery(notice.id)?.invoke(null)
+                if (notice.action == ErrorAction.Login) {
+                    if (owner !== sessionExpiry) sessionExpiry.dismiss()
+                    authenticating = AuthenticationRecovery(owner, notice.id, auth.memberSession.value?.memberId)
+                } else owner.takeRecovery(notice.id)?.invoke(null)
             }
         }
     }
 }
+
+private data class AuthenticationRecovery(
+    val owner: ErrorRecoveryState,
+    val noticeId: Long,
+    val memberId: Long?,
+)
 
 /** Figma 책췍/ErrorDialog 1394:5478. 두 버튼은 좁은 화면과 큰 글자에서도 가로 배치한다. */
 @Composable

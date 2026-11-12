@@ -123,7 +123,7 @@ internal fun RootScreen(
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     var archiveLoginOpensMyPage by rememberSaveable { mutableStateOf(false) }
-    val tokens by authViewModel.tokens.collectAsState()
+    val memberSession by authViewModel.memberSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
@@ -139,7 +139,7 @@ internal fun RootScreen(
     val feedListState = rememberLazyListState()
     val searchResultsListState = rememberLazyListState()
     var tabStateToClear by remember { mutableStateOf<RootTab?>(null) }
-    val accessToken = tokens?.accessToken
+    val accessToken = memberSession?.requestKey
     val clearExitConfirmation: () -> Unit = {
         exitConfirmationDeadlineMillis = null
         exitConfirmationSnackbarJob?.cancel()
@@ -221,15 +221,7 @@ internal fun RootScreen(
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
     }
-    val retryHome: () -> Unit = {
-        rootScope.launch {
-            retryHomeWithSessionRecovery(
-                currentAccessToken = { authViewModel.tokens.value?.accessToken },
-                refreshAccessToken = authViewModel::refreshAccessTokenForRetry,
-                retryHome = homeViewModel::retry,
-            )
-        }
-    }
+    val retryHome: () -> Unit = { homeViewModel.retry(authViewModel.memberSession.value?.requestKey) }
 
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, imageModifier ->
@@ -350,7 +342,7 @@ internal fun RootScreen(
             onAppleSignIn = {
                 analytics.beginAuthAttempt("apple", "library_add")
                 authViewModel.clearError()
-                authViewModel.requireAppleAuthentication { token ->
+                authViewModel.requireAppleMemberAuthentication { token ->
                     analytics.endAuthAttempt("success")
                     librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
@@ -359,7 +351,7 @@ internal fun RootScreen(
             onGoogleSignIn = {
                 analytics.beginAuthAttempt("google", "library_add")
                 authViewModel.clearError()
-                authViewModel.requireAuthentication { token ->
+                authViewModel.requireMemberAuthentication { token ->
                     analytics.endAuthAttempt("success")
                     librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
@@ -395,7 +387,7 @@ internal fun RootScreen(
             onAppleSignIn = {
                 analytics.beginAuthAttempt("apple", if (archiveLoginOpensMyPage) "profile" else "library_edit")
                 authViewModel.clearError()
-                authViewModel.requireAppleAuthentication {
+                authViewModel.requireAppleMemberAuthentication {
                     analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage()
@@ -405,7 +397,7 @@ internal fun RootScreen(
             onGoogleSignIn = {
                 analytics.beginAuthAttempt("google", if (archiveLoginOpensMyPage) "profile" else "library_edit")
                 authViewModel.clearError()
-                authViewModel.requireAuthentication {
+                authViewModel.requireMemberAuthentication {
                     analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage()
