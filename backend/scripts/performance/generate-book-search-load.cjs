@@ -95,9 +95,9 @@ SELECT p.isbn13, p.title, CONCAT('https://example.invalid/performance/', p.isbn1
        '성능 측정용', '고전 문학'
 FROM perf_book_plan p;
 
-INSERT INTO review (book_id, actor_id, content, quote, chapter, current_page,
+INSERT INTO review (book_id, actor_id, content, quote, chapter,
                     is_spoiler, anonymous, deleted_at, created_at, updated_at)
-SELECT b.id, @perf_actor_id, '테스트 감상 1', NULL, NULL, NULL,
+SELECT b.id, @perf_actor_id, '테스트 감상 1', NULL, NULL,
        FALSE, TRUE, NULL, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6)
 FROM perf_book_plan p
 JOIN book b ON b.isbn13 = p.isbn13

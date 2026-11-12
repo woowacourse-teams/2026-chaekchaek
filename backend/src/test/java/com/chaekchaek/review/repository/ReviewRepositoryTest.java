@@ -109,6 +109,6 @@ class ReviewRepositoryTest {
     }
 
     private Review saveReview(long actorId) {
-        return reviewRepository.save(Review.create(BOOK_ID, actorId, "감상", null, null, null, false, false));
+        return reviewRepository.save(Review.create(BOOK_ID, actorId, "감상", null, null, false, false));
     }
 }

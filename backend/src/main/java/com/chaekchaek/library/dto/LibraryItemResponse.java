@@ -2,7 +2,6 @@ package com.chaekchaek.library.dto;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,13 +19,9 @@ public record LibraryItemResponse(
         String publisher,
         String category,
         LocalDate publishedDate,
-        Integer totalPages,
         long commentCount,
-        ReadingStatus status,
-        Integer currentPage,
         BigDecimal rating,
-        Instant addedAt,
-        Instant readingUpdatedAt
+        Instant addedAt
 ) {
 
     public static LibraryItemResponse from(LibraryItem item, Book book, long commentCount) {
@@ -42,13 +37,9 @@ public record LibraryItemResponse(
                 book.getPublisher(),
                 book.getCategory(),
                 book.getPublishedDate(),
-                book.getTotalPages(),
                 commentCount,
-                item.getStatus(),
-                item.getCurrentPage(),
                 item.getRating(),
-                item.getAddedAt(),
-                item.getReadingUpdatedAt()
+                item.getAddedAt()
         );
     }
 }

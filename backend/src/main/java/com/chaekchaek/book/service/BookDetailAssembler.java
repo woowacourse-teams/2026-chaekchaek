@@ -48,7 +48,6 @@ class BookDetailAssembler {
                     book.getPublisher(),
                     book.getCategory(),
                     book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                    book.getTotalPages(),
                     null,
                     null,
                     null,
@@ -79,7 +78,6 @@ class BookDetailAssembler {
                 book.getPublisher(),
                 book.getCategory(),
                 book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(),
                 Math.toIntExact(counts.reviewCount()),
                 Math.toIntExact(counts.replyCount()),
                 averageRating(ratings),
@@ -140,14 +138,9 @@ class BookDetailAssembler {
     }
 
     private BookMyRecordResponse myRecord(LibraryItem item) {
-        if (!item.hasReadingState() && item.getRating() == null) {
+        if (item.getRating() == null) {
             return null;
         }
-        String status = item.getStatus() == null ? null : item.getStatus().name();
-        return new BookMyRecordResponse(
-                status,
-                item.getCurrentPage(),
-                item.getRating()
-        );
+        return new BookMyRecordResponse(item.getRating());
     }
 }

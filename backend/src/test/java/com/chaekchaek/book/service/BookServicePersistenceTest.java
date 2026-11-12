@@ -8,7 +8,6 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
@@ -70,7 +69,6 @@ class BookServicePersistenceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24"
         ));
@@ -88,7 +86,6 @@ class BookServicePersistenceTest {
                 "출판사",
                 "소설",
                 LocalDate.of(2026, 1, 2),
-                100,
                 null,
                 null
         ));
@@ -135,7 +132,6 @@ class BookServicePersistenceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308,
                 "https://www.yes24.com/product/goods/101375809",
                 null
         ));
@@ -173,7 +169,6 @@ class BookServicePersistenceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308,
                 null,
                 null
         );
@@ -192,8 +187,6 @@ class BookServicePersistenceTest {
         LibraryItem item = LibraryItem.create(
                 memberId,
                 bookId,
-                ReadingStatus.WANT_TO_READ,
-                null,
                 Instant.parse("2026-08-14T00:00:00Z")
         );
         item.rate(new BigDecimal(rating), Instant.parse("2026-08-14T00:00:00Z"));
@@ -204,8 +197,6 @@ class BookServicePersistenceTest {
         return LibraryItem.create(
                 memberId,
                 bookId,
-                ReadingStatus.WANT_TO_READ,
-                null,
                 Instant.parse("2026-08-14T00:00:00Z")
         );
     }

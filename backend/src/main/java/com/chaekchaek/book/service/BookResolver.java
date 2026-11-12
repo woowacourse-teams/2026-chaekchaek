@@ -94,7 +94,6 @@ public class BookResolver {
                 source.publisher(),
                 source.category(),
                 source.publishedDate(),
-                source.totalPages(),
                 source.purchaseUrl(),
                 source.source()
         );

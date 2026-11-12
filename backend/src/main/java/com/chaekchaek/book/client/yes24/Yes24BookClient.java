@@ -134,7 +134,6 @@ public class Yes24BookClient implements BookDetailClient {
                 source.isbn13(),
                 source.goodsSortNm(),
                 source.publisher(),
-                source.pages(),
                 source.link(),
                 "yes24"
         );

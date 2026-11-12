@@ -52,7 +52,6 @@ class GuestInteractionAuthorizationIntegrationTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308,
                 null,
                 null
         ));
@@ -103,19 +102,7 @@ class GuestInteractionAuthorizationIntegrationTest {
                         .with(csrf())
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788936433598\",\"status\":\"WANT_TO_READ\"}"))
-                .andExpect(status().isUnauthorized());
-        mockMvc.perform(patch("/api/v1/library/1")
-                        .with(csrf())
-                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPage\":10,\"totalPages\":100}"))
-                .andExpect(status().isUnauthorized());
-        mockMvc.perform(patch("/api/v1/library/1")
-                        .with(csrf())
-                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"READING\"}"))
+                        .content("{\"isbn13\":\"9788936433598\"}"))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(put("/api/v1/library/1/rating")
                         .with(csrf())

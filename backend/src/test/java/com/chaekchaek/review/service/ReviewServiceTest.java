@@ -30,7 +30,6 @@ import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
 import com.chaekchaek.review.event.BookActivityChangedEvent;
-import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyReactionRepository;
@@ -60,7 +59,6 @@ class ReviewServiceTest {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
-        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(7L))).thenReturn(Map.of(
                 7L,
@@ -84,7 +82,6 @@ class ReviewServiceTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 () -> CurrentActor.guest(7L),
-                readingRecordCoordinator,
                 bookReader,
                 memberReader,
                 mock(BookResolver.class),
@@ -99,8 +96,6 @@ class ReviewServiceTest {
                         "게스트 감상",
                         null,
                         null,
-                        null,
-                        null,
                         false
                 )
         );
@@ -113,82 +108,9 @@ class ReviewServiceTest {
         assertThat(response.author().actorType()).isEqualTo(ActorType.GUEST);
         assertThat(response.author().memberId()).isNull();
         assertThat(response.author().profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
-        verify(readingRecordCoordinator, never()).recordReview(
-                ArgumentMatchers.anyLong(),
-                ArgumentMatchers.anyLong(),
-                ArgumentMatchers.any(),
-                ArgumentMatchers.any()
-        );
     }
 
-    @Test
-    @DisplayName("게스트는 감상에서 개인 독서 쪽수를 입력할 수 없다")
-    void should_RejectReadingPage_When_GuestCreatesReview() {
-        // given
-        ReviewService service = new ReviewService(
-                mock(ReviewRepository.class),
-                mock(ReplyRepository.class),
-                mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class),
-                () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class),
-                mock(ReviewBookReader.class),
-                memberReader(true),
-                mock(BookResolver.class),
-                transactionManager(),
-                eventPublisher
-        );
 
-        // when & then
-        assertThatThrownBy(() -> service.createReview(
-                5L,
-                new ReviewCreateRequest(
-                        "게스트 감상",
-                        null,
-                        null,
-                        10,
-                        100,
-                        false
-                )
-        ))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-    }
-
-    @Test
-    @DisplayName("게스트는 기존 감상의 개인 독서 쪽수를 수정할 수 없다")
-    void should_RejectReadingPage_When_GuestUpdatesReview() {
-        // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        Review review = Review.create(5L, 7L, "게스트 감상", null, null, null, false, true);
-        ReflectionTestUtils.setField(review, "id", 10L);
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
-        ReviewService service = new ReviewService(
-                reviewRepository,
-                mock(ReplyRepository.class),
-                mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class),
-                () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class),
-                mock(ReviewBookReader.class),
-                memberReader(true),
-                mock(BookResolver.class),
-                transactionManager(),
-                eventPublisher
-        );
-        ReviewUpdateRequest request = new ReviewUpdateRequest();
-        request.setCurrentPage(10);
-        request.setTotalPages(100);
-
-        // when & then
-        assertThatThrownBy(() -> service.updateReview(10L, request))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-    }
 
     @Test
     @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
@@ -198,7 +120,7 @@ class ReviewServiceTest {
         ReplyRepository replyRepository = mock(ReplyRepository.class);
         ReviewReactionRepository reviewReactionRepository = mock(ReviewReactionRepository.class);
         ReplyReactionRepository replyReactionRepository = mock(ReplyReactionRepository.class);
-        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Review review = Review.create(5L, 1L, "감상", null, null, false, false);
         Reply reply = Reply.create(10L, 1L, "답글", false);
         ReflectionTestUtils.setField(review, "id", 10L);
         ReflectionTestUtils.setField(reply, "id", 20L);
@@ -213,7 +135,6 @@ class ReviewServiceTest {
                 reviewReactionRepository,
                 replyReactionRepository,
                 currentActorProvider,
-                mock(ReadingRecordCoordinator.class),
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
@@ -241,7 +162,6 @@ class ReviewServiceTest {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
-        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
                 1L,
@@ -254,12 +174,12 @@ class ReviewServiceTest {
                         ActorType.MEMBER
                 )
         ));
-        ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review review = invocation.getArgument(0);
             ReflectionTestUtils.setField(review, "id", 10L);
             return review;
         });
+        ReviewService reviewService = reviewService(reviewRepository, bookReader, memberReader);
 
         // when
         ReviewResponse actual = reviewService.createReview(
@@ -268,15 +188,12 @@ class ReviewServiceTest {
                         "감상",
                         null,
                         null,
-                        10,
-                        100,
                         false
                 )
         );
 
         // then
         verify(bookReader).validateBookExists(5L);
-        verify(readingRecordCoordinator).recordReview(1L, 5L, 10, 100);
         verify(memberReader).findByActorIds(List.of(1L));
         verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
         assertThat(actual.author().anonymous()).isTrue();
@@ -291,7 +208,6 @@ class ReviewServiceTest {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
-        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         BookResolver bookResolver = mock(BookResolver.class);
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(5L);
@@ -305,7 +221,6 @@ class ReviewServiceTest {
         ReviewService reviewService = reviewService(
                 reviewRepository,
                 bookReader,
-                readingRecordCoordinator,
                 memberReader(false),
                 bookResolver
         );
@@ -315,8 +230,6 @@ class ReviewServiceTest {
                 isbn13,
                 new ReviewCreateRequest(
                         "감상",
-                        null,
-                        null,
                         null,
                         null,
                         false
@@ -336,13 +249,12 @@ class ReviewServiceTest {
     void should_PublishBookActivityChangedEvent_When_DeletingReview() {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Review review = Review.create(5L, 1L, "감상", null, null, false, false);
         ReflectionTestUtils.setField(review, "id", 17L);
         when(reviewRepository.findById(17L)).thenReturn(Optional.of(review));
         ReviewService service = reviewService(
                 reviewRepository,
                 mock(ReviewBookReader.class),
-                mock(ReadingRecordCoordinator.class),
                 memberReader(false)
         );
 
@@ -360,7 +272,7 @@ class ReviewServiceTest {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReplyRepository replyRepository = mock(ReplyRepository.class);
-        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Review review = Review.create(5L, 1L, "감상", null, null, false, false);
         ReflectionTestUtils.setField(review, "id", 17L);
         when(reviewRepository.findById(17L)).thenReturn(Optional.of(review));
         when(replyRepository.save(any(Reply.class))).thenAnswer(invocation -> {
@@ -383,7 +295,7 @@ class ReviewServiceTest {
         // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReplyRepository replyRepository = mock(ReplyRepository.class);
-        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Review review = Review.create(5L, 1L, "감상", null, null, false, false);
         Reply reply = Reply.create(17L, 1L, "답글", false);
         ReflectionTestUtils.setField(review, "id", 17L);
         ReflectionTestUtils.setField(reply, "id", 99L);
@@ -400,100 +312,8 @@ class ReviewServiceTest {
         verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
     }
 
-    @Test
-    @DisplayName("게스트의 ISBN13 감상 페이지 입력은 도서를 등록하기 전에 거절한다")
-    void should_RejectGuestReadingPageBeforeResolvingBook_When_CreatingReviewByIsbn13() {
-        // given
-        BookResolver bookResolver = mock(BookResolver.class);
-        ReviewService reviewService = new ReviewService(
-                mock(ReviewRepository.class),
-                mock(ReplyRepository.class),
-                mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class),
-                () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class),
-                mock(ReviewBookReader.class),
-                memberReader(false),
-                bookResolver,
-                transactionManager(),
-                eventPublisher
-        );
 
-        // when & then
-        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(
-                new Isbn13("9788925568683"),
-                new ReviewCreateRequest(
-                        "감상",
-                        null,
-                        null,
-                        10,
-                        100,
-                        false
-                )
-        ))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-        verify(bookResolver, never()).findOrCreate(any(Isbn13.class));
-    }
 
-    @Test
-    @DisplayName("감상 페이지 수정은 저장된 전체 페이지를 확인하도록 서재 경계에 위임한다")
-    void should_DelegateStoredTotalPagesValidation_When_UpdatingReviewPage() {
-        // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReviewBookReader bookReader = mock(ReviewBookReader.class);
-        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
-        ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader(false));
-        Review review = Review.create(5L, 1L, "감상", null, null, 10, false, false);
-        ReflectionTestUtils.setField(review, "id", 10L);
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
-        ReviewUpdateRequest request = new ReviewUpdateRequest();
-        request.setCurrentPage(50);
-        request.setTotalPages(100);
-
-        // when
-        reviewService.updateReview(10L, request);
-
-        // then
-        verify(readingRecordCoordinator).validateReviewPage(1L, 5L, 50, 100);
-    }
-
-    @Test
-    @DisplayName("감상 페이지가 전체 페이지를 초과하면 서재 경계의 독서 상태 오류를 반환한다")
-    void should_ReturnInvalidReadingState_When_ReviewPageExceedsTotalPages() {
-        // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReviewBookReader bookReader = mock(ReviewBookReader.class);
-        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
-        ReviewService reviewService = reviewService(
-                reviewRepository,
-                bookReader,
-                readingRecordCoordinator,
-                memberReader(false)
-        );
-        doThrow(new BusinessException(ErrorCode.INVALID_READING_STATE))
-                .when(readingRecordCoordinator).recordReview(1L, 5L, 101, 100);
-
-        // when & then
-        assertThatThrownBy(() -> reviewService.createReview(
-                5L,
-                new ReviewCreateRequest(
-                        "감상",
-                        null,
-                        null,
-                        101,
-                        100,
-                        false
-                )
-        ))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
-        );
-    }
 
     @Test
     @DisplayName("도서별 댓글 수는 감상과 답글을 합산하고 항목이 없으면 0을 반환한다")
@@ -517,7 +337,6 @@ class ReviewServiceTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                mock(ReadingRecordCoordinator.class),
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
@@ -554,7 +373,6 @@ class ReviewServiceTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                mock(ReadingRecordCoordinator.class),
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
@@ -585,13 +403,11 @@ class ReviewServiceTest {
     private ReviewService reviewService(
             ReviewRepository reviewRepository,
             ReviewBookReader bookReader,
-            ReadingRecordCoordinator readingRecordCoordinator,
             ReviewMemberReader memberReader
     ) {
         return reviewService(
                 reviewRepository,
                 bookReader,
-                readingRecordCoordinator,
                 memberReader,
                 mock(BookResolver.class)
         );
@@ -607,7 +423,6 @@ class ReviewServiceTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                mock(ReadingRecordCoordinator.class),
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
@@ -619,7 +434,6 @@ class ReviewServiceTest {
     private ReviewService reviewService(
             ReviewRepository reviewRepository,
             ReviewBookReader bookReader,
-            ReadingRecordCoordinator readingRecordCoordinator,
             ReviewMemberReader memberReader,
             BookResolver bookResolver
     ) {
@@ -629,7 +443,6 @@ class ReviewServiceTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                readingRecordCoordinator,
                 bookReader,
                 memberReader,
                 bookResolver,

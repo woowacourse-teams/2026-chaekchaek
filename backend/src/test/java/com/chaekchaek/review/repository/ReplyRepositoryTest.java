@@ -31,8 +31,8 @@ class ReplyRepositoryTest {
     @DisplayName("감상마다 최신 답글 세 개를 선택한 뒤 오래된 순으로 반환한다")
     void should_ReturnLatestThreePerReviewInAscendingOrder_When_FindingRecentReplies() {
         // given
-        Review firstReview = reviewRepository.save(Review.create(1L, 1L, "첫 감상", null, null, null, false, false));
-        Review secondReview = reviewRepository.save(Review.create(1L, 2L, "둘째 감상", null, null, null, false, false));
+        Review firstReview = reviewRepository.save(Review.create(1L, 1L, "첫 감상", null, null, false, false));
+        Review secondReview = reviewRepository.save(Review.create(1L, 2L, "둘째 감상", null, null, false, false));
         List<Reply> firstReplies = List.of(
                 replyRepository.save(Reply.create(firstReview.getId(), 1L, "1", false)),
                 replyRepository.save(Reply.create(firstReview.getId(), 1L, "2", false)),
@@ -73,8 +73,8 @@ class ReplyRepositoryTest {
     @DisplayName("최신 답글에 삭제 답글이 섞여도 감상마다 정상 답글 세 개를 채운다")
     void should_FillLatestThreeActiveRepliesPerReview_When_RecentRepliesIncludeDeletedOnes() {
         // given
-        Review firstReview = reviewRepository.save(Review.create(1L, 1L, "첫 감상", null, null, null, false, false));
-        Review secondReview = reviewRepository.save(Review.create(1L, 2L, "둘째 감상", null, null, null, false, false));
+        Review firstReview = reviewRepository.save(Review.create(1L, 1L, "첫 감상", null, null, false, false));
+        Review secondReview = reviewRepository.save(Review.create(1L, 2L, "둘째 감상", null, null, false, false));
         List<Reply> firstReplies = new ArrayList<>();
         List<Reply> secondReplies = new ArrayList<>();
         for (int index = 0; index < 4; index++) {
@@ -102,7 +102,7 @@ class ReplyRepositoryTest {
     @DisplayName("감상의 답글이 모두 삭제되면 최근 답글이 비어 있다")
     void should_ReturnNoRecentReplies_When_AllRepliesAreDeleted() {
         // given
-        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, false, false));
         replyRepository.save(Reply.create(review.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
         replyRepository.save(Reply.create(99L, 1L, "다른 감상의 답글", false));
         replyRepository.flush();
@@ -118,9 +118,9 @@ class ReplyRepositoryTest {
     @DisplayName("인기 도서는 정상 답글이 남은 삭제 감상까지 집계하고 감상별 답글 수는 삭제되지 않은 감상만 집계한다")
     void should_IncludeDeletedReviewsWithActiveRepliesOnlyInPopularBooks_When_CountingActivities() {
         // given
-        Review activeReview = reviewRepository.save(Review.create(1L, 1L, "유효 감상", null, null, null, false, false));
-        Review deletedReview = reviewRepository.save(Review.create(2L, 2L, "삭제 감상", null, null, null, false, false));
-        Review hiddenReview = reviewRepository.save(Review.create(3L, 3L, "숨겨진 감상", null, null, null, false, false));
+        Review activeReview = reviewRepository.save(Review.create(1L, 1L, "유효 감상", null, null, false, false));
+        Review deletedReview = reviewRepository.save(Review.create(2L, 2L, "삭제 감상", null, null, false, false));
+        Review hiddenReview = reviewRepository.save(Review.create(3L, 3L, "숨겨진 감상", null, null, false, false));
         replyRepository.save(Reply.create(activeReview.getId(), 1L, "유효 답글", false));
         Reply deletedReply = replyRepository.save(Reply.create(activeReview.getId(), 1L, "삭제 답글", false));
         replyRepository.save(Reply.create(deletedReview.getId(), 2L, "삭제된 감상의 답글", false));
@@ -155,11 +155,11 @@ class ReplyRepositoryTest {
         List<Review> nonSpoilerReviews = new ArrayList<>();
         for (int index = 0; index < 10; index++) {
             nonSpoilerReviews.add(reviewRepository.save(
-                    Review.create(1L, 1L, "감상 " + index, null, null, null, false, false)
+                    Review.create(1L, 1L, "감상 " + index, null, null, false, false)
             ));
         }
-        reviewRepository.save(Review.create(1L, 1L, "스포일러 감상", null, null, null, true, false));
-        Review deletedReview = reviewRepository.save(Review.create(1L, 1L, "삭제 감상", null, null, null, false, false));
+        reviewRepository.save(Review.create(1L, 1L, "스포일러 감상", null, null, true, false));
+        Review deletedReview = reviewRepository.save(Review.create(1L, 1L, "삭제 감상", null, null, false, false));
         deletedReview.deleteBy(1L);
         reviewRepository.flush();
 
@@ -178,8 +178,8 @@ class ReplyRepositoryTest {
     @DisplayName("감상의 삭제되지 않은 답글만 작성 시간과 ID 오름차순으로 페이지를 나눠 조회한다")
     void should_PageOnlyActiveRepliesOfReview_When_DeletedRepliesAreMixed() {
         // given
-        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, null, false, false));
-        Review otherReview = reviewRepository.save(Review.create(1L, 2L, "다른 감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, false, false));
+        Review otherReview = reviewRepository.save(Review.create(1L, 2L, "다른 감상", null, null, false, false));
         List<Long> activeReplyIds = new ArrayList<>();
         for (int index = 0; index < 11; index++) {
             replyRepository.save(Reply.create(review.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
@@ -210,7 +210,7 @@ class ReplyRepositoryTest {
     @DisplayName("감상의 답글이 모두 삭제되면 빈 목록과 전체 개수 0을 반환한다")
     void should_ReturnEmptyPage_When_AllRepliesOfReviewAreDeleted() {
         // given
-        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, false, false));
         replyRepository.save(Reply.create(review.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
         replyRepository.save(Reply.create(review.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
         replyRepository.flush();

@@ -50,7 +50,7 @@ class ReplyListIntegrationTest {
         // given
         GuestTokenResponse guest = issueGuestToken();
         String guestToken = guest.guestToken();
-        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, false, false));
         List<Long> replyIds = new ArrayList<>();
         for (int index = 0; index < 11; index++) {
             replyIds.add(createReply(review.getId(), guestToken));
@@ -88,7 +88,7 @@ class ReplyListIntegrationTest {
         // given
         GuestTokenResponse guest = issueGuestToken();
         String guestToken = guest.guestToken();
-        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, false, false));
         long replyId = createReply(review.getId(), guestToken);
         mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", replyId)
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
@@ -114,7 +114,7 @@ class ReplyListIntegrationTest {
         // given
         GuestTokenResponse guest = issueGuestToken();
         String guestToken = guest.guestToken();
-        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, false, false));
         long replyId = createReply(review.getId(), guestToken);
         review.deleteBy(guest.actorId());
         reviewRepository.saveAndFlush(review);
@@ -147,7 +147,7 @@ class ReplyListIntegrationTest {
         // given
         GuestTokenResponse guest = issueGuestToken();
         String guestToken = guest.guestToken();
-        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, false, false));
         long replyId = createReply(review.getId(), guestToken);
         mockMvc.perform(delete("/api/v1/replies/{replyId}", replyId)
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
@@ -173,7 +173,7 @@ class ReplyListIntegrationTest {
         // given
         GuestTokenResponse guest = issueGuestToken();
         String guestToken = guest.guestToken();
-        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, false, false));
         createReply(review.getId(), guestToken);
         mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", review.getId())
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))

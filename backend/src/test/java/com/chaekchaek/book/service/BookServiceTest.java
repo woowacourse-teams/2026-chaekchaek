@@ -33,7 +33,6 @@ class BookServiceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24"
         );
@@ -48,7 +47,6 @@ class BookServiceTest {
                 detailBook.getPublisher(),
                 detailBook.getCategory(),
                 "2026-01-01",
-                308,
                 0,
                 0,
                 null,
@@ -68,7 +66,6 @@ class BookServiceTest {
         BookDetailResponse response = service.getDetail(isbn13);
 
         // then
-        assertThat(response).extracting(BookDetailResponse::title, BookDetailResponse::totalPages)
-                .containsExactly("마션", 308);
+        assertThat(response.title()).isEqualTo("마션");
     }
 }

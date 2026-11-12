@@ -67,7 +67,6 @@ class Yes24SearchRegistrationTest {
         assertThat(book.getDescription()).isEqualTo("내면의 길을 찾아가는 성장 소설");
         assertThat(book.getAuthors()).containsExactly("헤르만 헤세");
         assertThat(book.getTranslators()).containsExactly("전영애");
-        assertThat(book.getTotalPages()).isEqualTo(240);
     }
 
     @Test

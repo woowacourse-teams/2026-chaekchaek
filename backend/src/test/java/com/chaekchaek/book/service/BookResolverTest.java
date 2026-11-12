@@ -88,7 +88,6 @@ class BookResolverTest {
                 ISBN13.value(),
                 "SF",
                 "알에이치코리아",
-                308,
                 "https://www.yes24.com/product/goods/118578901",
                 "yes24"
         ));
@@ -266,7 +265,6 @@ class BookResolverTest {
                 ISBN13.value(),
                 "SF",
                 "알에이치코리아",
-                308,
                 "https://www.yes24.com/product/goods/118578901",
                 "yes24"
         );
@@ -289,7 +287,6 @@ class BookResolverTest {
                 ISBN13.value(),
                 "SF",
                 "알에이치코리아",
-                308,
                 "https://www.yes24.com/product/goods/118578901",
                 "yes24"
         );

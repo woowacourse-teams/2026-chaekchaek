@@ -16,7 +16,6 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
-import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyReactionRepository;
@@ -73,7 +72,6 @@ class ReviewCreateByIsbnTransactionTest {
                     ISBN13.value(),
                     "SF",
                     "알에이치코리아",
-                    308,
                     "https://www.yes24.com/product/goods/101375809",
                     "yes24"
             );
@@ -91,7 +89,6 @@ class ReviewCreateByIsbnTransactionTest {
                 mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class),
                 requireStoredBook(),
                 guestProfileReader(),
                 bookResolver,
@@ -104,8 +101,6 @@ class ReviewCreateByIsbnTransactionTest {
                 ISBN13,
                 new ReviewCreateRequest(
                         "감상",
-                        null,
-                        null,
                         null,
                         null,
                         false

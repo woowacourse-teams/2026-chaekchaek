@@ -23,7 +23,6 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
@@ -152,14 +151,11 @@ class IsbnRatingIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isbn13").value(ISBN13.value()))
                 .andExpect(jsonPath("$.rating").value(4.5))
-                .andExpect(jsonPath("$.status").value(nullValue()))
-                .andExpect(jsonPath("$.currentPage").value(nullValue()))
-                .andExpect(jsonPath("$.readingUpdatedAt").value(nullValue()))
                 .andReturn().getResponse().getContentAsString();
 
         // then
         LibraryItemResponse response = objectMapper.readValue(body, LibraryItemResponse.class);
-        assertThat(objectMapper.readTree(body).size()).isEqualTo(18);
+        assertThat(objectMapper.readTree(body).size()).isEqualTo(14);
         assertThat(books.findByIsbn13(ISBN13).orElseThrow().getId()).isEqualTo(response.bookId());
         assertThat(records.findByMemberIdAndBookId(member.getId(), response.bookId())).isPresent();
         assertThat(records.count()).isEqualTo(1L);
@@ -191,17 +187,13 @@ class IsbnRatingIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"NONE", "READING", "CLEARED"})
-    @DisplayName("ISBN 경로와 ID 경로는 같은 응답과 별점 행을 공유하고 독서 기록을 보존한다")
-    void should_PreserveResponseAndRecordAcrossRoutes_When_BookExists(String readingState) throws Exception {
+    @ValueSource(booleans = {false, true})
+    @DisplayName("ISBN 경로와 ID 경로는 같은 응답과 별점 행을 공유한다")
+    void should_PreserveResponseAndRecordAcrossRoutes_When_BookExists(boolean existingRecord) throws Exception {
         // given
         Book book = book();
-        if (!readingState.equals("NONE")) {
-            LibraryItem item = LibraryItem.create(member.getId(), book.getId(), ReadingStatus.READING, 240, NOW);
-            item.changeCurrentPage(23, 240, NOW);
-            if (readingState.equals("CLEARED")) {
-                item.clearReadingState();
-            }
+        if (existingRecord) {
+            LibraryItem item = LibraryItem.create(member.getId(), book.getId(), NOW);
             records.saveAndFlush(item);
         }
 
@@ -222,8 +214,6 @@ class IsbnRatingIntegrationTest {
         LibraryItem item = records.findByMemberIdAndBookId(member.getId(), book.getId()).orElseThrow();
         assertThat(item.getId()).isEqualTo(recordId);
         assertThat(item.getRating()).isEqualByComparingTo("3.5");
-        assertThat(item.getStatus()).isEqualTo(readingState.equals("READING") ? ReadingStatus.READING : null);
-        assertThat(item.getCurrentPage()).isEqualTo(readingState.equals("READING") ? 23 : null);
         assertThat(records.count()).isEqualTo(1L);
         assertThat(placements.count()).isZero();
         assertThat(records.findRatingStatisticsByBookIdIn(List.of(book.getId()))).singleElement()
@@ -233,14 +223,13 @@ class IsbnRatingIntegrationTest {
 
     @ParameterizedTest
     @CsvSource({"false,false", "false,true", "true,false", "true,true"})
-    @DisplayName("ISBN 별점 삭제는 내 별점만 지우고 독서 기록과 책장 배치를 유지한다")
-    void should_RemoveOnlyMyRating_When_DeletingByIsbn(boolean cookie, boolean reading) throws Exception {
+    @DisplayName("ISBN 별점 삭제는 내 별점만 지우고 책장 배치를 유지한다")
+    void should_RemoveOnlyMyRating_When_DeletingByIsbn(boolean cookie, boolean hasPlacement) throws Exception {
         // given
         Book book = book();
         LibraryItem item = LibraryItem.createForRating(member.getId(), book.getId(), new BigDecimal("4.5"), NOW);
-        if (reading) {
-            item = LibraryItem.create(member.getId(), book.getId(), ReadingStatus.READING, 240, NOW);
-            item.changeCurrentPage(23, 240, NOW);
+        if (hasPlacement) {
+            item = LibraryItem.create(member.getId(), book.getId(), NOW);
             item.rate(new BigDecimal("4.5"), NOW);
             Library library = libraries.saveAndFlush(Library.create(member.getId(), "읽는 책", NOW));
             placements.saveAndFlush(LibraryBook.create(library.getId(), book.getId(), 1L));
@@ -265,13 +254,10 @@ class IsbnRatingIntegrationTest {
         assertThat(saved.getId()).isEqualTo(recordId);
         assertThat(saved.getRating()).isNull();
         assertThat(saved.getRatingUpdatedAt()).isNull();
-        assertThat(saved.getStatus()).isEqualTo(reading ? ReadingStatus.READING : null);
-        assertThat(saved.getCurrentPage()).isEqualTo(reading ? 23 : null);
-        assertThat(saved.getReadingUpdatedAt()).isEqualTo(reading ? NOW : null);
         assertThat(records.findByMemberIdAndBookId(other.getId(), book.getId()).orElseThrow().getRating())
                 .isEqualByComparingTo("3.5");
         assertThat(records.count()).isEqualTo(2L);
-        assertThat(placements.count()).isEqualTo(reading ? 1L : 0L);
+        assertThat(placements.count()).isEqualTo(hasPlacement ? 1L : 0L);
         assertThat(books.count()).isEqualTo(1L);
         assertThat(records.findRatingStatisticsByBookIdIn(List.of(book.getId()))).singleElement()
                 .satisfies(statistics -> assertThat(statistics.getRatingCount()).isEqualTo(1L));
@@ -459,7 +445,6 @@ class IsbnRatingIntegrationTest {
                 "민음사",
                 "국내도서",
                 null,
-                240,
                 null,
                 null
         ));
