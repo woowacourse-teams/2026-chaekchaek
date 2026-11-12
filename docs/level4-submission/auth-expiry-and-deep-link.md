@@ -1,6 +1,6 @@
 # 외부 진입점과 인증 만료 처리 요구사항 제출 문서
 
-2026-11-12 작성. 레벨4 요구사항 5(외부 진입점)와 6(인증 만료 처리)의 제출 증거를 모은다. 요구사항 5는 2026-11-12에 양 플랫폼 자동화 검증까지 마쳤고, 요구사항 6은 개발 서버 기기 시연이 남아 있다.
+2026-11-12 작성. 레벨4 요구사항 5(외부 진입점)와 6(인증 만료 처리)의 제출 증거를 모은다. 요구사항 5는 2026-11-12에 양 플랫폼 자동화 검증까지 마쳤고, 요구사항 6은 같은 날 개발 서버에 연결한 Android 실제 폰에서 다섯 시나리오를 시연했다.
 
 - 인증 만료: [이슈 #707](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707), [Draft PR #708](https://github.com/woowacourse-teams/2026-chaekchaek/pull/708), 작업 브랜치 `707-auth-expiry-recovery`
 - 인증 만료 정책 원문: [모바일 인증 만료와 세션 복구 정책](../mobile-auth-expiry-policy.md)
@@ -16,11 +16,11 @@
 | 완료 조건 | 증거 | 상태 |
 | --- | --- | --- |
 | 상황별 서버 응답과 앱 동작을 백엔드와 합의해 문서화 | [정책 문서 2절](../mobile-auth-expiry-policy.md#2-서버-응답-계약), [개발 서버 응답 기록](assets/auth-expiry/dev-server-auth-responses.txt) | 문서화와 서버 응답 대조는 완료. 백엔드 합의 기록은 미확인 |
-| Access 토큰 만료 후 사용자 모르게 계속 사용(Silent Refresh) | 호스트 테스트 `SilentRefreshClientTest` | 자동 테스트 통과. 개발 서버 기기 시연 미실행 |
-| 동시 만료 응답에도 갱신 1회 | 호스트 테스트, 개발자 도구 `재발급 요청 N회` 표시 | 자동 테스트 통과. 기기 시연 미실행 |
-| Refresh 폐기 후 로그인 화면, 재로그인 후 원래 화면 복귀 | 호스트 테스트 `AuthViewModelTest` | 자동 테스트 통과. 기기 시연 미실행 |
-| 갱신 중 네트워크 단절에도 로그아웃 없음 | 호스트 테스트 `SilentRefreshClientTest` | 자동 테스트 통과. 기기 시연 미실행 |
-| (권장) 개발자 도구에서 만료 시각 확인, 강제 만료, Refresh 폐기 | `AuthDeveloperContent` | 구현 완료. 기기 캡처 미확보 |
+| Access 토큰 만료 후 사용자 모르게 계속 사용(Silent Refresh) | 호스트 테스트 `SilentRefreshClientTest`, 시연 1·2 | 자동 테스트와 시연 통과 |
+| 동시 만료 응답에도 갱신 1회 | 호스트 테스트, 개발자 도구 `재발급 요청 N회` 표시, 시연 1 | 자동 테스트와 시연 통과 |
+| Refresh 폐기 후 로그인 화면, 재로그인 후 원래 화면 복귀 | 호스트 테스트 `AuthViewModelTest`, 시연 3·4 | 자동 테스트와 시연 통과 |
+| 갱신 중 네트워크 단절에도 로그아웃 없음 | 호스트 테스트 `SilentRefreshClientTest`, 시연 5 | 자동 테스트 통과. 시연은 오프라인 중 만료와 복구까지 확인 |
+| (권장) 개발자 도구에서 만료 시각 확인, 강제 만료, Refresh 폐기 | `AuthDeveloperContent`, 시연 캡처 | 구현과 시연 완료 |
 
 ### 서버 응답 계약 확인
 
@@ -45,17 +45,27 @@
 | `SilentRefreshClientTest` | 401 후 갱신과 재전송, 재전송 후에도 401이면 1회로 중단, 인증 엔드포인트 미개입, Refresh 폐기 시 401 전달, 갱신 완료 뒤 늦은 401의 토큰 재사용, 갱신 연결 오류 후 같은 세션 재시도, 이전 세션 응답 미재전송, 403은 갱신하지 않음 |
 | `AuthViewModelTest` | 만료 회원 범위의 재로그인과 대기 작업 재개, 다른 회원 로그인 시 대기 작업 차단, 닉네임 저장 중 토큰 회전, 개발자 도구 강제 만료와 폐기, 동시 갱신을 재발급 요청 1회로 계산 |
 
-### 개발 서버 시연 계획
+### 개발 서버 시연
 
-Android 실제 폰에서 development 빌드로 실행한다. 로그인은 사용자가 직접 진행한다. 각 단계의 개발자 도구 화면과 결과 화면을 캡처해 `assets/auth-expiry/`에 저장한다.
+2026-11-12 17:15~17:31(KST)에 Galaxy S25(`SM-S931N`)에서 진행했다. 앱은 `707-auth-expiry-recovery`의 `1af62146`을 `-PapiEnvironment=development`로 빌드한 1.3.1 (10)이고, 서버는 `https://dev-api.chaekchaek.com`이다. Google 로그인에 등록된 업로드 키로 서명했다(SHA-1 `BE:94:81:DC:F5:22:F8:AC:A1:D0:A1:13:2E:40:FC:8D:88:CB:5B:5A`). 로그인은 사용자가 실제 Google 계정 두 개로 직접 진행했다.
 
-| 순서 | 시나리오 | 확인할 결과 | 결과 |
-| --- | --- | --- | --- |
-| 1 | 로그인 후 개발자 도구에서 남은 시간과 재발급 요청 수 확인 → 강제 만료 → 홈 이동 | 오류 없이 홈 표시, 재발급 요청 수가 1만 증가 | 미실행 |
-| 2 | 감상 또는 닉네임 입력 중 강제 만료 → 저장 | 오류 없이 저장 | 미실행 |
-| 3 | 입력 중 Refresh 서버 폐기 → 저장 → 같은 계정 재로그인 | 로그인 안내 후 원래 화면과 초안 유지, 저장 완료 | 미실행 |
-| 4 | 3번 상태에서 다른 계정으로 로그인 | 이전 계정의 대기 작업 미제출 | 미실행 |
-| 5 | 강제 만료 → 기기 네트워크 차단 → 요청 → 연결 복구 후 재시도 | 로그아웃 없음, 재시도 성공 | 미실행 |
+| 순서 | 시나리오 | 확인한 결과 |
+| --- | --- | --- |
+| 1 | 개발자 도구에서 Access 강제 만료 → 홈 새로고침 | 오류 없이 홈 표시. 재발급 요청 0→1회, Access 남은 시간 1779초로 새로 발급, Refresh도 회전 |
+| 2 | Access 강제 만료 직후 홈에서 서재에 담기 | "내 서재에 담았어요" 표시. 재발급 요청 1→2회 |
+| 3 | Refresh 서버 폐기와 Access 강제 만료 → 책 상세에서 감상 초안 저장 → 같은 계정으로 로그인 | 공통 오류창 "다시 로그인해 주세요"(닫기·로그인) 표시. 로그인 후 같은 책 상세로 돌아와 초안이 그대로 저장되고 감상 수 18→19 |
+| 4 | 3과 같이 만든 뒤 다른 계정으로 로그인 | 작성 창의 초안은 남지만 제출되지 않음. 새로고침 후 감상 수 19 유지 |
+| 5 | Access 강제 만료 → 비행기 모드 → 새로고침 → 연결 복구 → 새로고침 | 오프라인 동안 로그아웃되지 않고 Refresh 유지(재발급 요청 5회 그대로). 연결 후 오류 없이 재발급 1회(6회), Access 1782초 |
+
+시연 5는 네트워크가 끊겨 원래 요청이 서버에 닿지 않는 경우다. 원래 요청은 401을 받았지만 재발급 요청만 연결 오류로 실패하는 경우는 손으로 타이밍을 맞출 수 없어, 호스트 테스트 `갱신 연결 오류 후에도 같은 세션에서 다시 시도할 수 있다`로 확인한다.
+
+| 시나리오 | 조작 전·실패 안내 | 결과 |
+| --- | --- | --- |
+| 1 | <img src="./assets/auth-expiry/demo-1-before-devtools.png" alt="강제 만료 전 개발자 도구, 재발급 요청 0회" width="220"> | <img src="./assets/auth-expiry/demo-1-after-refresh-devtools.png" alt="홈 새로고침 뒤 재발급 요청 1회와 새 Access 토큰" width="220"> |
+| 2 | <img src="./assets/auth-expiry/demo-2-save-success.png" alt="만료 직후 서재에 담기 성공 안내" width="220"> | <img src="./assets/auth-expiry/demo-2-after-save-devtools.png" alt="담기 뒤 재발급 요청 2회" width="220"> |
+| 3 | <img src="./assets/auth-expiry/demo-3-login-required.png" alt="Refresh 폐기 뒤 다시 로그인해 주세요 안내" width="220"> <img src="./assets/auth-expiry/demo-3-draft-before-save.png" alt="저장 전 감상 초안" width="220"> | <img src="./assets/auth-expiry/demo-3-saved-after-relogin.png" alt="재로그인 뒤 같은 책 상세에 저장된 감상" width="220"> |
+| 4 | <img src="./assets/auth-expiry/demo-4-other-account-draft-kept.png" alt="다른 계정 로그인 뒤 제출되지 않고 남은 초안" width="220"> | <img src="./assets/auth-expiry/demo-4-other-account-not-submitted.png" alt="감상 수 19 유지" width="220"> |
+| 5 | <img src="./assets/auth-expiry/demo-5-offline-session-kept.png" alt="비행기 모드에서 Refresh 유지" width="220"> | <img src="./assets/auth-expiry/demo-5-online-reissued.png" alt="연결 복구 뒤 재발급 요청 6회" width="220"> |
 
 ### 검증 기록
 
@@ -65,7 +75,6 @@ Android 실제 폰에서 development 빌드로 실행한다. 로그인은 사용
 ### 확보하지 못한 증거
 
 - 백엔드와의 합의 기록. 서버가 토큰을 회전한 직후 응답만 유실된 경우의 복구 계약도 미확인이다.
-- 개발 서버 시연 캡처 전부.
 
 ## 요구사항 5. 외부 진입점
 

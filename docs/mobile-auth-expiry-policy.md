@@ -66,3 +66,4 @@ Android와 iOS의 개발자 도구에서 앱이 현재 사용하는 인증 세�
 - `SilentRefreshClientTest`는 1회 재전송, 지연 401, 일시적 갱신 실패, 세션 교체, 403, 만료 오류의 회원 범위, 개발자 폐기 중 갱신 대기를 다룬다. `AuthViewModelTest`는 닉네임 저장 중 토큰이 회전해도 로그인과 대기 작업을 완료하는지, 동시 갱신을 재발급 요청 1회로 세는지 확인한다.
 - 제출용 증거 현황과 개발 서버 응답 기록은 [외부 진입점과 인증 만료 처리 제출 문서](level4-submission/auth-expiry-and-deep-link.md)에 모은다.
 - 개발 서버에서 Android와 iOS 각각 확인할 항목은 저장 중 조용한 갱신, 동시 401의 서버 재발급 횟수, Refresh 폐기 후 같은 회원의 입력·위치 복구, 다른 회원 로그인 시 대기 작업 차단, 재발급 중 연결 실패와 재시도다. 개발자 도구에 진입만 했을 때 재발급이 발생하는지도 확인한다.
+- 2026-11-12 Android 실제 폰(Galaxy S25, development 서버)에서 위 다섯 흐름을 시연했다. 개발자 도구 진입과 Refresh 폐기 조작만으로는 재발급이 일어나지 않았다. 결과와 캡처는 [제출 문서](level4-submission/auth-expiry-and-deep-link.md#개발-서버-시연)에 있다.
