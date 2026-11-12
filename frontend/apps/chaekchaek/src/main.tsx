@@ -28,9 +28,9 @@ if (ENV.APP_ENV !== 'local') {
 
 const root = createRoot(container);
 root.render(
-  <StrictMode>
-    <AppProviders>
-      <App />
-    </AppProviders>
-  </StrictMode>,
+  // <StrictMode>
+  <AppProviders>
+    <App />
+  </AppProviders>,
+  // </StrictMode>,
 );
