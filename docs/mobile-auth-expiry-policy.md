@@ -66,8 +66,8 @@ flowchart TD
 | 구분 | 상태 |
 | --- | --- |
 | 정책 문서 작성 | 완료 (이 문서) |
-| Ktor Client 401 Silent Refresh 인터셉터 | 구현 예정 |
-| 동시 401 요청 단일 재발급 공유 | 구현 예정 |
-| Refresh 폐기 시 세션 정리 및 작업 보존 복귀 | 구현 예정 |
-| 개발자 도구 토큰 만료·폐기 기능 | 구현 예정 |
-| Android 및 iOS 단위·UI 테스트 검증 | 검증 예정 |
+| Ktor Client 401 Silent Refresh 인터셉터 | 완료 (`AuthenticatedHttpClient.kt`) |
+| 동시 401 요청 단일 재발급 공유 | 완료 (`AuthSession.kt`, Single Flight) |
+| Refresh 폐기 시 세션 정리 및 작업 보존 복귀 | 완료 (`AuthViewModel.kt`, 세션 정리 및 상태 보존) |
+| 개발자 도구 토큰 만료-폐기 기능 | 완료 (`AuthDeveloperContent.kt`, Android 및 iOS 연계) |
+| 단위 테스트 검증 (`:shared:testAndroidHostTest`) | 완료 (504개 테스트 전체 통과) |
