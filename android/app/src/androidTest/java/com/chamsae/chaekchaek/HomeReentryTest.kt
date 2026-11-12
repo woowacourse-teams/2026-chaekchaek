@@ -187,6 +187,4 @@ private fun readingBook() = ReadingBook(
     isbn13 = "9780000000042",
     title = "삭제 전 읽던 책",
     coverId = "",
-    currentPage = 132,
-    totalPages = 320,
 )

@@ -137,7 +137,7 @@ class BookRatingRestorationTest {
     private fun detailWithRating(rating: Double) = BookDetail(
         bookId = 42, isbn13 = "", title = "별점 복원 검증", authors = emptyList(),
         translators = emptyList(), publisher = "", category = "", publishedDate = null,
-        totalPages = 100, coverImageUrl = "", commentCount = 0, averageRating = null,
-        ratingCount = 0, myRecord = LibraryRecord(status = "READING", currentPage = 0, rating = rating),
+        coverImageUrl = "", commentCount = 0, averageRating = null,
+        ratingCount = 0, myRecord = LibraryRecord(rating = rating),
     )
 }

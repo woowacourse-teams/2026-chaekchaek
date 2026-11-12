@@ -173,7 +173,6 @@ class BookDetailPaginationRetryTest {
         content = content,
         quote = null,
         chapter = null,
-        currentPage = null,
         createdAt = "2026-10-14T00:00:00Z",
         authorName = "검증 작성자",
         anonymous = false,

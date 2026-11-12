@@ -106,7 +106,7 @@ class LoginNicknameAnonymityTest {
         preferences.edit().putBoolean("anonymous", true).commit()
         val anonymousReviews = mutableStateOf(preferences.getBoolean("anonymous", true))
         val state = mutableStateOf(BookDetailUiState(
-            book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증", totalPages = 224),
+            book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증"),
             signedIn = true,
         ))
         val submitted = mutableListOf<QuestionAReviewDraft>()

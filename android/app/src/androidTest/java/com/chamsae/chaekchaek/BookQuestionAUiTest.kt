@@ -372,17 +372,17 @@ class BookQuestionAUiTest {
         val reviews = (1L..20L).map { id ->
             BookReview(
                 reviewId = id, content = "질문 A 스크롤 검증 감상 $id", quote = null, chapter = null,
-                currentPage = null, createdAt = "2026-10-21T00:00:00Z", authorName = "작성자",
+                createdAt = "2026-10-21T00:00:00Z", authorName = "작성자",
                 anonymous = false, replyCount = 0, likeCount = 0,
             )
         }
         return BookDetailUiState(
-            book = BookDetailArgs(id = "42", bookId = 42, title = "질문 A UI 검증", totalPages = 224),
+            book = BookDetailArgs(id = "42", bookId = 42, title = "질문 A UI 검증"),
             detail = if (withRecord) BookDetail(
                 bookId = 42, isbn13 = "", title = "질문 A UI 검증", authors = emptyList(), translators = emptyList(),
-                publisher = "", category = "", publishedDate = null, totalPages = 224, coverImageUrl = "",
+                publisher = "", category = "", publishedDate = null, coverImageUrl = "",
                 commentCount = reviews.size, averageRating = null, ratingCount = 0,
-                myRecord = LibraryRecord(status = "READING", currentPage = 37, rating = 2.0),
+                myRecord = LibraryRecord(rating = 2.0),
             ) else null,
             signedIn = true, reviews = reviews, reviewCount = reviews.size,
         )
