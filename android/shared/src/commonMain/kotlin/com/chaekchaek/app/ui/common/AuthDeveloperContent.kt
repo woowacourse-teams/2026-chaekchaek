@@ -26,7 +26,7 @@ fun AuthDeveloperContent(authViewModel: AuthViewModel) {
         val accessState = tokenState(debugInfo.hasAccessToken, debugInfo.accessTokenExpiresInSeconds)
         val refreshState = tokenState(debugInfo.hasRefreshToken, debugInfo.refreshTokenExpiresInSeconds)
         Text(
-            "Access 토큰: $accessState\nRefresh 토큰: $refreshState",
+            "Access 토큰: $accessState\nRefresh 토큰: $refreshState\n재발급 요청: ${debugInfo.reissueRequestsSent}회 (앱 실행 후)",
             style = MaterialTheme.typography.bodyMedium,
         )
         if (statusMessage != null) {

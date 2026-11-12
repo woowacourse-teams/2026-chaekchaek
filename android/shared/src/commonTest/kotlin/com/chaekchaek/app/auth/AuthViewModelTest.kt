@@ -4,6 +4,8 @@ import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.data.remote.RemoteMemberProfile
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.NonCancellable
@@ -760,6 +762,30 @@ class AuthViewModelTest {
     assertEquals(true, restoredInfo.hasAccessToken)
     assertEquals(true, restoredInfo.hasRefreshToken)
     assertEquals(3600L, restoredInfo.accessTokenExpiresInSeconds)
+  }
+
+  @Test
+  fun `개발자 도구의 재발급 요청 수는 동시 갱신을 한 번으로 센다`() = runTest {
+    val reissueGate = CompletableDeferred<Unit>()
+    val backend = FakeAuthBackend(storedRefreshToken = "stored-refresh") {
+      reissueGate.await()
+      tokens("reissued").copy(accessTokenExpiresIn = 3600)
+    }
+    val session = authSession(backend)
+    runCurrent()
+    assertEquals(1, session.tokenDebugInfo().reissueRequestsSent)
+
+    val concurrent = List(3) { async { session.refreshAccessTokenForRetry() } }
+    runCurrent()
+    reissueGate.complete(Unit)
+    concurrent.awaitAll()
+
+    assertEquals(listOf("stored-refresh"), backend.reissueRequests)
+    assertEquals(1, session.tokenDebugInfo().reissueRequestsSent)
+
+    session.expireAccessTokenForTesting()
+    session.refreshAccessTokenForRetry()
+    assertEquals(2, session.tokenDebugInfo().reissueRequestsSent)
   }
 
   @Test

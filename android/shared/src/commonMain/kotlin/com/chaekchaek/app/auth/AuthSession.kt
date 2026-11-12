@@ -27,6 +27,8 @@ data class AuthTokenDebugInfo(
   val accessTokenExpiresInSeconds: Long?,
   val hasRefreshToken: Boolean,
   val refreshTokenExpiresInSeconds: Long?,
+  /** 앱 실행 후 서버로 보낸 재발급 요청 수. 동시 401의 단일 재발급을 기기에서 확인하는 개발자 도구용 값이다. */
+  val reissueRequestsSent: Int,
 )
 
 internal data class SessionCredentials(val tokens: MobileAuthTokens, val generation: Long, val profileRequestKey: String)
@@ -58,6 +60,7 @@ internal class AuthSession(
   private var renewal = Renewal()
   private var memberRequestKey: String? = null
   private var debugOperation: CompletableDeferred<Unit>? = null
+  private var reissueRequestsSent = 0
 
   private class Renewal {
     var request: Deferred<Result<MobileAuthTokens?>>? = null
@@ -133,6 +136,7 @@ internal class AuthSession(
         accessTokenExpiresInSeconds = null,
         hasRefreshToken = hasRefresh,
         refreshTokenExpiresInSeconds = null,
+        reissueRequestsSent = reissueRequestsSent,
       )
     }
     val remaining = ((accessTokenExpiresAtMillis - currentTimeMillis()) / MILLIS_PER_SECOND).coerceAtLeast(0L)
@@ -142,6 +146,7 @@ internal class AuthSession(
       hasRefreshToken = hasRefresh,
       refreshTokenExpiresInSeconds = ((refreshTokenExpiresAtMillis - currentTimeMillis()) / MILLIS_PER_SECOND)
         .coerceAtLeast(0L),
+      reissueRequestsSent = reissueRequestsSent,
     )
   }
 
@@ -269,6 +274,7 @@ internal class AuthSession(
         _isRestoring.value = false
         return null
       }
+      reissueRequestsSent++
       refreshToken
     }
     return try {
