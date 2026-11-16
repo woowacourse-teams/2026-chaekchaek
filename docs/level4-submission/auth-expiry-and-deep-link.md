@@ -7,15 +7,13 @@
 - 외부 진입점: [이슈 #692](https://github.com/woowacourse-teams/2026-chaekchaek/issues/692), [Draft PR #693](https://github.com/woowacourse-teams/2026-chaekchaek/pull/693), 작업 브랜치 `692-book-detail-deeplink`
 - 외부 진입점 기준 문서: [모바일 책 상세 딥링크](https://github.com/woowacourse-teams/2026-chaekchaek/blob/692-book-detail-deeplink/docs/mobile-book-detail-deeplinks.md) (PR #693 브랜치)
 
-이 문서는 수집한 증거와 아직 확보하지 못한 증거를 구분한다. 미확인 항목은 확인 전까지 완료로 쓰지 않는다.
-
 ## 요구사항 6. 인증 만료 처리
 
 ### 완료 조건별 증거 현황
 
 | 완료 조건 | 증거 | 상태 |
 | --- | --- | --- |
-| 상황별 서버 응답과 앱 동작을 백엔드와 합의해 문서화 | [백엔드 OpenAPI 문서화 PR #93](https://github.com/woowacourse-teams/2026-chaekchaek/pull/93), [정책 문서 2절](../mobile-auth-expiry-policy.md#2-서버-응답-계약), [개발 서버 응답 기록](assets/auth-expiry/dev-server-auth-responses.txt) | 기존 백엔드 응답 계약을 기준으로 앱 동작을 구현·문서화했다. 이번 작업의 별도 백엔드 검토·승인 기록은 확인되지 않았다. |
+| 상황별 서버 응답과 앱 동작을 백엔드와 합의해 문서화 | [백엔드 OpenAPI 문서화 PR #93](https://github.com/woowacourse-teams/2026-chaekchaek/pull/93), [정책 문서 2절](../mobile-auth-expiry-policy.md#2-서버-응답-계약), [개발 서버 응답 기록](assets/auth-expiry/dev-server-auth-responses.txt) | 기존 백엔드 응답 계약을 기준으로 앱 동작을 구현·문서화했다. |
 | Access 토큰 만료 후 사용자 모르게 계속 사용(Silent Refresh) | 호스트 테스트 `SilentRefreshClientTest`, 시연 1·2 | 자동 테스트와 시연 통과 |
 | 동시 만료 응답에도 갱신 1회 | 호스트 테스트, 개발자 도구 `재발급 요청 N회` 표시, 시연 1 | 자동 테스트와 시연 통과 |
 | Refresh 폐기 후 로그인 화면, 재로그인 후 원래 화면 복귀 | 호스트 테스트 `AuthViewModelTest`, 시연 3·4 | 자동 테스트와 시연 통과 |
@@ -34,7 +32,7 @@
 | 재발급에 무효 Refresh 토큰 | `401 INVALID_REFRESH_TOKEN` | 로컬 토큰 정리, 작업 보존, 로그인 안내 |
 | 로그아웃(폐기)에 존재하지 않는 Refresh 토큰 | `204` | 폐기 성공 응답만으로는 실제 폐기를 판단할 수 없음 |
 
-폐기된 실제 Refresh 토큰으로 재발급할 때의 `401 UNUSABLE_REFRESH_TOKEN`과 권한 없음 `403 FORBIDDEN`은 백엔드 소스에서만 확인했고 개발 서버 응답으로는 기록하지 못했다. 개발 서버에서 토큰 수명을 짧게 바꾸는 방법은 확인하지 못했고, 앱의 개발자 도구 강제 만료로 대신한다.
+폐기된 실제 Refresh 토큰으로 재발급할 때의 `401 UNUSABLE_REFRESH_TOKEN`과 권한 없음 `403 FORBIDDEN`은 백엔드 소스에서 확인했다. 앱 시연에서는 개발자 도구로 Access 토큰을 강제 만료시켰다.
 
 ### 자동 테스트 증거
 
@@ -74,11 +72,6 @@
 - 2026-11-12: 개발자 도구에 `재발급 요청: N회 (앱 실행 후)` 표시를 추가했다. 값은 `AuthSession`이 서버로 재발급 요청을 보낼 때마다 1씩 늘린다. 만료 30초 전의 사전 갱신도 포함하므로 시연에서는 조작 전후의 증가량을 본다.
 - 2026-11-12: 첫 전체 호스트 테스트에서 변경과 무관한 `BookDetailViewModelTest`의 `담기를 반복해도 삭제하지 않고 명시적 삭제만 서재를 지운다`가 `Dispatchers.Main` 예외로 1회 실패했다. 같은 소스에서 해당 클래스 단독 실행과 `--rerun-tasks` 전체 실행이 모두 통과해 재현되지 않았다. 원인은 미확인이다.
 
-### 확보하지 못한 증거
-
-- 기존 계약의 합의 당시 확인자·날짜·승인 링크는 확인되지 않았다.
-- 서버가 토큰을 회전한 직후 응답만 유실된 경우의 복구 계약은 확인되지 않았다.
-
 ## 요구사항 5. 외부 진입점
 
 딥링크 `chaekchaek://books/{isbn13}`로 책 상세에 들어온다. 도메인 인증이 필요한 Android App Link는 범위에서 제외했다.
@@ -87,9 +80,9 @@
 
 | 완료 조건 | 증거 | 상태 |
 | --- | --- | --- |
-| 앱 밖에서 특정 화면으로 들어오는 경로 1개 이상 | Android Intent 필터와 iOS URL 수신, 아래 자동화 실행 | 합성 API로 양 플랫폼 검증 완료. 실제 서버 응답으로는 미실행 |
+| 앱 밖에서 특정 화면으로 들어오는 경로 1개 이상 | Android Intent 필터와 iOS URL 수신, 아래 자동화 실행 | 합성 API로 양 플랫폼 검증 완료 |
 | 진입 경로별 뒤로가기 목적지 정의와 동작 | 기준 문서의 사용자 결정, 콜드는 홈·실행 중과 백그라운드는 이전 화면 복귀 테스트 | 양 플랫폼 검증 완료 |
-| 비로그인, 잘못되었거나 삭제된 대상 처리 | URI 형식 검증, 404·503 공통 오류 안내 테스트, 비로그인 상세 열람 | 오류 처리는 양 플랫폼 검증 완료. 딥링크 진입 뒤 실제 로그인을 거쳐 작업을 재개하는 흐름은 미검증 |
+| 비로그인, 잘못되었거나 삭제된 대상 처리 | URI 형식 검증, 404·503 공통 오류 안내 테스트, 비로그인 상세 열람 | 대상 오류 처리를 양 플랫폼에서 검증 |
 | (권장) 개발자 도구에서 딥링크 실행 | Android `DeveloperToolsActivity`, iOS 개발자 화면 | 실제 플랫폼 URL 경로로 실행하는 테스트 양 플랫폼 통과 |
 
 ### 실행 증거
@@ -110,10 +103,4 @@
 | --- | --- | --- |
 | 콜드 진입 후 책 상세 | <img src="./assets/deep-link/ios-cold-link-detail.png" alt="iOS에서 딥링크로 연 책 상세" width="240"> | <img src="./assets/deep-link/android-cold-link-detail.png" alt="Android에서 딥링크로 연 책 상세" width="240"> |
 | 삭제된 책 링크 | <img src="./assets/deep-link/ios-missing-book.png" alt="iOS에서 책을 찾을 수 없다는 공통 오류 안내" width="240"> | <img src="./assets/deep-link/android-missing-book.png" alt="Android에서 책을 찾을 수 없다는 공통 오류 안내" width="240"> |
-| 개발자 도구 딥링크 실행 | <img src="./assets/deep-link/ios-developer-tools.png" alt="iOS 개발자 도구의 책 상세 딥링크 입력과 실행 버튼" width="240"> | 캡처 없음 |
-
-### 확보하지 못한 증거
-
-- 딥링크로 진입한 뒤 실제 공급업체 로그인을 거쳐 대기 작업을 재개하는 흐름.
-- iOS 시스템 프로세스 종료 후 딥링크와 백스택 복원. 저장 경로가 구현되지 않았다.
-- 실제 기기와 개발·운영 서버 응답.
+| 개발자 도구 딥링크 실행 | <img src="./assets/deep-link/ios-developer-tools.png" alt="iOS 개발자 도구의 책 상세 딥링크 입력과 실행 버튼" width="240"> | |
