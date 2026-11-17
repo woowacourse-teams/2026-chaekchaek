@@ -243,11 +243,12 @@ assertThatThrownBy(() -> subject.execute())
 
 ## 9. Git 작업 방식
 
-- 작업 브랜치는 `be`를 기준으로 작업의 주된 목적에 맞는 prefix를 사용한다.
+- 작업 브랜치는 `be-dev`를 기준으로 만들고 작업의 주된 목적에 맞는 prefix를 사용한다.
   - `feature/`: 기능 추가. 예: `feature/book-search`.
   - `fix/`: 버그 수정. 예: `fix/book-null-description`.
   - `refactor/`: 기존 동작을 유지하는 구조, 책임 정리. 예: `refactor/book-search`.
   - `style/`: import, 줄바꿈, 코드 배치 등 동작에 영향을 주지 않는 표현 정리. 예: `style/backend-code-conventions`.
+- PR의 기본 대상 브랜치도 `be-dev`로 한다. 사용자가 다른 대상 브랜치를 명시한 경우에는 그 요청을 따른다.
 - 여러 종류의 변경이 섞인 경우 브랜치 prefix는 작업의 주된 목적을 따르고, 각 커밋의 type은 해당 변경에 맞게 선택한다.
 - 커밋 메시지는 AngularJS 스타일을 바탕으로 `[영역] type(scope): 설명` 형식을 사용한다.
 - 영역은 `BE`, `FE`, `AN`, `ALL` 중에서 선택한다.
