@@ -1,0 +1,47 @@
+name: chaekchaek-incident
+services:
+  incident-analyzer:
+    image: ${INCIDENT_IMAGE:-chaekchaek-incident-analyzer:local}
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ${INCIDENT_ENV_FILE:?INCIDENT_ENV_FILE is required}
+    environment:
+      SERVER_TOMCAT_THREADS_MAX: 16
+      SERVER_TOMCAT_THREADS_MIN_SPARE: 2
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+      LOKI_URL: http://loki:3100
+      PROMETHEUS_URL: http://prometheus:9090
+      INCIDENT_DB_URL: jdbc:h2:file:/app/data/incidents;DB_CLOSE_ON_EXIT=FALSE
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 0.75
+    pids_limit: 128
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    volumes:
+      - incident-data:/app/data
+    networks:
+      monitoring:
+        aliases:
+          - incident-analyzer
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+networks:
+  monitoring:
+    external: true
+    name: chaekchaek-monitoring-server_default
+volumes:
+  incident-data:
+    name: chaekchaek-incident-data

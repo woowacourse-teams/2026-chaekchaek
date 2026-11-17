@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: 책췍 장애 분석 Webhook
+  version: 2.0.0
+paths:
+  /internal/alerts/grafana:
+    post:
+      summary: Grafana 장애 발생과 복구 알림 접수
+      description: 허용한 환경과 프로필의 장애 정보만 저장한다. 자동 분석이나 추가 Slack 발송을 시작하지 않는다. 복구 상태도 저장하며 이후 사용자의 질문 대상으로 조회할 수 있다.
+      security:
+        - webhookToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrafanaAlertRequest'
+      responses:
+        '202':
+          description: 저장 완료 또는 비활성 환경, 미지원 프로필 무시
+        '400':
+          description: 입력 오류, 조직 불일치, 잘린 알림
+        '401':
+          description: Bearer 인증 실패
+        '413':
+          description: 본문이 262144 바이트 초과
+        '503':
+          description: 동시 접수 충돌, Grafana에서 재시도 필요
+components:
+  securitySchemes:
+    webhookToken:
+      type: http
+      scheme: bearer
+  schemas:
+    GrafanaAlertRequest:
+      type: object
+      required: [orgId, alerts]
+      properties:
+        orgId:
+          type: integer
+          const: 1
+        truncatedAlerts:
+          type: integer
+          const: 0
+          default: 0
+        alerts:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required: [status, fingerprint, startsAt, labels]
+            properties:
+              status:
+                type: string
+                enum: [firing, resolved]
+              fingerprint:
+                type: string
+                minLength: 1
+                maxLength: 128
+                pattern: '^[A-Za-z0-9_-]+$'
+              startsAt:
+                type: string
+                format: date-time
+              labels:
+                type: object
+                maxProperties: 30
+                additionalProperties:
+                  type: string
+                properties:
+                  env:
+                    type: string
+                    enum: [dev, prod]
+                  analysis_profile:
+                    type: string
+                    enum: [api-errors, availability]
+                  alertname:
+                    type: string

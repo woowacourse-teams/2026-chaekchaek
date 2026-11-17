@@ -1,0 +1,6 @@
+책췍은 Java 21, Spring Boot, MySQL을 사용한다.
+EXTERNAL_API_ERROR는 책췍의 502 응답이다. upstreamService, upstreamStatus, failureKind가 있을 때만 공급자와 실패 종류를 구체화한다.
+upstreamStatus=429이면 공급자 사용량, 제한 정책, 같은 시각 요청량을 확인한다. TIMEOUT이면 외부 응답과 네트워크, 호스트 지표를 함께 확인한다.
+DB 연결 대기 증가가 있으면 장시간 트랜잭션, 쿼리 지연, DB 수집 상태를 확인한다. 풀 크기 변경은 해결로 단정하지 않는다.
+INTERNAL_SERVER_ERROR는 대표 예외 종류와 애플리케이션 프레임을 확인한다. 소스 코드를 읽었다고 주장하지 않는다.
+/health의 200은 DB와 외부 API 정상 상태를 증명하지 않는다.

@@ -1,0 +1,43 @@
+name: Incident Analyzer CI
+on:
+  pull_request:
+    branches: [be, be-dev, main]
+    paths:
+      - 'incident-analyzer/**'
+      - 'monitoring-server/**'
+      - '.github/workflows/incident-analyzer-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: incident-analyzer-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: liberica
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test and build
+        working-directory: incident-analyzer
+        run: ./gradlew test bootJar
+      - name: Validate deployment configuration
+        run: |
+          for script in monitoring-server/scripts/*.sh; do bash -n "$script"; done
+          python3 monitoring-server/scripts/render-alerting.py --env dev --with-questions --paused --output /tmp/alerting.json
+          INCIDENT_ENV_FILE="$PWD/monitoring-server/.env.incident.example" docker compose -f monitoring-server/incident/docker-compose.yml config --quiet
+      - name: Package release
+        run: monitoring-server/scripts/package-incident.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: incident-analyzer-${{ github.sha }}
+          path: monitoring-server/releases/${{ github.sha }}/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: incident-analyzer-test-results
+          path: incident-analyzer/build/reports/tests/test/
