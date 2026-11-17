@@ -105,10 +105,6 @@ public class ApiExceptionHandler {
     @ExceptionHandler(BookClientException.class)
     public ProblemDetail handleBookClientException(BookClientException exception, HttpServletRequest request) {
         errorEvent(log.atWarn(), request, ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY)
-                .addKeyValue("upstreamService", exception.getUpstreamService())
-                .addKeyValue("upstreamStatus", exception.getUpstreamStatus())
-                .addKeyValue("failureKind", exception.getFailureKind())
-                .addKeyValue("exception", exception.getClass().getSimpleName())
                 .setCause(exception)
                 .log("도서 API 호출 실패");
         return createProblemDetail(ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY);

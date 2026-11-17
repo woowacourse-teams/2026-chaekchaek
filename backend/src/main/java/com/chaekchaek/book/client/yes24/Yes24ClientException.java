@@ -5,10 +5,10 @@ import com.chaekchaek.book.client.BookClientException;
 public final class Yes24ClientException extends BookClientException {
 
     public Yes24ClientException(Throwable cause) {
-        super("yes24", "Failed to call YES24 API", cause);
+        super("Failed to call YES24 API", cause);
     }
 
     public Yes24ClientException(String errorCode) {
-        super("yes24", "YES24 API error: code=%s".formatted(errorCode));
+        super("YES24 API error: code=%s".formatted(errorCode));
     }
 }
