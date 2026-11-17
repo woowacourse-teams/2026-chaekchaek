@@ -9,6 +9,10 @@ import com.chaekchaek.incident.analysis.dto.AnalysisResult;
 import com.chaekchaek.incident.config.IncidentProperties;
 import com.chaekchaek.incident.evidence.dto.EvidenceBundle;
 import com.chaekchaek.incident.evidence.dto.EvidenceItem;
+import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.dto.QueryBatch;
+import com.chaekchaek.incident.evidence.dto.QueryExecution;
+import com.chaekchaek.incident.evidence.dto.QueryStatus;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -112,6 +116,35 @@ final class Fixtures {
                         "upstreamStatus를 확인해야 합니다"
                 )),
                 List.of("외부 응답 상태가 없습니다")
+        );
+    }
+
+    static QueryBatch queryBatch() {
+        var additional = new EvidenceItem(
+                "E2",
+                "prometheus",
+                "DB 연결 대기 최댓값",
+                Map.of("row1", "pool=HikariPool-1, value=3", "unit", "connections")
+        );
+        return new QueryBatch(
+                new EvidenceBundle(
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        List.of(evidence().items().getFirst(), additional),
+                        evidence().missingEvidence()
+                ),
+                List.of(new QueryExecution(
+                        "db_pool_wait_peak",
+                        "prometheus",
+                        "DB 연결 대기 최댓값",
+                        QueryName.DB_POOL_WAIT_PEAK.expression("dev"),
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        QueryStatus.SUCCESS,
+                        false,
+                        "E2",
+                        List.of()
+                ))
         );
     }
 

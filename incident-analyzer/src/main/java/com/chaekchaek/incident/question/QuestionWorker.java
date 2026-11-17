@@ -1,6 +1,7 @@
 package com.chaekchaek.incident.question;
 
 import com.chaekchaek.incident.alert.service.IncidentService;
+import com.chaekchaek.incident.analysis.AnalysisFailureCode;
 import com.chaekchaek.incident.analysis.IncidentInvestigator;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.evidence.EvidenceCollector;
@@ -14,7 +15,6 @@ import com.chaekchaek.incident.slack.client.SlackApiClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.time.Clock;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -97,28 +97,22 @@ public class QuestionWorker {
                     questions.conversation(task),
                     task.deadlineAt()
             );
-            return messages.reply(incident, result.analysis(), result.queries());
+            PreparedReply reply = messages.reply(incident, result.analysis(), result.queries());
+            if (result.failureCode() != null) {
+                recordAnalysisFailure(task, result.failureCode());
+            }
+            return reply;
         } catch (QuestionRejectedException exception) {
             return PreparedReply.notice(exception.getMessage());
         } catch (Exception exception) {
-            String code = failureCode(exception);
-            questions.analysisFailed(task.id(), code);
-            meters.counter("incident_analysis", "outcome", "failed", "reason", code).increment();
-            log.warn("incident_question_analysis_failed questionId={} code={}", task.id(), code);
+            recordAnalysisFailure(task, AnalysisFailureCode.from(exception));
             return PreparedReply.notice("장애 질문에 답하는 중 오류가 발생했습니다. Grafana에서 근거를 확인하거나 다시 멘션하여 질문해 주세요.");
         }
     }
 
-    private String failureCode(Exception exception) {
-        String message = exception.getMessage();
-        if (exception instanceof RemoteCallException && message != null
-                && message.matches("HTTP_[0-9]{3}|SLACK_[a-z_]{1,64}|[A-Z_]{1,64}")) {
-            return message;
-        }
-        if (exception instanceof IllegalArgumentException && message != null
-                && Set.of("INVALID_MODEL_OUTPUT", "INVALID_MODEL_TEXT", "UNKNOWN_EVIDENCE_REFERENCE").contains(message)) {
-            return message;
-        }
-        return "ANALYSIS_PROCESSING_ERROR";
+    private void recordAnalysisFailure(QuestionTask task, String code) {
+        questions.analysisFailed(task.id(), code);
+        meters.counter("incident_analysis", "outcome", "failed", "reason", code).increment();
+        log.warn("incident_question_analysis_failed questionId={} code={}", task.id(), code);
     }
 }

@@ -5,20 +5,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.incident.analysis.AnalysisValidator;
+import com.chaekchaek.incident.analysis.IncidentInvestigator;
 import com.chaekchaek.incident.analysis.client.LlmClient;
+import com.chaekchaek.incident.analysis.service.ModelBudgetService;
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.QueryExecutor;
 import com.chaekchaek.incident.evidence.dto.EvidenceBundle;
 import com.chaekchaek.incident.evidence.dto.EvidenceItem;
 import com.chaekchaek.incident.evidence.dto.QueryBatch;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -197,6 +204,69 @@ class LlmQueryContractTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("UNKNOWN_EVIDENCE_REFERENCE");
         assertThat(meters.get("incident_llm_tokens").tag("direction", "input").counter().count()).isEqualTo(100);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "HTTP,HTTP_429,100,50",
+            "JSON,ANALYSIS_PROCESSING_ERROR,100,50",
+            "REFERENCE,UNKNOWN_EVIDENCE_REFERENCE,200,100"
+    })
+    @DisplayName("최종 HTTP와 파싱과 근거 검증 실패를 복구하고 수신한 사용량만 지표에 집계한다")
+    void should_PreserveEvidenceAndUsage_When_FinalResponseFails(
+            String fault,
+            String code,
+            long inputTokens,
+            long outputTokens
+    ) throws Exception {
+        // given
+        enqueue(selected("{\"queries\":[\"db_pool_wait_peak\"]}"));
+        server.enqueue(failedFinalResponse(fault));
+        QueryExecutor queries = mock(QueryExecutor.class);
+        ModelBudgetService budget = mock(ModelBudgetService.class);
+        QueryBatch batch = Fixtures.queryBatch();
+        when(queries.execute(any(), any(), any(), any())).thenReturn(batch);
+        when(budget.reserve()).thenReturn(true);
+        var investigator = new IncidentInvestigator(llm, queries, budget, Clock.fixed(Fixtures.NOW, ZoneOffset.UTC));
+        // when
+        var result = investigator.investigate(
+                Fixtures.evidence(),
+                Fixtures.incident(),
+                "DB 대기를 확인해 주세요",
+                List.of(),
+                Fixtures.NOW.plusSeconds(90)
+        );
+        // then
+        assertThat(result.failureCode()).isEqualTo(code);
+        assertThat(result.analysis().evidence()).isEqualTo(batch.evidence().items());
+        assertThat(result.queries()).isEqualTo(batch.executions());
+        assertThat(result.analysis().inputTokens()).isEqualTo(100);
+        assertThat(result.analysis().outputTokens()).isEqualTo(50);
+        assertThat(result.toString()).doesNotContain("private-provider-diagnostic", "private-model-output", "sk-secret", "opaque-content");
+        assertThat(meters.get("incident_llm_tokens").tag("direction", "input").counter().count()).isEqualTo(inputTokens);
+        assertThat(meters.get("incident_llm_tokens").tag("direction", "output").counter().count()).isEqualTo(outputTokens);
+        assertThat(meters.get("incident_model_request").tag("phase", "initial").counter().count()).isEqualTo(1);
+        assertThat(meters.get("incident_model_request").tag("phase", "final").counter().count()).isEqualTo(1);
+        assertThat(server.getRequestCount()).isEqualTo(2);
+        request();
+        assertThat(request().path("tool_choice").asText()).isEqualTo("none");
+        verify(budget, times(2)).reserve();
+        verify(queries).execute(any(), any(), any(), any());
+    }
+
+    private MockResponse failedFinalResponse(String fault) {
+        if ("HTTP".equals(fault)) {
+            return new MockResponse().setResponseCode(429).setBody("private-provider-diagnostic sk-secret");
+        }
+        if ("JSON".equals(fault)) {
+            return new MockResponse().setBody("private-model-output sk-secret");
+        }
+        ObjectNode body = (ObjectNode) completed("E999");
+        ObjectNode report = mapper.valueToTree(Fixtures.report("E999"));
+        report.put("summary", "private-model-output sk-secret");
+        ((ObjectNode) body.path("output").get(0).path("content").get(0))
+                .put("text", mapper.writeValueAsString(report));
+        return new MockResponse().setHeader("Content-Type", "application/json").setBody(body.toString());
     }
 
     @Test

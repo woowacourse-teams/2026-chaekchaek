@@ -23,16 +23,22 @@ import com.chaekchaek.incident.evidence.dto.QueryBatch;
 import com.chaekchaek.incident.evidence.dto.QueryExecution;
 import com.chaekchaek.incident.evidence.dto.QuerySelection;
 import com.chaekchaek.incident.evidence.dto.QueryStatus;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.ResourceAccessException;
 import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +78,7 @@ class IncidentInvestigatorTest {
         // then
         assertThat(result.analysis()).isEqualTo(Fixtures.result());
         assertThat(result.queries()).isEmpty();
+        assertThat(result.failureCode()).isNull();
         var order = inOrder(budget, llm);
         order.verify(budget).reserve();
         order.verify(llm).begin(Fixtures.evidence(), Fixtures.incident(), "확인 순서", List.of(), allowQueries);
@@ -94,6 +101,7 @@ class IncidentInvestigatorTest {
         // then
         assertThat(result.analysis().evidence()).isEqualTo(Fixtures.evidence().items());
         assertThat(result.analysis().report().missingEvidence()).containsExactly("답변 제한 시간이 부족합니다");
+        assertThat(result.failureCode()).isNull();
         verifyNoInteractions(llm, queries, budget);
     }
 
@@ -108,6 +116,7 @@ class IncidentInvestigatorTest {
         assertThat(result.analysis().report().assessment()).isEqualTo("INSUFFICIENT_EVIDENCE");
         assertThat(result.analysis().report().missingEvidence()).containsExactly("LLM이 비활성 상태이거나 오늘의 호출 한도에 도달했습니다");
         assertThat(result.analysis().evidence()).isEqualTo(Fixtures.evidence().items());
+        assertThat(result.failureCode()).isNull();
         verifyNoInteractions(llm, queries);
     }
 
@@ -134,6 +143,7 @@ class IncidentInvestigatorTest {
         order.verifyNoMoreInteractions();
         assertThat(result.queries()).isEqualTo(batch.executions());
         assertThat(result.analysis()).isEqualTo(Fixtures.result());
+        assertThat(result.failureCode()).isNull();
     }
 
     @Test
@@ -154,6 +164,7 @@ class IncidentInvestigatorTest {
         assertThat(result.analysis().outputTokens()).isEqualTo(50);
         assertThat(result.analysis().model()).isEqualTo("none");
         assertThat(result.analysis().report().missingEvidence()).containsExactly("추가 조회 후 오늘의 모델 호출 한도에 도달했습니다");
+        assertThat(result.failureCode()).isNull();
         verify(budget, times(2)).reserve();
         verify(llm, never()).finish(any(), any(), any());
     }
@@ -173,6 +184,7 @@ class IncidentInvestigatorTest {
         assertThat(result.queries()).isEqualTo(batch.executions());
         assertThat(result.analysis().inputTokens()).isEqualTo(100);
         assertThat(result.analysis().report().missingEvidence()).containsExactly("추가 조회 후 최종 답변 제한 시간이 부족합니다");
+        assertThat(result.failureCode()).isNull();
         verify(budget).reserve();
         verify(llm, never()).continuationFits(any(), any());
         verify(llm, never()).finish(any(), any(), any());
@@ -192,6 +204,7 @@ class IncidentInvestigatorTest {
         // then
         assertThat(result.queries()).isEqualTo(batch.executions());
         assertThat(result.analysis().report().missingEvidence()).containsExactly("추가 조회 결과가 모델 입력량 제한을 넘었습니다");
+        assertThat(result.failureCode()).isNull();
         verify(budget).reserve();
         verify(llm, never()).finish(any(), any(), any());
     }
@@ -210,23 +223,47 @@ class IncidentInvestigatorTest {
         verify(budget).reserve();
     }
 
-    @Test
-    @DisplayName("최종 모델 오류 후 조회나 모델을 다시 실행하지 않는다")
-    void should_StopWithoutRetry_When_FinalModelFails() throws Exception {
+    @ParameterizedTest
+    @MethodSource("finalFailures")
+    @DisplayName("최종 모델 오류가 나도 기본 근거와 추가 조회 결과를 보존한다")
+    void should_PreserveCollectedEvidence_When_FinalModelFails(Exception failure, String code) throws Exception {
         // given
         LlmTurn first = selected();
-        QueryBatch batch = batch();
+        QueryBatch batch = Fixtures.queryBatch();
         arrangeSelection(first, batch);
         given(budget.reserve()).willReturn(true);
         given(llm.continuationFits(first, batch)).willReturn(true);
-        given(llm.finish(first, batch, Fixtures.incident())).willThrow(new RemoteCallException("UNEXPECTED_TOOL_CALL"));
-        // when, then
-        assertThatThrownBy(this::investigate)
-                .isInstanceOf(RemoteCallException.class)
-                .hasMessage("UNEXPECTED_TOOL_CALL");
+        given(llm.finish(first, batch, Fixtures.incident())).willThrow(failure);
+        // when
+        var result = investigate();
+        // then
+        assertThat(result.analysis().evidence()).isEqualTo(batch.evidence().items());
+        assertThat(result.analysis().evidence()).extracting(item -> item.id()).containsExactly("E1", "E2");
+        assertThat(result.analysis().evidenceNotes()).isEqualTo(batch.evidence().missingEvidence());
+        assertThat(result.queries()).isEqualTo(batch.executions());
+        assertThat(result.analysis().inputTokens()).isEqualTo(100);
+        assertThat(result.analysis().outputTokens()).isEqualTo(50);
+        assertThat(result.analysis().report().assessment()).isEqualTo("INSUFFICIENT_EVIDENCE");
+        assertThat(result.analysis().report().observedFacts()).isEmpty();
+        assertThat(result.analysis().report().hypotheses()).isEmpty();
+        assertThat(result.analysis().report().missingEvidence()).containsExactly("최종 모델 답변 생성에 실패했습니다");
+        assertThat(result.failureCode()).isEqualTo(code);
+        assertThat(result.toString()).doesNotContain("private-question", "sk-secret");
         verify(budget, times(2)).reserve();
+        verify(llm).begin(Fixtures.evidence(), Fixtures.incident(), "확인 순서", List.of(), true);
         verify(queries).execute(first.selection(), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
         verify(llm).finish(first, batch, Fixtures.incident());
+    }
+
+    private static Stream<Arguments> finalFailures() {
+        return Stream.of(
+                Arguments.of(new IOException("private-question sk-secret"), "ANALYSIS_PROCESSING_ERROR"),
+                Arguments.of(new ResourceAccessException("private-question sk-secret", new SocketTimeoutException()), "ANALYSIS_PROCESSING_ERROR"),
+                Arguments.of(new RemoteCallException("HTTP_429"), "HTTP_429"),
+                Arguments.of(new RemoteCallException("UNEXPECTED_TOOL_CALL"), "UNEXPECTED_TOOL_CALL"),
+                Arguments.of(new IllegalArgumentException("UNKNOWN_EVIDENCE_REFERENCE"), "UNKNOWN_EVIDENCE_REFERENCE"),
+                Arguments.of(new IllegalStateException("private-question sk-secret"), "ANALYSIS_PROCESSING_ERROR")
+        );
     }
 
     private InvestigationResult investigate() throws Exception {

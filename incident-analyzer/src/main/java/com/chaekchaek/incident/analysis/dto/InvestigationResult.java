@@ -5,7 +5,8 @@ import java.util.List;
 
 public record InvestigationResult(
         AnalysisResult analysis,
-        List<QueryExecution> queries
+        List<QueryExecution> queries,
+        String failureCode
 ) {
     public InvestigationResult {
         queries = List.copyOf(queries);

@@ -47,7 +47,8 @@ public class IncidentInvestigator {
         if (!first.requestsQueries()) {
             return new InvestigationResult(
                     first.report(),
-                    List.of()
+                    List.of(),
+                    null
             );
         }
         QueryBatch batch = queries.execute(first.selection(), incident, evidence, deadline);
@@ -59,7 +60,7 @@ public class IncidentInvestigator {
             QueryBatch batch,
             IncidentSnapshot incident,
             Instant deadline
-    ) throws IOException {
+    ) {
         if (!hasTime(deadline, 35)) {
             return unavailable(batch, "추가 조회 후 최종 답변 제한 시간이 부족합니다", first.inputTokens(), first.outputTokens());
         }
@@ -69,9 +70,22 @@ public class IncidentInvestigator {
         if (!budget.reserve()) {
             return unavailable(batch, "추가 조회 후 오늘의 모델 호출 한도에 도달했습니다", first.inputTokens(), first.outputTokens());
         }
+        AnalysisResult analysis;
+        try {
+            analysis = llm.finish(first, batch, incident);
+        } catch (IOException | RuntimeException exception) {
+            return unavailable(
+                    batch,
+                    "최종 모델 답변 생성에 실패했습니다",
+                    first.inputTokens(),
+                    first.outputTokens(),
+                    AnalysisFailureCode.from(exception)
+            );
+        }
         return new InvestigationResult(
-                llm.finish(first, batch, incident),
-                batch.executions()
+                analysis,
+                batch.executions(),
+                null
         );
     }
 
@@ -84,6 +98,16 @@ public class IncidentInvestigator {
             String reason,
             long inputTokens,
             long outputTokens
+    ) {
+        return unavailable(batch, reason, inputTokens, outputTokens, null);
+    }
+
+    private InvestigationResult unavailable(
+            QueryBatch batch,
+            String reason,
+            long inputTokens,
+            long outputTokens,
+            String failureCode
     ) {
         return new InvestigationResult(
                 new AnalysisResult(
@@ -101,7 +125,8 @@ public class IncidentInvestigator {
                         batch.evidence().missingEvidence(),
                         batch.evidence().items()
                 ),
-                batch.executions()
+                batch.executions(),
+                failureCode
         );
     }
 }

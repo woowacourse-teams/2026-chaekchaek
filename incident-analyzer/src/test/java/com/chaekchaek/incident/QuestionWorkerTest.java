@@ -7,14 +7,22 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.chaekchaek.incident.alert.domain.IncidentReference;
 import com.chaekchaek.incident.alert.service.IncidentService;
 import com.chaekchaek.incident.analysis.IncidentInvestigator;
+import com.chaekchaek.incident.analysis.client.LlmClient;
 import com.chaekchaek.incident.analysis.dto.InvestigationResult;
+import com.chaekchaek.incident.analysis.dto.LlmTurn;
+import com.chaekchaek.incident.analysis.service.ModelBudgetService;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.evidence.EvidenceCollector;
+import com.chaekchaek.incident.evidence.QueryExecutor;
+import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.dto.QuerySelection;
 import com.chaekchaek.incident.notification.AnalysisMessage;
 import com.chaekchaek.incident.question.QuestionWorker;
 import com.chaekchaek.incident.question.domain.QuestionRejectedException;
@@ -23,6 +31,8 @@ import com.chaekchaek.incident.question.service.QuestionService;
 import com.chaekchaek.incident.slack.ParentAlertResolver;
 import com.chaekchaek.incident.slack.client.SlackApiClient;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -36,6 +46,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.web.util.UriComponentsBuilder;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,18 +72,7 @@ class QuestionWorkerTest {
 
     @BeforeEach
     void setUp() {
-        worker = new QuestionWorker(
-                questions,
-                incidents,
-                parents,
-                evidence,
-                investigator,
-                new AnalysisMessage(Fixtures.properties("http://localhost/"), mapper),
-                slack,
-                mapper,
-                meters,
-                Clock.fixed(Fixtures.NOW, ZoneOffset.UTC)
-        );
+        worker = worker(investigator);
         given(questions.canDeliver(any())).willReturn(true);
     }
 
@@ -82,7 +85,8 @@ class QuestionWorkerTest {
         given(questions.conversation(any())).willReturn(List.of());
         given(investigator.investigate(any(), eq(Fixtures.incident()), any(), any(), any())).willReturn(new InvestigationResult(
                 Fixtures.result(),
-                List.of()
+                List.of(),
+                null
         ));
         // when
         worker.process(Fixtures.task(1, null));
@@ -172,6 +176,99 @@ class QuestionWorkerTest {
         var reply = ArgumentCaptor.forClass(PreparedReply.class);
         verify(questions).prepare(eq("EvQUESTION"), reply.capture());
         assertThat(reply.getValue().message().toString()).doesNotContain("private-question", "sk-secret");
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("최종 모델 실패 뒤 근거 답변을 저장하고 재발송해도 분석 실패와 조회를 반복하지 않는다")
+    void should_PreserveEvidenceAndFailure_When_FinalAnswerIsRetried(CapturedOutput output) throws Exception {
+        // given
+        arrangeIncident();
+        given(evidence.collect(Fixtures.incident())).willReturn(Fixtures.evidence());
+        LlmClient llm = mock(LlmClient.class);
+        QueryExecutor queries = mock(QueryExecutor.class);
+        ModelBudgetService budget = mock(ModelBudgetService.class);
+        var first = new LlmTurn(
+                mapper.readTree("[{\"content\":\"private-question sk-secret\"}]"),
+                mapper.readTree("[{\"type\":\"reasoning\",\"encrypted_content\":\"opaque-private-reasoning\"}]"),
+                null,
+                new QuerySelection(List.of(QueryName.DB_POOL_WAIT_PEAK)),
+                "call_1",
+                100,
+                50
+        );
+        var batch = Fixtures.queryBatch();
+        given(budget.reserve()).willReturn(true);
+        given(llm.begin(any(), any(), any(), any(), eq(true))).willReturn(first);
+        given(queries.execute(any(), any(), any(), any())).willReturn(batch);
+        given(llm.continuationFits(first, batch)).willReturn(true);
+        given(llm.finish(first, batch, Fixtures.incident())).willThrow(new IllegalStateException("private-question sk-secret"));
+        var actualInvestigator = new IncidentInvestigator(llm, queries, budget, Clock.fixed(Fixtures.NOW, ZoneOffset.UTC));
+        var actualWorker = worker(actualInvestigator);
+        var task = Fixtures.task(1, null);
+        // when
+        actualWorker.process(task);
+        // then
+        var reply = ArgumentCaptor.forClass(PreparedReply.class);
+        var order = inOrder(questions, slack);
+        order.verify(questions).analysisFailed("EvQUESTION", "ANALYSIS_PROCESSING_ERROR");
+        order.verify(questions).prepare(eq("EvQUESTION"), reply.capture());
+        order.verify(slack).reply(task, reply.getValue());
+        order.verify(questions).delivered("EvQUESTION");
+        JsonNode body = mapper.valueToTree(reply.getValue().message());
+        assertThat(body.toString()).contains("E1", "E2", "value=5", "pool=HikariPool-1, value=3", "SUCCESS", "표본만 확인했습니다");
+        assertThat(body.toString()).doesNotContain("private-question", "sk-secret", "opaque-private-reasoning", "encrypted_content");
+        var actions = body.path("blocks")
+                .valueStream()
+                .filter(block -> "actions".equals(block.path("type").asText()))
+                .toList();
+        assertThat(actions).hasSize(2);
+        JsonNode baseQuery = pane(actions.getFirst().path("elements").get(0).path("url").asText()).path("queries").get(0);
+        assertThat(baseQuery.path("queryType").asText()).isEqualTo("range");
+        JsonNode additional = pane(actions.getLast().path("elements").get(0).path("url").asText());
+        assertThat(additional.path("datasource").asText()).isEqualTo("prometheus");
+        assertThat(additional.path("queries").get(0).path("expr").asText()).isEqualTo(QueryName.DB_POOL_WAIT_PEAK.expression("dev"));
+        assertThat(additional.path("queries").get(0).path("instant").asBoolean()).isTrue();
+        assertThat(additional.path("range").path("from").asText()).isEqualTo(String.valueOf(batch.evidence().from().toEpochMilli()));
+        assertThat(additional.path("range").path("to").asText()).isEqualTo(String.valueOf(batch.evidence().to().toEpochMilli()));
+        assertThat(reply.getValue().inputTokens()).isEqualTo(100);
+        assertThat(reply.getValue().outputTokens()).isEqualTo(50);
+
+        // when
+        var retry = Fixtures.task(1, mapper.writeValueAsString(reply.getValue()));
+        actualWorker.process(retry);
+        // then
+        verify(slack).reply(retry, reply.getValue());
+        verify(questions).analysisFailed("EvQUESTION", "ANALYSIS_PROCESSING_ERROR");
+        verify(questions).prepare(eq("EvQUESTION"), any());
+        verify(questions, times(2)).delivered("EvQUESTION");
+        verify(budget, times(2)).reserve();
+        verify(llm).begin(any(), any(), any(), any(), eq(true));
+        verify(llm).finish(first, batch, Fixtures.incident());
+        verify(queries).execute(any(), any(), any(), any());
+        assertThat(meters.get("incident_analysis").tag("outcome", "failed").tag("reason", "ANALYSIS_PROCESSING_ERROR").counter().count()).isEqualTo(1);
+        assertThat(meters.find("incident_llm_tokens").counter()).isNull();
+        assertThat(output.getAll()).contains("code=ANALYSIS_PROCESSING_ERROR").doesNotContain("private-question", "sk-secret", "opaque-private-reasoning");
+    }
+
+    private JsonNode pane(String url) {
+        String encoded = UriComponentsBuilder.fromUriString(url).build().getQueryParams().getFirst("panes");
+        return mapper.readTree(URLDecoder.decode(encoded, StandardCharsets.UTF_8)).path("incident");
+    }
+
+    private QuestionWorker worker(IncidentInvestigator investigator) {
+        return new QuestionWorker(
+                questions,
+                incidents,
+                parents,
+                evidence,
+                investigator,
+                new AnalysisMessage(Fixtures.properties("http://localhost/"), mapper),
+                slack,
+                mapper,
+                meters,
+                Clock.fixed(Fixtures.NOW, ZoneOffset.UTC)
+        );
     }
 
     private void arrangeIncident() {
