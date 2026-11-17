@@ -10,7 +10,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.auth.exception.AppleAuthServerException;
 import com.chaekchaek.book.client.BookClientException;
+import com.chaekchaek.book.client.kakao.KakaoClientException;
 import com.chaekchaek.book.client.yes24.Yes24ClientException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 class ApiExceptionHandlerTest {
 
@@ -60,6 +64,89 @@ class ApiExceptionHandlerTest {
                 () -> assertThat(response.getProperties())
                         .containsEntry("code", ErrorCode.EXTERNAL_API_ERROR.getCode())
         );
+    }
+
+    @Test
+    @DisplayName("외부 HTTP 상태와 책췍 응답 상태를 구분해서 기록한다")
+    void should_LogUpstreamStatus_When_ProviderRejectsRequest() {
+        // given
+        var exception = new Yes24ClientException(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS));
+
+        // when
+        ProblemDetail response = handler.handleBookClientException(exception, request);
+
+        // then
+        assertThat(response.getStatus()).isEqualTo(502);
+        assertThat(appender.list.getFirst().getKeyValuePairs())
+                .extracting(pair -> pair.key, pair -> pair.value)
+                .contains(
+                        tuple("upstreamService", "yes24"),
+                        tuple("upstreamStatus", 429),
+                        tuple("failureKind", "HTTP_ERROR")
+                );
+    }
+
+    @Test
+    @DisplayName("카카오 요청 오류는 공급자 상태와 게이트웨이 상태를 함께 기록한다")
+    void should_LogKakaoBadRequest_When_KakaoRejectsRequest() {
+        // given
+        var exception = new KakaoClientException(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+
+        // when
+        ProblemDetail response = handler.handleBookClientException(exception, request);
+
+        // then
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
+        assertThat(response.getProperties()).containsEntry("code", ErrorCode.EXTERNAL_API_ERROR.getCode());
+        assertThat(appender.list).hasSize(1);
+        ILoggingEvent event = appender.list.getFirst();
+        assertThat(event.getLevel()).isEqualTo(Level.WARN);
+        assertThat(event.getKeyValuePairs())
+                .extracting(pair -> pair.key, pair -> pair.value)
+                .contains(
+                        tuple("errorCode", ErrorCode.EXTERNAL_API_ERROR.getCode()),
+                        tuple("status", 502),
+                        tuple("upstreamService", "kakao"),
+                        tuple("upstreamStatus", 400),
+                        tuple("failureKind", "HTTP_ERROR"),
+                        tuple("exception", "KakaoClientException")
+                );
+    }
+
+    @Test
+    @DisplayName("외부 연결 타임아웃은 HTTP 상태를 추측하지 않는다")
+    void should_LogTimeoutWithoutStatus_When_UpstreamTimesOut() {
+        // given
+        var exception = new KakaoClientException(new ResourceAccessException(
+                "request failed",
+                new SocketTimeoutException()
+        ));
+
+        // when
+        handler.handleBookClientException(exception, request);
+
+        // then
+        assertThat(appender.list.getFirst().getKeyValuePairs())
+                .extracting(pair -> pair.key, pair -> pair.value)
+                .contains(
+                        tuple("upstreamService", "kakao"),
+                        tuple("upstreamStatus", null),
+                        tuple("failureKind", "TIMEOUT")
+                );
+    }
+
+    @Test
+    @DisplayName("공급자 업무 오류와 분류할 수 없는 예외를 구분한다")
+    void should_PreserveUnknownFailure_When_HttpEvidenceIsAbsent() {
+        // given
+        var providerFailure = new Yes24ClientException("SERVER_ERROR");
+        var unknownFailure = new Yes24ClientException(new IllegalStateException());
+
+        // when & then
+        assertThat(providerFailure.getFailureKind()).isEqualTo("PROVIDER_ERROR");
+        assertThat(unknownFailure.getFailureKind()).isEqualTo("UNKNOWN");
+        assertThat(providerFailure.getUpstreamStatus()).isNull();
+        assertThat(unknownFailure.getUpstreamStatus()).isNull();
     }
 
     @Test
