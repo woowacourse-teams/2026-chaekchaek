@@ -15,16 +15,16 @@
 | --- | --- | --- |
 | 상황별 서버 응답과 앱 동작을 백엔드와 합의해 문서화 | [백엔드 담당자 확인 댓글](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707#issuecomment-6970403396), [백엔드 OpenAPI 문서화 PR #93](https://github.com/woowacourse-teams/2026-chaekchaek/pull/93), [정책 문서 2절](../mobile-auth-expiry-policy.md#2-서버-응답-계약), [개발 서버 응답 기록](assets/auth-expiry/dev-server-auth-responses.txt) | 2026-11-18 백엔드 담당 루드비코가 서버 응답과 앱 처리 흐름을 확인하고 동의했다. |
 | Access 토큰 만료 후 사용자 모르게 계속 사용(Silent Refresh) | 호스트 테스트 `SilentRefreshClientTest`, 시연 1·2 | 자동 테스트와 시연 통과 |
-| 동시 만료 응답에도 갱신 1회 | 호스트 테스트, 개발자 도구 `재발급 요청 N회` 표시, 시연 1 | 자동 테스트와 시연 통과 |
+| 동시 만료 응답에도 갱신 1회 | 호스트 테스트 `AuthViewModelTest`, `SilentRefreshClientTest`, 시연 1 | 호스트 테스트에서 동시 갱신 요청이 1회로 합쳐지고, 늦게 도착한 `401`이 갱신 결과를 재사용하는 것을 확인했다. 시연 1에서는 홈 새로고침 후 재발급 1회를 확인했다. |
 | Refresh 폐기 후 로그인 화면, 재로그인 후 원래 화면 복귀 | 호스트 테스트 `AuthViewModelTest`, 시연 3·4 | 자동 테스트와 시연 통과 |
-| 갱신 중 네트워크 단절에도 로그아웃 없음 | 호스트 테스트 `SilentRefreshClientTest`, 시연 5 | 자동 테스트 통과. 시연은 오프라인 중 만료와 복구까지 확인 |
+| 갱신 중 네트워크 단절에도 로그아웃 없음 | 호스트 테스트 `SilentRefreshClientTest`, 시연 5 | 호스트 테스트에서 갱신 연결 오류 후 같은 세션으로 재시도하는 것을 확인했다. 시연 5에서는 오프라인에서 세션을 유지하고 연결 복구 후 재발급하는 것을 확인했다. |
 | (권장) 개발자 도구에서 만료 시각 확인, 강제 만료, Refresh 폐기 | `AuthDeveloperContent`, 시연 캡처 | 구현과 시연 완료 |
 
 ### 서버 응답 계약 확인
 
 모바일 구현에 앞서 백엔드에서 토큰 재발급·로그아웃 API를 구현하고 OpenAPI에 문서화했다. 앱의 인증 만료 처리는 이 기존 계약을 기준으로 구현했다. 2026-11-12에 개발·운영 OpenAPI와 백엔드 소스를 대조해 상황별 응답과 앱 동작을 정책 문서에 정리했다. [백엔드 구현 PR #39](https://github.com/woowacourse-teams/2026-chaekchaek/pull/39) · [백엔드 OpenAPI 문서화 PR #93](https://github.com/woowacourse-teams/2026-chaekchaek/pull/93)
 
-2026-11-18 14:53(KST)에 백엔드 담당 루드비코(HyoYoonNam)가 상황별 서버 응답과 앱 동작을 확인하고 이슈 #707에 정리된 처리 방식에 동의했다. 이슈에는 동시 `401` 응답 시 재발급 1회, 원래 요청 1회 재시도, Refresh 토큰 폐기 후 재로그인과 작업 복구, 연결 오류 시 세션 유지가 정리돼 있다. [백엔드 확인 댓글](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707#issuecomment-6970403396)
+2026-11-18 14:53(KST)에 백엔드 담당 루드비코(HyoYoonNam)가 서버 응답과 앱 동작의 대응을 확인하고 이슈 #707의 처리 방식에 동의했다. 이슈가 명시한 응답은 Access 만료 `401 UNAUTHORIZED`, Refresh 폐기 `401 UNUSABLE_REFRESH_TOKEN`, 권한 없음 `403 FORBIDDEN`이다. 앱은 Access 만료 시 자동으로 갱신해 원래 요청을 1회 재시도하고, 여러 `401`은 재발급 1회를 공유한다. Refresh 폐기 시 재로그인 후 화면과 작업을 복구한다. `403`에서는 재발급을 시도하지 않고, 연결 오류 시 세션을 유지한다. [합의 대상 이슈 #707](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707) · [백엔드 확인 댓글](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707#issuecomment-6970403396) · [상황별 서버 응답과 앱 처리 표](../mobile-auth-expiry-policy.md#2-서버-응답-계약)
 
 2026-11-12 06:25 UTC에 개발 서버 `https://dev-api.chaekchaek.com`에 임의 토큰을 보내 응답을 기록했다. 원문은 [개발 서버 응답 기록](assets/auth-expiry/dev-server-auth-responses.txt)에 있다.
 
