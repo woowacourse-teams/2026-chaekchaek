@@ -1,0 +1,82 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "assessment": {
+      "type": "string",
+      "enum": [
+        "SUPPORTED",
+        "PARTIAL",
+        "INSUFFICIENT_EVIDENCE"
+      ]
+    },
+    "observedFacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "description",
+          "evidenceIds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "candidate": {
+            "type": "string"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextCheck": {
+            "type": "string"
+          },
+          "expectedObservation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate",
+          "evidenceIds",
+          "nextCheck",
+          "expectedObservation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "missingEvidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "assessment",
+    "observedFacts",
+    "hypotheses",
+    "missingEvidence"
+  ],
+  "additionalProperties": false
+}

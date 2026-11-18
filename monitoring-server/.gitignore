@@ -1,0 +1,4 @@
+.env
+.env.incident
+releases/
+grafana/provisioning/alerting/chaekchaek-*.json
