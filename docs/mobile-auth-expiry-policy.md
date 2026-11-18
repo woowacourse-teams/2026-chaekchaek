@@ -8,7 +8,11 @@ Access 토큰 만료 시 사용자 개입 없이 조용히 토큰을 재발급(S
 
 ## 2. 서버 응답 계약
 
-2026-11-12에 개발·운영 OpenAPI와 백엔드 `be-dev@b8d26f52`의 `AuthTokenService`, `RestAuthenticationEntryPoint`, `ApiExceptionHandler`를 대조했다. 배포된 두 OpenAPI는 재발급의 200과 400, 폐기의 204와 400을 문서화한다. 재발급 401의 오류 코드와 회전 동작은 백엔드 소스에서 확인했다. 별도의 백엔드 합의 기록과 개발 서버 계정 시연은 확인이 필요하다. [개발 OpenAPI](https://dev-api.chaekchaek.com/docs/openapi3.yaml) · [운영 OpenAPI](https://api.chaekchaek.com/docs/openapi3.yaml)
+2026-11-12에 개발·운영 OpenAPI와 백엔드 `be-dev@b8d26f52`의 `AuthTokenService`, `RestAuthenticationEntryPoint`, `ApiExceptionHandler`를 대조했다. 배포된 두 OpenAPI는 재발급의 200과 400, 폐기의 204와 400을 문서화한다. 재발급 401의 오류 코드와 회전 동작은 백엔드 소스에서 확인했다. [개발 OpenAPI](https://dev-api.chaekchaek.com/docs/openapi3.yaml) · [운영 OpenAPI](https://api.chaekchaek.com/docs/openapi3.yaml)
+
+2026-11-12 Galaxy S25에서 실제 계정 두 개로 개발 서버에 로그인해 인증 만료 시나리오 다섯 가지를 시연했다. [시연 결과와 캡처](level4-submission/auth-expiry-and-deep-link.md#개발-서버-시연)
+
+2026-11-18 14:53(KST)에 백엔드 담당 루드비코(HyoYoonNam)가 서버 응답과 앱 동작을 확인하고 이슈 #707에 동의를 기록했다. [백엔드 확인 댓글](https://github.com/woowacourse-teams/2026-chaekchaek/issues/707#issuecomment-6970403396)
 
 | 상황 | HTTP 상태 코드 | 에러 코드 / 응답 본문 | 앱의 처리 정책 |
 | --- | --- | --- | --- |
