@@ -15,11 +15,13 @@ import com.chaekchaek.incident.analysis.client.LlmClient;
 import com.chaekchaek.incident.analysis.service.ModelBudgetService;
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
-import com.chaekchaek.incident.evidence.QueryName;
 import com.chaekchaek.incident.evidence.QueryExecutor;
+import com.chaekchaek.incident.evidence.QueryName;
 import com.chaekchaek.incident.evidence.dto.EvidenceBundle;
 import com.chaekchaek.incident.evidence.dto.EvidenceItem;
 import com.chaekchaek.incident.evidence.dto.QueryBatch;
+import com.chaekchaek.incident.evidence.dto.QueryExecution;
+import com.chaekchaek.incident.evidence.dto.QueryStatus;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Clock;
@@ -36,6 +38,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -267,6 +270,39 @@ class LlmQueryContractTest {
         ((ObjectNode) body.path("output").get(0).path("content").get(0))
                 .put("text", mapper.writeValueAsString(report));
         return new MockResponse().setHeader("Content-Type", "application/json").setBody(body.toString());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QueryStatus.class, names = {"FAILED", "SKIPPED_DEADLINE"})
+    @DisplayName("실패와 미실행만 있는 조회는 자료 없음 계약으로 바꾸지 않는다")
+    void should_KeepReportContract_When_QueryFailedOrWasNotExecuted(QueryStatus status) throws Exception {
+        // given
+        enqueue(selected("{\"queries\":[\"db_pool_wait_peak\"]}"));
+        enqueue(completed("E1"));
+        var query = new QueryExecution(
+                "db_pool_wait_peak",
+                "prometheus",
+                QueryName.DB_POOL_WAIT_PEAK.getDescription(),
+                QueryName.DB_POOL_WAIT_PEAK.expression("dev"),
+                Fixtures.incident().startsAt().minusSeconds(900),
+                Fixtures.incident().startsAt(),
+                status,
+                false,
+                "",
+                List.of()
+        );
+        var batch = new QueryBatch(
+                Fixtures.evidence(),
+                List.of(query)
+        );
+        // when
+        var first = llm.begin(Fixtures.evidence(), Fixtures.incident(), "조회", List.of(), true);
+        var result = llm.finish(first, batch, Fixtures.incident());
+        // then
+        assertThat(result.report()).isEqualTo(Fixtures.report("E1"));
+        assertThat(result.nextChecks()).isEmpty();
+        request();
+        assertThat(request().path("text").path("format").path("schema").path("properties").has("observedFacts")).isTrue();
     }
 
     @Test

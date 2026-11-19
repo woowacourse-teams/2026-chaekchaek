@@ -17,5 +17,11 @@ public record QueryExecution(
 ) {
     public QueryExecution {
         limitations = List.copyOf(limitations);
+        if (status == QueryStatus.SUCCESS && (evidenceId == null || !evidenceId.matches("E[1-9][0-9]*"))) {
+            throw new IllegalArgumentException("SUCCESS_QUERY_REQUIRES_EVIDENCE");
+        }
+        if (status != QueryStatus.SUCCESS && !"".equals(evidenceId)) {
+            throw new IllegalArgumentException("UNOBSERVED_QUERY_CANNOT_REFERENCE_EVIDENCE");
+        }
     }
 }

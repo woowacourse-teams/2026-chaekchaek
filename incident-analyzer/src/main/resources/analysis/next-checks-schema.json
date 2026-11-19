@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nextChecks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "check": {"type": "string", "minLength": 1, "maxLength": 500},
+          "expectedObservation": {"type": "string", "minLength": 1, "maxLength": 500}
+        },
+        "required": ["check", "expectedObservation"]
+      }
+    }
+  },
+  "required": ["nextChecks"]
+}

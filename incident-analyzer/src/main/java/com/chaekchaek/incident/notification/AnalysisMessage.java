@@ -3,7 +3,9 @@ package com.chaekchaek.incident.notification;
 import com.chaekchaek.incident.alert.dto.IncidentSnapshot;
 import com.chaekchaek.incident.analysis.dto.AnalysisResult;
 import com.chaekchaek.incident.config.IncidentProperties;
+import com.chaekchaek.incident.evidence.dto.EvidenceItem;
 import com.chaekchaek.incident.evidence.dto.QueryExecution;
+import com.chaekchaek.incident.evidence.dto.QueryStatus;
 import com.chaekchaek.incident.question.dto.PreparedReply;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -33,17 +35,48 @@ public class AnalysisMessage {
             AnalysisResult result,
             List<QueryExecution> queries
     ) {
-        String context = result.report().summary() + "\n" + result.report().hypotheses()
-                .stream()
-                .map(candidate -> candidate.candidate() + ": " + candidate.nextCheck())
-                .collect(Collectors.joining("\n"));
+        String context = context(result, queries);
         return new PreparedReply(
                 message(incident, result, queries),
-                context.substring(0, Math.min(context.length(), 1800)),
+                context,
                 result.model(),
                 result.inputTokens(),
                 result.outputTokens()
         );
+    }
+
+    private String context(AnalysisResult result, List<QueryExecution> queries) {
+        if (queries
+                .stream()
+                .anyMatch(query -> query.status() == QueryStatus.NO_DATA)) {
+            return queryContext(result, queries);
+        }
+        String context = result.report().summary() + "\n" + result.report().hypotheses()
+                .stream()
+                .map(candidate -> candidate.candidate() + ": " + candidate.nextCheck())
+                .collect(Collectors.joining("\n"));
+        return context.substring(0, Math.min(context.length(), 1800));
+    }
+
+    private String queryContext(AnalysisResult result, List<QueryExecution> queries) {
+        var entries = new ArrayList<String>();
+        entries.add(result.report().summary());
+        queries.forEach(query -> entries.add("추가 조회 " + query.queryId() + " [" + query.source() + "] "
+                + query.description() + ": " + query.status() + " | " + query.from() + " ~ " + query.to()
+                + queryReference(query)));
+        entries.add("NO_DATA는 유효한 관측 자료 부재이며 정상값 0을 의미하지 않습니다.");
+        result.evidence().forEach(item -> entries.add(evidenceText(item)));
+        result.nextChecks().forEach(check -> entries.add("다음 점검 제안: " + check.check()
+                + "\n판단 기준: " + check.expectedObservation()));
+        result.evidenceNotes().forEach(entries::add);
+        result.report().missingEvidence().forEach(entries::add);
+        var context = new StringBuilder();
+        for (String entry : entries) {
+            if (context.length() + entry.length() + 1 <= 1800) {
+                context.append(entry).append('\n');
+            }
+        }
+        return context.toString().stripTrailing();
     }
 
     private Map<String, Object> message(
@@ -63,11 +96,9 @@ public class AnalysisMessage {
         result.report().hypotheses().forEach(candidate -> blocks.add(section("원인 후보: " + candidate.candidate()
                 + "\n근거: " + String.join(", ", candidate.evidenceIds())
                 + "\n확인: " + candidate.nextCheck() + "\n판단 기준: " + candidate.expectedObservation())));
-        result.evidence().forEach(item -> blocks.add(section(item.id() + " [" + item.source() + "] "
-                + item.description() + "\n" + item.values().entrySet()
-                .stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining(", ")))));
+        result.evidence().forEach(item -> blocks.add(section(evidenceText(item))));
+        result.nextChecks().forEach(check -> blocks.add(section("다음 점검 제안: " + check.check()
+                + "\n판단 기준: " + check.expectedObservation())));
         blocks.add(section("자료 제한: " + String.join("\n", result.evidenceNotes())
                 + "\n" + String.join("\n", result.report().missingEvidence())));
         blocks.add(Map.of(
@@ -102,8 +133,9 @@ public class AnalysisMessage {
         }
         var buttons = new ArrayList<Map<String, Object>>();
         for (QueryExecution query : queries) {
-            blocks.add(section("추가 조회: " + query.description() + "\n상태: " + query.status()
-                    + " | 근거: " + query.evidenceId() + "\n구간: " + query.from() + " ~ " + query.to()
+            blocks.add(section("추가 조회: " + query.queryId() + " | " + query.description()
+                    + "\n출처: " + query.source() + "\n상태: " + query.status()
+                    + queryReference(query) + "\n구간: " + query.from() + " ~ " + query.to()
                     + "\n쿼리: " + query.expression() + "\n제한: " + String.join(", ", query.limitations())));
             buttons.add(Map.of(
                     "type",
@@ -115,6 +147,20 @@ public class AnalysisMessage {
             ));
         }
         blocks.add(Map.of("type", "actions", "elements", List.copyOf(buttons)));
+    }
+
+    private String queryReference(QueryExecution query) {
+        if (query.status() == QueryStatus.SUCCESS) {
+            return " | 근거: " + query.evidenceId();
+        }
+        return "";
+    }
+
+    private String evidenceText(EvidenceItem item) {
+        return item.id() + " [" + item.source() + "] " + item.description() + "\n" + item.values().entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(", "));
     }
 
     private String evidenceLink(IncidentSnapshot task) {

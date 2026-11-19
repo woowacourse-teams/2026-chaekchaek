@@ -1,0 +1,54 @@
+{
+  "before": "과거 실제 모델의 C2, C4 답변을 기준으로 같은 조회를 강제 재현해 조회 선택의 변동이 빈 결과 검증을 생략하지 않게 한다.",
+  "cases": {
+    "C2": {
+      "selected": [
+        "external_api_failure_counts",
+        "http_latency_p95"
+      ],
+      "observed": [
+        "책췍 502",
+        "공급자 429",
+        "표본 2",
+        "15분 집계 12"
+      ],
+      "empty": [
+        "http_latency_p95"
+      ]
+    },
+    "C4": {
+      "selected": [
+        "db_pool_wait_peak",
+        "http_latency_p95",
+        "error_type_counts"
+      ],
+      "observed": [
+        "호스트 메모리 0.42",
+        "호스트 표본 8초"
+      ],
+      "empty": [
+        "db_pool_wait_peak",
+        "http_latency_p95",
+        "error_type_counts"
+      ]
+    },
+    "C6": {
+      "selected": [
+        "db_pool_wait_peak",
+        "http_latency_p95"
+      ],
+      "observed": [
+        "15분 DB 최댓값 0"
+      ],
+      "empty": [
+        "http_latency_p95"
+      ]
+    }
+  },
+  "required": [
+    "NO_DATA는 해당 쿼리 이름, 15분 구간, 같은 식/데이터 소스의 Grafana 링크로 확인한다.",
+    "빈 조회에 다른 관측의 E ID를 붙이지 않는다. 원문, Slack 표시, 후속 문맥을 검사한다.",
+    "성공한 근거값을 보존한다. 관측 0과 자료 부재를 구분한다. 실패와 미실행에 NO_DATA를 만들지 않는다.",
+    "첫 두 사례의 자료와 신규 입력을 구분한다. 실제 모델과 고정된 응답을 사용한 검증 범위를 구분한다."
+  ]
+}

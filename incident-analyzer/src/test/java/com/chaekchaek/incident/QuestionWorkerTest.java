@@ -4,25 +4,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.chaekchaek.incident.alert.domain.IncidentReference;
 import com.chaekchaek.incident.alert.service.IncidentService;
 import com.chaekchaek.incident.analysis.IncidentInvestigator;
 import com.chaekchaek.incident.analysis.client.LlmClient;
+import com.chaekchaek.incident.analysis.dto.AnalysisReport;
+import com.chaekchaek.incident.analysis.dto.AnalysisResult;
 import com.chaekchaek.incident.analysis.dto.InvestigationResult;
 import com.chaekchaek.incident.analysis.dto.LlmTurn;
+import com.chaekchaek.incident.analysis.dto.NextCheck;
 import com.chaekchaek.incident.analysis.service.ModelBudgetService;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.evidence.EvidenceCollector;
 import com.chaekchaek.incident.evidence.QueryExecutor;
 import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.dto.EvidenceBundle;
+import com.chaekchaek.incident.evidence.dto.QueryBatch;
+import com.chaekchaek.incident.evidence.dto.QueryExecution;
 import com.chaekchaek.incident.evidence.dto.QuerySelection;
+import com.chaekchaek.incident.evidence.dto.QueryStatus;
 import com.chaekchaek.incident.notification.AnalysisMessage;
 import com.chaekchaek.incident.question.QuestionWorker;
 import com.chaekchaek.incident.question.domain.QuestionRejectedException;
@@ -149,6 +157,28 @@ class QuestionWorkerTest {
         verifyNoInteractions(investigator);
     }
 
+    @Test
+    @DisplayName("기본 관측이 없으면 기존 안내를 보내고 모델과 추가 조회를 시작하지 않는다")
+    void should_SkipInvestigation_When_BaseEvidenceIsEmpty() {
+        // given
+        arrangeIncident();
+        given(evidence.collect(Fixtures.incident())).willReturn(new EvidenceBundle(
+                Fixtures.incident().startsAt().minusSeconds(600),
+                Fixtures.incident().startsAt(),
+                List.of(),
+                List.of("관측 자료가 없습니다")
+        ));
+        // when
+        worker.process(Fixtures.task(1, null));
+        // then
+        var reply = ArgumentCaptor.forClass(PreparedReply.class);
+        verify(questions).prepare(eq("EvQUESTION"), reply.capture());
+        assertThat(reply.getValue().message().toString()).contains("발생 시점의 관측 자료를 확인할 수 없습니다");
+        assertThat(reply.getValue().inputTokens()).isZero();
+        assertThat(reply.getValue().outputTokens()).isZero();
+        verifyNoInteractions(investigator);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"INVALID_MODEL_TEXT", "UNKNOWN_EVIDENCE_REFERENCE"})
     @DisplayName("모델 출력 검증 실패를 원인 코드로 남긴다")
@@ -249,6 +279,88 @@ class QuestionWorkerTest {
         assertThat(meters.get("incident_analysis").tag("outcome", "failed").tag("reason", "ANALYSIS_PROCESSING_ERROR").counter().count()).isEqualTo(1);
         assertThat(meters.find("incident_llm_tokens").counter()).isNull();
         assertThat(output.getAll()).contains("code=ANALYSIS_PROCESSING_ERROR").doesNotContain("private-question", "sk-secret", "opaque-private-reasoning");
+    }
+
+    @Test
+    @DisplayName("빈 조회 답변의 Slack 발송이 실패해도 저장한 관측과 점검 제안을 그대로 재전송한다")
+    void should_ReusePreparedNoDataReply_When_FirstSlackDeliveryFails() throws Exception {
+        // given
+        arrangeIncident();
+        given(evidence.collect(Fixtures.incident())).willReturn(Fixtures.evidence());
+        LlmClient llm = mock(LlmClient.class);
+        QueryExecutor queries = mock(QueryExecutor.class);
+        ModelBudgetService budget = mock(ModelBudgetService.class);
+        var first = new LlmTurn(
+                mapper.createArrayNode(),
+                mapper.createArrayNode(),
+                null,
+                new QuerySelection(List.of(QueryName.DB_POOL_WAIT_PEAK, QueryName.HTTP_LATENCY_P95)),
+                "call_1",
+                100,
+                50
+        );
+        var successful = Fixtures.queryBatch();
+        var batch = new QueryBatch(
+                successful.evidence(),
+                List.of(successful.executions().getFirst(), new QueryExecution(
+                        "http_latency_p95",
+                        "prometheus",
+                        QueryName.HTTP_LATENCY_P95.getDescription(),
+                        QueryName.HTTP_LATENCY_P95.expression("dev"),
+                        Fixtures.incident().startsAt().minusSeconds(900),
+                        Fixtures.incident().startsAt(),
+                        QueryStatus.NO_DATA,
+                        false,
+                        "",
+                        List.of("유효한 관측 자료가 없습니다. 정상값 0을 의미하지 않습니다")
+                ))
+        );
+        var result = new AnalysisResult(
+                new AnalysisReport(
+                        "일부 추가 조회에 유효한 관측 자료가 없습니다",
+                        "PARTIAL",
+                        List.of(),
+                        List.of(),
+                        List.of()
+                ),
+                "test-model",
+                "v4-no-data-next-checks",
+                200,
+                100,
+                batch.evidence().missingEvidence(),
+                batch.evidence().items(),
+                List.of(new NextCheck(
+                        "같은 구간 histogram 수집과 요청량을 확인하세요",
+                        "표본이 수집됐는지 확인합니다"
+                ))
+        );
+        given(budget.reserve()).willReturn(true);
+        given(llm.begin(any(), any(), any(), any(), eq(true))).willReturn(first);
+        given(queries.execute(any(), any(), any(), any())).willReturn(batch);
+        given(llm.continuationFits(first, batch)).willReturn(true);
+        given(llm.finish(first, batch, Fixtures.incident())).willReturn(result);
+        doThrow(new RemoteCallException("SLACK_rate_limited")).doNothing().when(slack).reply(any(), any());
+        var actualWorker = worker(new IncidentInvestigator(llm, queries, budget, Clock.fixed(Fixtures.NOW, ZoneOffset.UTC)));
+        // when
+        actualWorker.process(Fixtures.task(1, null));
+        // then
+        var reply = ArgumentCaptor.forClass(PreparedReply.class);
+        verify(questions).prepare(eq("EvQUESTION"), reply.capture());
+        verify(questions).fail("EvQUESTION", "SLACK_rate_limited");
+        assertThat(reply.getValue().message().toString()).contains("NO_DATA", "다음 점검 제안", "value=3");
+        assertThat(reply.getValue().contextSummary()).contains("http_latency_p95", "NO_DATA", "value=3");
+        // when
+        var retry = Fixtures.task(2, mapper.writeValueAsString(reply.getValue()));
+        actualWorker.process(retry);
+        // then
+        verify(slack).reply(retry, reply.getValue());
+        verify(questions).prepare(eq("EvQUESTION"), any());
+        verify(questions).delivered("EvQUESTION");
+        verify(questions, never()).analysisFailed(any(), any());
+        verify(budget, times(2)).reserve();
+        verify(llm).begin(any(), any(), any(), any(), eq(true));
+        verify(llm).finish(first, batch, Fixtures.incident());
+        verify(queries).execute(any(), any(), any(), any());
     }
 
     private JsonNode pane(String url) {
