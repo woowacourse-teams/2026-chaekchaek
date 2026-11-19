@@ -160,6 +160,8 @@ class NoDataRegressionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "{\"nextChecks\":[{\"check\":\"_E1_에 p95 자료가 없습니다\",\"expectedObservation\":\"다시 확인\"}]}",
+            "{\"nextChecks\":[{\"check\":\"조회 확인\",\"expectedObservation\":\"__E1__에 p95 자료가 없습니다\"}]}",
             "{\"nextChecks\":[{\"check\":\"p95를 확인할 값이 반환되지 않았습니다 E1\",\"expectedObservation\":\"다시 확인\"}]}",
             "{\"nextChecks\":[{\"check\":\"There was no valid p95 sample e1\",\"expectedObservation\":\"check again\"}]}",
             "{\"nextChecks\":[{\"check\":\"다시 확인\",\"expectedObservation\":\"E 1의 값이 없음\"}]}",
@@ -184,7 +186,7 @@ class NoDataRegressionTest {
                 .reply(incident("C6"), result.analysis(), result.queries());
         // then
         assertThat(result.failureCode()).isEqualTo("INVALID_MODEL_OUTPUT");
-        assertThat(reply.contextSummary()).doesNotContain("There was no valid", "Ｅ１", "E 1");
+        assertThat(reply.contextSummary()).doesNotContain("There was no valid", "Ｅ１", "E 1", "_E1_", "__E1__");
         assertThat(result.analysis().report().hypotheses()).isEmpty();
     }
 

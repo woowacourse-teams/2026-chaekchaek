@@ -37,7 +37,7 @@ public class LlmClient {
     private static final int MAX_INPUT_CHARACTERS = 20000;
     private static final String TOOL_NAME = "collect_incident_evidence";
     private static final Pattern EVIDENCE_REFERENCE = Pattern.compile(
-            "(?<![A-Za-z0-9_])e[\\s\\p{Z}\\p{Cf}]*[0-9]+",
+            "(?<![A-Za-z0-9])e[\\s\\p{Z}\\p{Cf}]*[0-9]+",
             Pattern.CASE_INSENSITIVE
     );
     private final IncidentProperties properties;
