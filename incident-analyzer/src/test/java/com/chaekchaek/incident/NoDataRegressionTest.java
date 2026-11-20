@@ -40,6 +40,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -52,7 +53,9 @@ class NoDataRegressionTest {
     private static final Instant AT = Instant.parse("2026-01-01T00:00:00Z");
     private static final String CHECKS = """
             {"nextChecks":[{"check":"같은 구간 histogram 샘플과 scrape 수집 상태, 요청량, HTTP status code 429와 node 2를 확인하세요",
-            "expectedObservation":"표본 부재와 실제 요청 부재를 구분하고, 공급자 제한 정책과 요청량을 대조하세요"}]}
+            "expectedObservation":"표본 부재와 실제 요청 부재를 구분하고, 공급자 제한 정책과 요청량을 대조하세요"},
+            {"check":"DB 연결 대기의 실제 표본과 pool별 값을 확인하세요","expectedObservation":"같은 pool의 대기 증가와 시간대를 대조하세요"},
+            {"check":"오류 유형의 전체 집계와 로그 표본을 대조하세요","expectedObservation":"전체 집계와 제한된 표본의 차이를 확인하세요"}]}
             """;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
@@ -65,6 +68,7 @@ class NoDataRegressionTest {
     private LlmClient llm;
     private String finalOutput;
     private MockResponse finalResponse;
+    private boolean longDbRows;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -108,10 +112,14 @@ class NoDataRegressionTest {
         String displayed = mapper.writeValueAsString(reply.message());
         assertThat(displayed).contains("다음 점검 제안", "histogram", "scrape", "요청량", "정상값 0을 의미하지 않습니다");
         assertThat(displayed).doesNotContain("원인 후보:");
+        JsonNode checks = mapper.readTree(CHECKS).path("nextChecks");
+        for (JsonNode check : checks) {
+            assertThat(reply.contextSummary()).contains(check.path("check").asText(), check.path("expectedObservation").asText());
+        }
         assertThat(reply.contextSummary()).contains("http_latency_p95", "NO_DATA", AT.minusSeconds(900).toString(), AT.toString(), "prometheus");
         if ("C2".equals(id)) {
             assertThat(displayed).contains("status=502", "upstreamStatus=429", "sampleCount=2", "value=12");
-            assertThat(reply.contextSummary()).contains("sampleCount=2", "value=12");
+            assertThat(reply.contextSummary()).contains("status=502", "upstreamStatus=429", "sampleCount=2", "value=12", "unit=errors");
         }
         if ("C4".equals(id)) {
             assertThat(displayed).contains("value=0.42", "value=8", "백엔드 수집 성공 여부: 유효한 샘플이 없습니다");
@@ -126,7 +134,7 @@ class NoDataRegressionTest {
                 assertThat(item.description()).isEqualTo(QueryName.DB_POOL_WAIT_PEAK.getDescription());
                 assertThat(item.values()).containsEntry("row1", "pool=HikariPool-1, value=0");
             });
-            assertThat(reply.contextSummary()).contains("db_pool_wait_peak", "SUCCESS", "value=0");
+            assertThat(reply.contextSummary()).contains("db_pool_wait_peak", "SUCCESS", "value=0", "unit=connections");
         }
         assertQueryLinks(reply, result);
         assertThat(mapper.readValue(mapper.writeValueAsString(reply), PreparedReply.class)).isEqualTo(reply);
@@ -137,6 +145,49 @@ class NoDataRegressionTest {
         assertThat(schema.path("additionalProperties").asBoolean()).isFalse();
         assertThat(schema.toString()).doesNotContain("evidenceIds", "observedFacts", "hypotheses");
         verify(budget, times(2)).reserve();
+    }
+
+    @Test
+    @DisplayName("긴 성공 근거에서도 첫 점검과 판단 기준의 원문 및 완전한 관측 행을 후속 문맥에 남긴다")
+    void should_PreserveFirstCheckAndObservedRow_When_LongEvidenceExceedsContextLimit() throws Exception {
+        // given
+        longDbRows = true;
+        String check = longCheck("같은 구간의 histogram과 scrape 상태를 확인하세요. ", " 확인 전에는 장애 원인으로 확정하지 마세요");
+        String expected = longCheck("표본 부재와 실제 요청 부재를 구분하세요. ", " 자료 부재만으로 정상값 0이라고 판단하지 마세요");
+        enqueueOutput(mapper.writeValueAsString(Map.of("nextChecks", List.of(Map.of(
+                "check", check,
+                "expectedObservation", expected
+        )))));
+        // when
+        InvestigationResult result = investigate("C6");
+        PreparedReply reply = new AnalysisMessage(Fixtures.properties("http://localhost/"), mapper)
+                .reply(incident("C6"), result.analysis(), result.queries());
+        // then
+        assertThat(result.failureCode()).isNull();
+        assertThat(check).hasSize(500);
+        assertThat(expected).hasSize(500);
+        assertThat(reply.contextSummary()).hasSizeLessThanOrEqualTo(1800);
+        assertThat(reply.contextSummary()).contains(
+                "db_pool_wait_peak [prometheus]: SUCCESS | 근거: E3",
+                "http_latency_p95 [prometheus]: NO_DATA",
+                AT.minusSeconds(900).toString(),
+                AT.toString(),
+                "정상값 0을 의미하지 않습니다",
+                "다음 점검 제안: " + check + "\n판단 기준: " + expected,
+                "E3 [prometheus] DB 연결 대기 구간 최대값 | unit=connections\nrow1=pool="
+                        + "p".repeat(99) + "1, value=0",
+                "생략"
+        );
+        JsonNode blocks = mapper.valueToTree(reply.message()).path("blocks");
+        String displayed = blocks.valueStream()
+                .map(block -> block.path("text").path("text").asText())
+                .reduce("", (left, right) -> left + "\n" + right);
+        assertThat(displayed).contains(check, expected, "row5=pool=" + "p".repeat(99) + "5, value=0");
+    }
+
+    private String longCheck(String prefix, String conclusion) {
+        String body = prefix + "수집 시각과 실제 표본, 같은 구간의 요청량을 대조하고 결과를 기록하세요. ".repeat(20);
+        return body.substring(0, 500 - conclusion.length()) + conclusion;
     }
 
     @ParameterizedTest
@@ -278,6 +329,15 @@ class NoDataRegressionTest {
                 .findFirst()
                 .orElseThrow();
         var rows = mapper.createArrayNode();
+        if (longDbRows && query == QueryName.DB_POOL_WAIT_PEAK) {
+            for (int index = 1; index <= 5; index++) {
+                rows.add(mapper.valueToTree(Map.of(
+                        "metric", Map.of("pool", "p".repeat(99) + index),
+                        "value", List.of(AT.getEpochSecond(), "0")
+                )));
+            }
+            return rows;
+        }
         for (JsonNode row : fixture.path("queries").path(query.getId())) {
             rows.add(mapper.valueToTree(Map.of(
                     "metric", row.path("metric"),

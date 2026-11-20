@@ -2,6 +2,7 @@ package com.chaekchaek.incident.notification;
 
 import com.chaekchaek.incident.alert.dto.IncidentSnapshot;
 import com.chaekchaek.incident.analysis.dto.AnalysisResult;
+import com.chaekchaek.incident.analysis.dto.NextCheck;
 import com.chaekchaek.incident.config.IncidentProperties;
 import com.chaekchaek.incident.evidence.dto.EvidenceItem;
 import com.chaekchaek.incident.evidence.dto.QueryExecution;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 @RequiredArgsConstructor
 public class AnalysisMessage {
+    private static final int CONTEXT_LIMIT = 1800;
     private final IncidentProperties properties;
     private final JsonMapper mapper;
 
@@ -55,7 +58,7 @@ public class AnalysisMessage {
                 .stream()
                 .map(candidate -> candidate.candidate() + ": " + candidate.nextCheck())
                 .collect(Collectors.joining("\n"));
-        return context.substring(0, Math.min(context.length(), 1800));
+        return context.substring(0, Math.min(context.length(), CONTEXT_LIMIT));
     }
 
     private String queryContext(AnalysisResult result, List<QueryExecution> queries) {
@@ -66,13 +69,85 @@ public class AnalysisMessage {
                 + queryReference(query)));
         entries.add("NO_DATA는 유효한 관측 자료 부재이며 정상값 0을 의미하지 않습니다.");
         result.evidence().forEach(item -> entries.add(evidenceText(item)));
-        result.nextChecks().forEach(check -> entries.add("다음 점검 제안: " + check.check()
-                + "\n판단 기준: " + check.expectedObservation()));
+        result.nextChecks().forEach(check -> entries.add(nextCheckText(check)));
+        int requiredLength = entries.stream()
+                .mapToInt(entry -> entry.length() + 1)
+                .sum();
+        if (requiredLength > CONTEXT_LIMIT) {
+            return compactQueryContext(result, queries);
+        }
         result.evidenceNotes().forEach(entries::add);
         result.report().missingEvidence().forEach(entries::add);
+        return boundedContext(entries);
+    }
+
+    private String compactQueryContext(AnalysisResult result, List<QueryExecution> queries) {
+        var entries = new ArrayList<String>();
+        entries.add(result.report().summary());
+        QueryExecution first = queries.getFirst();
+        boolean commonRange = queries.stream()
+                .allMatch(query -> query.from().equals(first.from()) && query.to().equals(first.to()));
+        if (commonRange) {
+            entries.add("추가 조회 구간: " + first.from() + " ~ " + first.to());
+        }
+        for (QueryExecution query : queries) {
+            String range = "";
+            if (!commonRange) {
+                range = " | 구간: " + query.from() + " ~ " + query.to();
+            }
+            entries.add("추가 조회 " + query.queryId() + " [" + query.source() + "]: "
+                    + query.status() + queryReference(query) + range);
+        }
+        entries.add("NO_DATA는 유효한 관측 자료 부재이며 정상값 0을 의미하지 않습니다.");
+        entries.add("일부 내용 생략, 전체 근거와 점검은 Slack 답변을 참조하세요.");
+        result.nextChecks()
+                .stream()
+                .limit(1)
+                .forEach(check -> entries.add(nextCheckText(check)));
+        var successIds = queries.stream()
+                .filter(query -> query.status() == QueryStatus.SUCCESS)
+                .map(QueryExecution::evidenceId)
+                .collect(Collectors.toSet());
+        result.evidence()
+                .stream()
+                .sorted(Comparator.comparing(item -> !successIds.contains(item.id())))
+                .forEach(item -> entries.addAll(compactEvidence(item)));
+        result.nextChecks()
+                .stream()
+                .skip(1)
+                .forEach(check -> entries.add(nextCheckText(check)));
+        result.evidenceNotes().forEach(entries::add);
+        result.report().missingEvidence().forEach(entries::add);
+        return boundedContext(entries);
+    }
+
+    private List<String> compactEvidence(EvidenceItem item) {
+        String header = item.id() + " [" + item.source() + "] " + item.description();
+        String unit = item.values().get("unit");
+        if (unit != null) {
+            header += " | unit=" + unit;
+        }
+        String rowHeader = header;
+        List<String> rows = item.values().entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().matches("row[1-5]"))
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> rowHeader + "\n" + entry.getKey() + "=" + entry.getValue())
+                .toList();
+        if (rows.isEmpty()) {
+            return List.of(evidenceText(item));
+        }
+        return rows;
+    }
+
+    private String nextCheckText(NextCheck check) {
+        return "다음 점검 제안: " + check.check() + "\n판단 기준: " + check.expectedObservation();
+    }
+
+    private String boundedContext(List<String> entries) {
         var context = new StringBuilder();
         for (String entry : entries) {
-            if (context.length() + entry.length() + 1 <= 1800) {
+            if (context.length() + entry.length() + 1 <= CONTEXT_LIMIT) {
                 context.append(entry).append('\n');
             }
         }
