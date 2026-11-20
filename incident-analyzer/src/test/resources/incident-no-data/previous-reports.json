@@ -1,0 +1,114 @@
+{
+  "C2": {
+    "summary": "외부 API 실패 규모는 확인되며, 책췍의 502 응답은 카카오(kakao)로부터의 429 응답과 연결된 실패로 보입니다. 다만 우리 응답의 전체 규모나 공급자 자체의 전체 장애 여부, HTTP 지연(p95)은 이 자료만으로는 확정할 수 없습니다.",
+    "assessment": "PARTIAL",
+    "observedFacts": [
+      {
+        "description": "대표 오류는 EXTERNAL_API_ERROR이며, 사용자 관측 응답은 502였고 예외는 KakaoClientException, failureKind는 HTTP_ERROR였습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "description": "같은 유형의 외부 API 실패가 카카오 upstreamStatus=429로 집계되었고, 15분 구간 전체 집계는 12건이었습니다.",
+        "evidenceIds": [
+          "E2"
+        ]
+      },
+      {
+        "description": "표본 로그의 sampleCount는 2건이어서, 대표 오류 표본만으로는 전체 오류 규모를 직접 대변하지 않습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "description": "HTTP 요청 응답 시간 p95는 이번 조회에서 유효한 관측 자료가 없어 판단할 수 없습니다.",
+        "evidenceIds": [
+          "E2"
+        ]
+      }
+    ],
+    "hypotheses": [
+      {
+        "candidate": "카카오 API의 429(요청 제한/과다 호출) 응답이 우리 서비스의 EXTERNAL_API_ERROR(502)로 전파되었다.",
+        "evidenceIds": [
+          "E1",
+          "E2"
+        ],
+        "nextCheck": "카카오 호출량과 같은 시각의 제한/쿼터 관련 지표, 그리고 애플리케이션의 재시도·차단 로직 로그를 함께 확인합니다.",
+        "expectedObservation": "같은 시간대에 kakao upstreamStatus=429가 반복되고, 우리 쪽 502가 그 뒤를 따라 증가하면 이 가설이 강화됩니다."
+      }
+    ],
+    "missingEvidence": [
+      "우리 응답의 전체 5xx 접근 로그 건수(최근 5분/직전 5분)",
+      "외부 API 공급자 측의 전체 장애/제한 상태를 더 직접 보여주는 지표",
+      "HTTP 응답 지연 p95의 실제 관측값",
+      "DB 연결 대기 및 호스트/백엔드 수집 상태",
+      "로그 전체 원문(요청 본문, 사용자 정보, 추가 예외 메시지 포함)"
+    ]
+  },
+  "C4": {
+    "summary": "백엔드 자료가 없다고 해서 서버가 꺼졌다고 단정할 수는 없습니다. 이번 근거로는 서버 종료, DB 병목, HTTP 지연 모두 확인되지 않았고, 현재는 판단 범위가 제한된 상태입니다.",
+    "assessment": "INSUFFICIENT_EVIDENCE",
+    "observedFacts": [
+      {
+        "description": "호스트 가용 메모리 비율은 0.42로 관측되었습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "description": "호스트 마지막 실제 샘플 경과 초는 8초로 관측되었습니다.",
+        "evidenceIds": [
+          "E2"
+        ]
+      },
+      {
+        "description": "DB 연결 대기 구간 최대값은 유효한 관측 자료가 없어 확인되지 않았습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "description": "HTTP 요청 응답 시간 p95는 유효한 관측 자료가 없어 확인되지 않았습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "description": "오류 코드와 예외 종류별 집계는 유효한 관측 자료가 없어 확인되지 않았습니다.",
+        "evidenceIds": [
+          "E1"
+        ]
+      }
+    ],
+    "hypotheses": [
+      {
+        "candidate": "백엔드 수집 부재는 서버 종료가 아니라 수집 경로 문제이거나 일시적 관측 공백일 수 있습니다.",
+        "evidenceIds": [
+          "E2",
+          "E1"
+        ],
+        "nextCheck": "백엔드 마지막 실제 샘플 경과 초, 백엔드 컨테이너 상태, Alloy 상태, 네트워크 경로를 순서대로 확인합니다.",
+        "expectedObservation": "서버가 살아 있으면 마지막 샘플 경과가 짧게 유지되거나 일부 수집은 지속됩니다. 반대로 서버 종료라면 백엔드와 관련된 여러 지표가 동시에 끊기는 양상이 함께 보여야 합니다."
+      },
+      {
+        "candidate": "DB 대기나 HTTP p95가 병목 원인일 가능성은 현재 자료로는 판단할 수 없습니다.",
+        "evidenceIds": [
+          "E1",
+          "E2"
+        ],
+        "nextCheck": "DB 연결 대기 수와 HTTP 요청 응답 시간 p95의 실제 관측값이 있는지, 그리고 같은 시각대의 5xx 증가 여부를 확인합니다.",
+        "expectedObservation": "DB 대기 또는 HTTP p95가 상승했다면 응답 지연과 오류 증가가 함께 보일 수 있습니다. 현재는 해당 지표가 없어 원인으로 확정할 수 없습니다."
+      }
+    ],
+    "missingEvidence": [
+      "해당 구간의 백엔드 마지막 실제 샘플 경과 초",
+      "DB 연결 대기 구간 최대값",
+      "HTTP 요청 응답 시간 p95",
+      "최근 5분 및 직전 5분의 5xx 접근 로그 건수",
+      "구조화된 오류 로그 표본",
+      "백엔드 수집 성공 여부"
+    ]
+  }
+}

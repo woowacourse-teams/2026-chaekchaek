@@ -13,6 +13,7 @@ import com.chaekchaek.incident.evidence.QueryExecutor;
 import com.chaekchaek.incident.evidence.QueryName;
 import com.chaekchaek.incident.evidence.client.LokiClient;
 import com.chaekchaek.incident.evidence.client.PrometheusClient;
+import com.chaekchaek.incident.evidence.dto.QueryExecution;
 import com.chaekchaek.incident.evidence.dto.QuerySelection;
 import com.chaekchaek.incident.evidence.dto.QueryStatus;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -25,6 +26,8 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.json.JsonMapper;
@@ -182,6 +185,26 @@ class QueryExecutorTest {
             }
             assertThat(server.getRequestCount()).isEqualTo(4);
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QueryStatus.class, names = {"NO_DATA", "FAILED", "SKIPPED_DEADLINE"})
+    @DisplayName("관측이 없는 조회에 다른 측정의 근거 ID를 연결할 수 없다")
+    void should_RejectEvidenceReference_When_QueryHasNoObservation(QueryStatus status) {
+        // when, then
+        assertThatThrownBy(() -> new QueryExecution(
+                "http_latency_p95",
+                "prometheus",
+                QueryName.HTTP_LATENCY_P95.getDescription(),
+                QueryName.HTTP_LATENCY_P95.expression("dev"),
+                Fixtures.incident().startsAt().minusSeconds(900),
+                Fixtures.incident().startsAt(),
+                status,
+                false,
+                "E1",
+                List.of()
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("UNOBSERVED_QUERY_CANNOT_REFERENCE_EVIDENCE");
     }
 
     private QueryExecutor executor() {

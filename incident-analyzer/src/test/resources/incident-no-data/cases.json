@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "incidentTime": "2026-01-01T00:00:00Z",
+  "environment": "dev",
+  "metadataTransform": "고정 익명 예시. C2, C4 입력은 PR #728 평가와 동일하며 C6는 새 합성 사례다.",
+  "cases": [
+    {
+      "id": "C2",
+      "source": "synthetic",
+      "profile": "api-errors",
+      "question": "외부 API 실패 집계를 추가로 확인하고, 우리 응답과 공급자 응답, 오류 규모를 구분해 주세요.",
+      "logs": [
+        {
+          "type": "error",
+          "status": 502,
+          "errorCode": "EXTERNAL_API_ERROR",
+          "exception": "KakaoClientException",
+          "upstreamService": "kakao",
+          "failureKind": "HTTP_ERROR",
+          "upstreamStatus": 429
+        },
+        {
+          "type": "error",
+          "status": 502,
+          "errorCode": "EXTERNAL_API_ERROR",
+          "exception": "KakaoClientException",
+          "upstreamService": "kakao",
+          "failureKind": "HTTP_ERROR",
+          "upstreamStatus": 429
+        }
+      ],
+      "base": {
+        "recent5xx": null,
+        "previous5xx": null,
+        "backendUp": null,
+        "backendAgeSeconds": null,
+        "hostMemoryRatio": null,
+        "hostAgeSeconds": null,
+        "dbPending": null
+      },
+      "queries": {
+        "external_api_failure_counts": [
+          {
+            "metric": {
+              "upstreamService": "kakao",
+              "upstreamStatus": "429",
+              "failureKind": "HTTP_ERROR"
+            },
+            "value": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "C4",
+      "source": "synthetic",
+      "profile": "availability",
+      "question": "백엔드 자료가 없으면 서버가 꺼진 건가요? DB 대기와 HTTP p95도 확인하고 판단 범위를 알려 주세요.",
+      "logs": [],
+      "base": {
+        "recent5xx": null,
+        "previous5xx": null,
+        "backendUp": null,
+        "backendAgeSeconds": null,
+        "hostMemoryRatio": "0.42",
+        "hostAgeSeconds": "8",
+        "dbPending": null
+      },
+      "queries": {
+        "db_pool_wait_peak": [],
+        "http_latency_p95": [
+          {
+            "metric": {},
+            "value": "NaN"
+          }
+        ]
+      }
+    },
+    {
+      "id": "C6",
+      "source": "new-synthetic",
+      "profile": "api-errors",
+      "question": "장애 직전 15분의 DB 연결 대기 최댓값과 HTTP 응답 시간 p95를 비교하고, 0으로 확인된 값과 자료가 없는 항목을 구분해 주세요.",
+      "logs": [],
+      "base": {
+        "recent5xx": null,
+        "previous5xx": null,
+        "backendUp": "1",
+        "backendAgeSeconds": "8",
+        "hostMemoryRatio": null,
+        "hostAgeSeconds": null,
+        "dbPending": null
+      },
+      "queries": {
+        "db_pool_wait_peak": [
+          {
+            "metric": {
+              "pool": "HikariPool-1"
+            },
+            "value": "0"
+          }
+        ],
+        "http_latency_p95": []
+      }
+    }
+  ]
+}

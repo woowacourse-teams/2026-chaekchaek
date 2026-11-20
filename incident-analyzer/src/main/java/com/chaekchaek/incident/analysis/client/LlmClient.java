@@ -5,6 +5,7 @@ import com.chaekchaek.incident.analysis.AnalysisValidator;
 import com.chaekchaek.incident.analysis.dto.AnalysisReport;
 import com.chaekchaek.incident.analysis.dto.AnalysisResult;
 import com.chaekchaek.incident.analysis.dto.LlmTurn;
+import com.chaekchaek.incident.analysis.dto.NextCheck;
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.config.IncidentProperties;
@@ -16,12 +17,15 @@ import com.chaekchaek.incident.question.dto.ConversationTurn;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -32,6 +36,10 @@ import tools.jackson.databind.node.ObjectNode;
 public class LlmClient {
     private static final int MAX_INPUT_CHARACTERS = 20000;
     private static final String TOOL_NAME = "collect_incident_evidence";
+    private static final Pattern EVIDENCE_REFERENCE = Pattern.compile(
+            "(?<![A-Za-z0-9])e[\\s\\p{Z}\\p{Cf}]*[0-9]+",
+            Pattern.CASE_INSENSITIVE
+    );
     private final IncidentProperties properties;
     private final JsonHttpClient http;
     private final JsonMapper mapper;
@@ -39,6 +47,8 @@ public class LlmClient {
     private final MeterRegistry meters;
     private final String instructions;
     private final JsonNode schema;
+    private final String nextCheckInstructions;
+    private final JsonNode nextCheckSchema;
 
     public LlmClient(
             IncidentProperties properties,
@@ -54,6 +64,8 @@ public class LlmClient {
         this.meters = meters;
         this.instructions = new ClassPathResource("analysis/instructions.txt").getContentAsString(StandardCharsets.UTF_8);
         this.schema = mapper.readTree(new ClassPathResource("analysis/report-schema.json").getInputStream());
+        this.nextCheckInstructions = new ClassPathResource("analysis/next-checks.txt").getContentAsString(StandardCharsets.UTF_8);
+        this.nextCheckSchema = mapper.readTree(new ClassPathResource("analysis/next-checks-schema.json").getInputStream());
     }
 
     public AnalysisResult analyze(
@@ -186,10 +198,23 @@ public class LlmClient {
 
     public AnalysisResult finish(LlmTurn first, QueryBatch batch, IncidentSnapshot incident) throws IOException {
         var body = request(batch.evidence(), incident, continuation(first, batch));
+        if (batch.hasNoData()) {
+            String runbook = new ClassPathResource("analysis/" + incident.profile() + ".txt").getContentAsString(StandardCharsets.UTF_8);
+            body.put("instructions", nextCheckInstructions + "\n다음 점검 참고 문서:\n" + runbook);
+            body.put("text", Map.of("format", Map.of(
+                    "type", "json_schema",
+                    "name", "incident_next_checks",
+                    "strict", true,
+                    "schema", nextCheckSchema
+            )));
+        }
         body.put("tools", List.of(tool()));
         body.put("tool_choice", "none");
         body.put("parallel_tool_calls", false);
         JsonNode response = send(body, Duration.ofSeconds(30), "final");
+        if (batch.hasNoData()) {
+            return readNextChecks(response, batch.evidence(), first);
+        }
         return readResult(
                 response,
                 batch.evidence(),
@@ -309,22 +334,7 @@ public class LlmClient {
             long inputTokens,
             long outputTokens
     ) {
-        requireCompleted(response);
-        if (response.path("output")
-                .valueStream()
-                .anyMatch(item -> "function_call".equals(item.path("type").asText()))) {
-            throw new RemoteCallException("UNEXPECTED_TOOL_CALL");
-        }
-        String output = response.path("output")
-                .valueStream()
-                .filter(item -> "message".equals(item.path("type").asText()))
-                .flatMap(item -> item.path("content")
-                        .valueStream())
-                .filter(item -> "output_text".equals(item.path("type").asText()))
-                .map(item -> item.path("text").asText())
-                .findFirst()
-                .orElseThrow(() -> new RemoteCallException("MISSING_MODEL_OUTPUT"));
-        AnalysisReport report = mapper.readValue(output, AnalysisReport.class);
+        AnalysisReport report = mapper.readValue(output(response), AnalysisReport.class);
         validator.validate(report, evidence);
         return new AnalysisResult(
                 report,
@@ -335,6 +345,74 @@ public class LlmClient {
                 evidence.missingEvidence(),
                 evidence.items()
         );
+    }
+
+    private AnalysisResult readNextChecks(JsonNode response, EvidenceBundle evidence, LlmTurn first) {
+        JsonNode result = mapper.readTree(output(response));
+        requireFields(result, Set.of("nextChecks"));
+        JsonNode checks = result.path("nextChecks");
+        if (!checks.isArray() || checks.isEmpty() || checks.size() > 3) {
+            throw new IllegalArgumentException("INVALID_MODEL_OUTPUT");
+        }
+        var nextChecks = new ArrayList<NextCheck>();
+        for (JsonNode check : checks) {
+            requireFields(check, Set.of("check", "expectedObservation"));
+            nextChecks.add(new NextCheck(
+                    nextCheckText(check.path("check")),
+                    nextCheckText(check.path("expectedObservation"))
+            ));
+        }
+        return new AnalysisResult(
+                new AnalysisReport(
+                        "일부 추가 조회에서 유효한 관측 자료를 얻지 못했습니다. 확인한 값과 조회 상태를 구분해 안내합니다.",
+                        "PARTIAL",
+                        List.of(),
+                        List.of(),
+                        List.of()
+                ),
+                properties.llmModel(),
+                "v4-no-data-next-checks",
+                first.inputTokens() + usage(response, "input_tokens"),
+                first.outputTokens() + usage(response, "output_tokens"),
+                evidence.missingEvidence(),
+                evidence.items(),
+                nextChecks
+        );
+    }
+
+    private void requireFields(JsonNode value, Set<String> fields) {
+        if (value == null || !value.isObject() || value.size() != fields.size()
+                || !value.propertyNames().containsAll(fields)) {
+            throw new IllegalArgumentException("INVALID_MODEL_OUTPUT");
+        }
+    }
+
+    private String nextCheckText(JsonNode value) {
+        String text = value.asText("");
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFKC);
+        if (!value.isString() || text.isBlank() || text.length() > 500
+                || EVIDENCE_REFERENCE.matcher(normalized).find()) {
+            throw new IllegalArgumentException("INVALID_MODEL_OUTPUT");
+        }
+        return text;
+    }
+
+    private String output(JsonNode response) {
+        requireCompleted(response);
+        if (response.path("output")
+                .valueStream()
+                .anyMatch(item -> "function_call".equals(item.path("type").asText()))) {
+            throw new RemoteCallException("UNEXPECTED_TOOL_CALL");
+        }
+        return response.path("output")
+                .valueStream()
+                .filter(item -> "message".equals(item.path("type").asText()))
+                .flatMap(item -> item.path("content")
+                        .valueStream())
+                .filter(item -> "output_text".equals(item.path("type").asText()))
+                .map(item -> item.path("text").asText())
+                .findFirst()
+                .orElseThrow(() -> new RemoteCallException("MISSING_MODEL_OUTPUT"));
     }
 
     private void requireCompleted(JsonNode response) {

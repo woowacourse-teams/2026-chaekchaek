@@ -144,7 +144,7 @@ class AnalysisMessageQueryTest {
                         Fixtures.incident().startsAt(),
                         QueryStatus.values()[query.ordinal()],
                         true,
-                        "E18",
+                        query.ordinal() == 0 ? "E18" : "",
                         List.of("상위 5개만 표시합니다")
                 ))
                 .toList();

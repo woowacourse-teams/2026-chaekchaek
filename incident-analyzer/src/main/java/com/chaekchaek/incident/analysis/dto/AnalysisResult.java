@@ -10,11 +10,34 @@ public record AnalysisResult(
         long inputTokens,
         long outputTokens,
         List<String> evidenceNotes,
-        List<EvidenceItem> evidence
+        List<EvidenceItem> evidence,
+        List<NextCheck> nextChecks
 ) {
     public AnalysisResult {
         evidenceNotes = List.copyOf(evidenceNotes);
         evidence = List.copyOf(evidence);
+        nextChecks = List.copyOf(nextChecks);
+    }
+
+    public AnalysisResult(
+            AnalysisReport report,
+            String model,
+            String promptVersion,
+            long inputTokens,
+            long outputTokens,
+            List<String> evidenceNotes,
+            List<EvidenceItem> evidence
+    ) {
+        this(
+                report,
+                model,
+                promptVersion,
+                inputTokens,
+                outputTokens,
+                evidenceNotes,
+                evidence,
+                List.of()
+        );
     }
 
     public static AnalysisResult unavailable(String reason) {
