@@ -3,6 +3,7 @@ package com.chaekchaek.incident;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -15,11 +16,18 @@ import com.chaekchaek.incident.analysis.client.LlmClient;
 import com.chaekchaek.incident.analysis.service.ModelBudgetService;
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
-import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.ErrorRequestDetails;
+import com.chaekchaek.incident.evidence.EvidenceCollector;
 import com.chaekchaek.incident.evidence.QueryExecutor;
+import com.chaekchaek.incident.evidence.QueryName;
+import com.chaekchaek.incident.evidence.SafeLogExtractor;
+import com.chaekchaek.incident.evidence.client.LokiClient;
+import com.chaekchaek.incident.evidence.client.PrometheusClient;
 import com.chaekchaek.incident.evidence.dto.EvidenceBundle;
 import com.chaekchaek.incident.evidence.dto.EvidenceItem;
 import com.chaekchaek.incident.evidence.dto.QueryBatch;
+import com.chaekchaek.incident.notification.AnalysisMessage;
+import com.chaekchaek.incident.question.dto.PreparedReply;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Clock;
@@ -115,15 +123,59 @@ class LlmQueryContractTest {
     }
 
     @Test
-    @DisplayName("기본 자료로 충분하면 도구가 있어도 첫 응답에서 보고를 마친다")
-    void should_ReturnReport_When_FirstTurnDoesNotSelectQueries() throws Exception {
+    @DisplayName("첫 입력에 정제된 기본 상세를 제공하고 추가 조회 없이 저장할 답변을 만든다")
+    void should_ReturnReportWithBasicDetails_When_FirstTurnDoesNotSelectQueries() throws Exception {
+        // given
+        var loki = mock(LokiClient.class);
+        var prometheus = mock(PrometheusClient.class);
+        when(loki.logs(anyString(), any(), any())).thenReturn(Fixtures.requestLogs(mapper));
+        when(loki.errorCount(anyString(), any())).thenReturn(mapper.readTree("[{\"value\":[1,\"18\"]}]"), mapper.createArrayNode());
+        when(prometheus.query(anyString(), any())).thenReturn(mapper.readTree("[{\"value\":[1,\"1\"]}]"));
+        var collector = new EvidenceCollector(
+                loki,
+                prometheus,
+                new SafeLogExtractor(),
+                new ErrorRequestDetails(mapper),
+                mapper
+        );
+        var evidence = collector.collect(Fixtures.incident());
+        enqueue(completed("E8"));
+        // when
+        var first = llm.begin(evidence, Fixtures.incident(), "무슨 일이야?", List.of(), true);
+        var reply = new AnalysisMessage(Fixtures.properties(server.url("/").toString()), mapper)
+                .reply(Fixtures.incident(), first.report());
+        // then
+        JsonNode initial = request();
+        JsonNode input = mapper.readTree(initial.path("input").get(0).path("content").asText());
+        JsonNode detail = input.path("evidence").path("items").get(7);
+        assertThat(detail.path("id").asText()).isEqualTo("E8");
+        assertThat(detail.path("values").path("row1").asText()).contains("wp-includes/wlwmanifest.xml", "No static resource", "{redacted}");
+        assertThat(detail.path("values").path("from").asText()).isEqualTo(Fixtures.incident().startsAt().minusSeconds(300).toString());
+        assertThat(detail.path("values").path("to").asText()).isEqualTo(Fixtures.incident().startsAt().toString());
+        assertThat(initial.path("tool_choice").asText()).isEqualTo("auto");
+        assertThat(first.requestsQueries()).isFalse();
+        assertThat(first.report().report()).isEqualTo(Fixtures.report("E8"));
+        assertThat(first.report().evidence()).isEqualTo(evidence.items());
+        assertThat(mapper.writeValueAsString(initial.path("input"))).hasSizeLessThan(20000);
+        assertThat(initial.path("input").toString()).doesNotContain("private-", "token=", "headers", "requestId");
+        String saved = mapper.writeValueAsString(reply);
+        assertThat(saved).contains("E8", "wp-includes/wlwmanifest.xml", "No static resource");
+        assertThat(saved).doesNotContain("private-", "token=", "headers", "requestId");
+        assertThat(mapper.readValue(saved, PreparedReply.class)).isEqualTo(reply);
+        assertThat(server.getRequestCount()).isEqualTo(1);
+        verify(loki).logs(anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("기본 수치 질문은 도구를 강제하지 않고 첫 응답에서 끝낼 수 있다")
+    void should_ReturnDirectAnswer_When_QuestionOnlyNeedsBasicCount() throws Exception {
         // given
         enqueue(completed("E1"));
         // when
-        var first = llm.begin(Fixtures.evidence(), Fixtures.incident(), "확인 순서", List.of(), true);
+        var first = llm.begin(Fixtures.evidence(), Fixtures.incident(), "발생 전 5분의 5xx 접근 로그는 몇 건이야?", List.of(), true);
         // then
         assertThat(first.requestsQueries()).isFalse();
-        assertThat(first.report().report()).isEqualTo(Fixtures.report("E1"));
+        assertThat(request().path("tool_choice").asText()).isEqualTo("auto");
         assertThat(server.getRequestCount()).isEqualTo(1);
     }
 

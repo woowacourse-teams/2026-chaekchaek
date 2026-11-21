@@ -22,18 +22,20 @@ public class EvidenceCollector {
     private final LokiClient loki;
     private final PrometheusClient prometheus;
     private final SafeLogExtractor extractor;
+    private final ErrorRequestDetails requestDetails;
     private final JsonMapper mapper;
 
     public EvidenceBundle collect(IncidentSnapshot task) {
         Instant to = task.startsAt();
         var items = new ArrayList<EvidenceItem>();
         var missing = new ArrayList<String>();
-        collectLogs(task, items, missing);
+        var details = collectLogs(task, items, missing);
         collectAccessCount(task, 0, items, missing);
         collectAccessCount(task, 300, items, missing);
         for (var metric : metricQueries(task.environment()).entrySet()) {
             collectScalar("prometheus", metric.getKey(), () -> prometheus.query(metric.getValue(), to), Map.of(), items, missing);
         }
+        appendRequestDetails(task, details, items, missing);
         return new EvidenceBundle(
                 to.minusSeconds(600),
                 to,
@@ -60,9 +62,29 @@ public class EvidenceCollector {
         );
     }
 
-    private void collectLogs(IncidentSnapshot task, List<EvidenceItem> items, List<String> missing) {
+    private ErrorRequestDetails.Samples collectLogs(
+            IncidentSnapshot task,
+            List<EvidenceItem> items,
+            List<String> missing
+    ) {
+        JsonNode streams;
         try {
-            JsonNode streams = loki.logs(task.environment(), task.startsAt().minusSeconds(300), task.startsAt());
+            streams = loki.logs(task.environment(), task.startsAt().minusSeconds(300), task.startsAt());
+        } catch (RuntimeException exception) {
+            missing.add("Loki 로그 조회에 실패했습니다");
+            return null;
+        }
+        collectLogTypes(streams, items, missing);
+        try {
+            return requestDetails.extract(streams, task.startsAt().minusSeconds(300), task.startsAt());
+        } catch (RuntimeException exception) {
+            missing.add("발생 전 0~5분 오류 요청 상세를 추출하지 못했습니다");
+            return null;
+        }
+    }
+
+    private void collectLogTypes(JsonNode streams, List<EvidenceItem> items, List<String> missing) {
+        try {
             Map<Map<String, String>, Integer> groups = new LinkedHashMap<>();
             for (JsonNode stream : streams) {
                 addLogGroup(stream, groups);
@@ -76,7 +98,7 @@ public class EvidenceCollector {
                 missing.add("해당 구간의 구조화된 오류 로그 표본이 없습니다");
             }
         } catch (RuntimeException exception) {
-            missing.add("Loki 로그 조회에 실패했습니다");
+            missing.add("오류 로그 유형 표본을 추출하지 못했습니다");
         }
     }
 
@@ -127,6 +149,34 @@ public class EvidenceCollector {
         } catch (RuntimeException exception) {
             missing.add(description + ": 조회에 실패했습니다");
         }
+    }
+
+    private void appendRequestDetails(
+            IncidentSnapshot task,
+            ErrorRequestDetails.Samples details,
+            List<EvidenceItem> items,
+            List<String> missing
+    ) {
+        if (details == null) {
+            return;
+        }
+        String description = "발생 전 0~5분 오류 요청 상세 표본";
+        details.limitations().forEach(note -> missing.add(description + ": " + note));
+        if (details.rows().isEmpty()) {
+            missing.add(description + ": 유효한 요청 상세가 없습니다");
+            return;
+        }
+        var values = new LinkedHashMap<>(details.rows());
+        values.put("unit", "samples");
+        values.put("from", task.startsAt().minusSeconds(300).toString());
+        values.put("to", task.startsAt().toString());
+        values.put("truncated", String.valueOf(details.truncated()));
+        items.add(new EvidenceItem(
+                "E" + (items.size() + 1),
+                "loki",
+                description,
+                values
+        ));
     }
 
     private Map<String, String> metricQueries(String environment) {

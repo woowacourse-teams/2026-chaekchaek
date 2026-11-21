@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 final class Fixtures {
     static final Instant NOW = Instant.parse("2026-11-17T10:00:00Z");
@@ -117,6 +119,29 @@ final class Fixtures {
                 )),
                 List.of("외부 응답 상태가 없습니다")
         );
+    }
+
+    static JsonNode requestLogs(JsonMapper mapper) {
+        var entries = mapper.createArrayNode();
+        for (int index = 0; index < 18; index++) {
+            String path = "/oauth2/authorization/google/private-name/wp-includes/wlwmanifest.xml?token=private-query";
+            String stack = "org.springframework.web.servlet.resource.NoResourceFoundException: No static resource "
+                    + path.substring(1) + " for request '" + path + "'.";
+            String log = mapper.writeValueAsString(Map.of(
+                    "type", "error",
+                    "status", 500,
+                    "errorCode", "INTERNAL_SERVER_ERROR",
+                    "method", "GET",
+                    "path", path,
+                    "exception", "NoResourceFoundException",
+                    "stack_trace", stack,
+                    "message", "private-message",
+                    "requestId", "private-request",
+                    "headers", "private-header"
+            ));
+            entries.add(mapper.valueToTree(List.of(incident().startsAt().minusSeconds(1).getEpochSecond() + "000000000", log)));
+        }
+        return mapper.valueToTree(List.of(Map.of("stream", Map.of("source", "private-label"), "values", entries)));
     }
 
     static QueryBatch queryBatch() {

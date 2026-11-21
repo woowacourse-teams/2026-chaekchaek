@@ -127,8 +127,8 @@ public class AnalysisMessage {
     private String evidenceLink(IncidentSnapshot task) {
         return exploreLink(
                 "loki",
-                "{app=\"chaekchaek\",env=\"" + task.environment() + "\"} | json | type=\"error\"",
-                task.startsAt().minusSeconds(600),
+                QueryName.ERROR_REQUEST_DETAILS.expression(task.environment()),
+                task.startsAt().minusSeconds(300),
                 task.startsAt(),
                 false
         );
