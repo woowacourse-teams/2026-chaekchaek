@@ -14,7 +14,6 @@ import com.chaekchaek.incident.question.dto.PreparedReply;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +59,22 @@ class AnalysisMessageQueryTest {
                 .path("queries").get(0);
         assertThat(baseQuery.path("queryType").asText()).isEqualTo("range");
         assertThat(blocks.toString()).contains("SUCCESS", "NO_DATA", "FAILED", "SKIPPED_DEADLINE", "상위 5개만 표시합니다");
+    }
+
+    @Test
+    @DisplayName("요청 상세의 재현 링크는 저장된 식과 구간을 range로 연다")
+    void should_ReproduceRangeQuery_When_RenderingRequestDetails() {
+        // given
+        var detail = execution(QueryName.ERROR_REQUEST_DETAILS, QueryStatus.SUCCESS);
+        // when
+        var reply = new AnalysisMessage(properties(), mapper).reply(Fixtures.incident(), Fixtures.result(), List.of(detail));
+        // then
+        JsonNode blocks = mapper.valueToTree(reply.message()).path("blocks");
+        JsonNode pane = pane(blocks.get(blocks.size() - 1).path("elements").get(0).path("url").asText());
+        assertThat(pane.path("queries").get(0).path("queryType").asText()).isEqualTo("range");
+        assertThat(pane.path("queries").get(0).path("expr").asText()).isEqualTo(detail.expression());
+        assertThat(pane.path("range").path("from").asText()).isEqualTo(String.valueOf(detail.from().toEpochMilli()));
+        assertThat(pane.path("range").path("to").asText()).isEqualTo(String.valueOf(detail.to().toEpochMilli()));
     }
 
     @Test
@@ -134,20 +149,27 @@ class AnalysisMessageQueryTest {
     }
 
     private List<QueryExecution> executions() {
-        return Arrays.stream(QueryName.values())
-                .map(query -> new QueryExecution(
-                        query.getId(),
-                        query.getSource(),
-                        query.getDescription(),
-                        query.expression("dev"),
-                        Fixtures.incident().startsAt().minusSeconds(900),
-                        Fixtures.incident().startsAt(),
-                        QueryStatus.values()[query.ordinal()],
-                        true,
-                        "E18",
-                        List.of("상위 5개만 표시합니다")
-                ))
-                .toList();
+        return List.of(
+                execution(QueryName.DB_POOL_WAIT_PEAK, QueryStatus.SUCCESS),
+                execution(QueryName.HTTP_LATENCY_P95, QueryStatus.NO_DATA),
+                execution(QueryName.ERROR_TYPE_COUNTS, QueryStatus.FAILED),
+                execution(QueryName.EXTERNAL_API_FAILURE_COUNTS, QueryStatus.SKIPPED_DEADLINE)
+        );
+    }
+
+    private QueryExecution execution(QueryName query, QueryStatus status) {
+        return new QueryExecution(
+                query.getId(),
+                query.getSource(),
+                query.getDescription(),
+                query.expression("dev"),
+                Fixtures.incident().startsAt().minusSeconds(900),
+                Fixtures.incident().startsAt(),
+                status,
+                true,
+                "E18",
+                List.of("상위 5개만 표시합니다")
+        );
     }
 
     private IncidentProperties properties() {

@@ -64,12 +64,12 @@ class LlmQueryContractTest {
     @DisplayName("함수 결과는 모든 첫 응답 항목과 호출 ID를 보존하여 최종 보고로 이어진다")
     void should_ContinueWithOriginalOutput_When_QueryIsSelected() throws Exception {
         // given
-        ObjectNode selection = selected("{\"queries\":[\"db_pool_wait_peak\"]}");
+        ObjectNode selection = selected("{\"queries\":[\"error_request_details\"]}");
         enqueue(selection);
         enqueue(completed("E2"));
-        QueryBatch batch = batch();
+        QueryBatch batch = Fixtures.requestDetailsBatch();
         // when
-        var first = llm.begin(Fixtures.evidence(), Fixtures.incident(), "DB 대기를 확인해 주세요", List.of(), true);
+        var first = llm.begin(Fixtures.evidence(), Fixtures.incident(), "무슨 일이야?", List.of(), true);
         var result = llm.finish(first, batch, Fixtures.incident());
         // then
         JsonNode initial = request();
@@ -83,7 +83,7 @@ class LlmQueryContractTest {
         assertThat(queryArray.path("minItems").asInt()).isEqualTo(1);
         assertThat(queryArray.path("maxItems").asInt()).isEqualTo(4);
         assertThat(queryArray.path("items").path("enum")).isEqualTo(mapper.readTree("""
-                ["db_pool_wait_peak","http_latency_p95","error_type_counts","external_api_failure_counts"]
+                ["db_pool_wait_peak","http_latency_p95","error_type_counts","external_api_failure_counts","error_request_details"]
                 """));
         assertThat(initial.path("tool_choice").asText()).isEqualTo("auto");
         assertThat(initial.path("parallel_tool_calls").asBoolean()).isFalse();
@@ -103,7 +103,8 @@ class LlmQueryContractTest {
         JsonNode ids = last.path("text").path("format").path("schema").path("properties")
                 .path("observedFacts").path("items").path("properties").path("evidenceIds").path("items").path("enum");
         assertThat(ids).isEqualTo(mapper.readTree("[\"E1\",\"E2\"]"));
-        assertThat(first.selection().queries()).containsExactly(QueryName.DB_POOL_WAIT_PEAK);
+        assertThat(last.path("input").toString()).contains("wp-includes/wlwmanifest.xml", "No static resource", "{redacted}");
+        assertThat(first.selection().queries()).containsExactly(QueryName.ERROR_REQUEST_DETAILS);
         assertThat(result.inputTokens()).isEqualTo(200);
         assertThat(result.outputTokens()).isEqualTo(100);
         assertThat(result.evidence()).isEqualTo(batch.evidence().items());
@@ -131,8 +132,9 @@ class LlmQueryContractTest {
             "{\"queries\":[\"db_pool_wait_peak\"],\"env\":\"prod\"}",
             "{\"queries\":[\"db_pool_wait_peak\"],\"query\":\"up\"}",
             "{\"queries\":[\"db_pool_wait_peak\",\"db_pool_wait_peak\"]}",
-            "{\"queries\":[\"db_pool_wait_peak\",\"http_latency_p95\",\"error_type_counts\",\"external_api_failure_counts\",\"db_pool_wait_peak\"]}",
+            "{\"queries\":[\"db_pool_wait_peak\",\"http_latency_p95\",\"error_type_counts\",\"external_api_failure_counts\",\"error_request_details\"]}",
             "{\"queries\":[\"arbitrary_sql\"]}",
+            "{\"queries\":[\"error_request_details\"],\"from\":\"2026-01-01\"}",
             "{\"queries\":[42]}",
             "{\"queries\":[]}",
             "{\"queries\":null}",
@@ -220,11 +222,11 @@ class LlmQueryContractTest {
             long outputTokens
     ) throws Exception {
         // given
-        enqueue(selected("{\"queries\":[\"db_pool_wait_peak\"]}"));
+        enqueue(selected("{\"queries\":[\"error_request_details\"]}"));
         server.enqueue(failedFinalResponse(fault));
         QueryExecutor queries = mock(QueryExecutor.class);
         ModelBudgetService budget = mock(ModelBudgetService.class);
-        QueryBatch batch = Fixtures.queryBatch();
+        QueryBatch batch = Fixtures.requestDetailsBatch();
         when(queries.execute(any(), any(), any(), any())).thenReturn(batch);
         when(budget.reserve()).thenReturn(true);
         var investigator = new IncidentInvestigator(llm, queries, budget, Clock.fixed(Fixtures.NOW, ZoneOffset.UTC));
@@ -232,7 +234,7 @@ class LlmQueryContractTest {
         var result = investigator.investigate(
                 Fixtures.evidence(),
                 Fixtures.incident(),
-                "DB 대기를 확인해 주세요",
+                "무슨 일이야?",
                 List.of(),
                 Fixtures.NOW.plusSeconds(90)
         );
@@ -242,6 +244,7 @@ class LlmQueryContractTest {
         assertThat(result.queries()).isEqualTo(batch.executions());
         assertThat(result.analysis().inputTokens()).isEqualTo(100);
         assertThat(result.analysis().outputTokens()).isEqualTo(50);
+        assertThat(result.toString()).contains("wp-includes/wlwmanifest.xml", "No static resource", "E2");
         assertThat(result.toString()).doesNotContain("private-provider-diagnostic", "private-model-output", "sk-secret", "opaque-content");
         assertThat(meters.get("incident_llm_tokens").tag("direction", "input").counter().count()).isEqualTo(inputTokens);
         assertThat(meters.get("incident_llm_tokens").tag("direction", "output").counter().count()).isEqualTo(outputTokens);

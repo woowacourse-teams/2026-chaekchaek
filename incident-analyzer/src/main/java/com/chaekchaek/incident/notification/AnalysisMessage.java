@@ -3,6 +3,7 @@ package com.chaekchaek.incident.notification;
 import com.chaekchaek.incident.alert.dto.IncidentSnapshot;
 import com.chaekchaek.incident.analysis.dto.AnalysisResult;
 import com.chaekchaek.incident.config.IncidentProperties;
+import com.chaekchaek.incident.evidence.QueryName;
 import com.chaekchaek.incident.evidence.dto.QueryExecution;
 import com.chaekchaek.incident.question.dto.PreparedReply;
 import java.time.Instant;
@@ -111,7 +112,13 @@ public class AnalysisMessage {
                     "text",
                     Map.of("type", "plain_text", "text", "추가 조회 " + (buttons.size() + 1) + " 재현"),
                     "url",
-                    exploreLink(query.source(), query.expression(), query.from(), query.to(), true)
+                    exploreLink(
+                            query.source(),
+                            query.expression(),
+                            query.from(),
+                            query.to(),
+                            !QueryName.ERROR_REQUEST_DETAILS.getId().equals(query.queryId())
+                    )
             ));
         }
         blocks.add(Map.of("type", "actions", "elements", List.copyOf(buttons)));

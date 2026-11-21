@@ -148,6 +148,40 @@ final class Fixtures {
         );
     }
 
+    static QueryBatch requestDetailsBatch() {
+        var detail = new EvidenceItem(
+                "E2",
+                "loki",
+                QueryName.ERROR_REQUEST_DETAILS.getDescription(),
+                Map.of(
+                        "row1", "method=GET, path=/oauth2/authorization/google/{redacted}/wp-includes/wlwmanifest.xml, exception=NoResourceFoundException, exceptionMessageSummary=No static resource /oauth2/authorization/google/{redacted}/wp-includes/wlwmanifest.xml, sampleCount=18",
+                        "fetchedSamples", "18",
+                        "validSamples", "18",
+                        "unit", "samples"
+                )
+        );
+        return new QueryBatch(
+                new EvidenceBundle(
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        List.of(evidence().items().getFirst(), detail),
+                        List.of("표본 내 건수이며 원본 경로별 집계가 아닙니다")
+                ),
+                List.of(new QueryExecution(
+                        QueryName.ERROR_REQUEST_DETAILS.getId(),
+                        "loki",
+                        QueryName.ERROR_REQUEST_DETAILS.getDescription(),
+                        QueryName.ERROR_REQUEST_DETAILS.expression("dev"),
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        QueryStatus.SUCCESS,
+                        false,
+                        "E2",
+                        List.of("정제된 요청 상세 표본입니다")
+                ))
+        );
+    }
+
     static AnalysisResult result() {
         return new AnalysisResult(
                 report("E1"),

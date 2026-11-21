@@ -160,6 +160,21 @@ class ExternalClientsTest {
     }
 
     @Test
+    @DisplayName("range 조회는 발생 시각의 나노초 정밀도를 보존한다")
+    void should_PreserveNanoseconds_When_QueryingLogRange() throws Exception {
+        // given
+        server.enqueue(new MockResponse().setBody("{\"status\":\"success\",\"data\":{\"result\":[]}}"));
+        var loki = new LokiClient(Fixtures.properties(server.url("/").toString()), new JsonHttpClient(mapper));
+        var at = Fixtures.NOW.plusNanos(123456789);
+        // when
+        loki.queryRange("fixed-expression", at.minusSeconds(900), at);
+        // then
+        var url = server.takeRequest(1, TimeUnit.SECONDS).getRequestUrl();
+        assertThat(url.queryParameter("start")).isEqualTo(at.minusSeconds(900).getEpochSecond() + "123456789");
+        assertThat(url.queryParameter("end")).isEqualTo(at.getEpochSecond() + "123456789");
+    }
+
+    @Test
     @DisplayName("슬랙 메시지는 근거 스냅샷과 구간 링크를 포함하고 일반 텍스트로 전송한다")
     void should_IncludeEvidenceWithoutMarkup_When_SendingSlack() throws Exception {
         // given
