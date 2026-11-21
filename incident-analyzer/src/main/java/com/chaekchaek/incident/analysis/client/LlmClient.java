@@ -32,12 +32,14 @@ import tools.jackson.databind.node.ObjectNode;
 public class LlmClient {
     private static final int MAX_INPUT_CHARACTERS = 20000;
     private static final String TOOL_NAME = "collect_incident_evidence";
+    private static final String REPORT_TOOL_NAME = "submit_incident_report";
     private final IncidentProperties properties;
     private final JsonHttpClient http;
     private final JsonMapper mapper;
     private final AnalysisValidator validator;
     private final MeterRegistry meters;
     private final String instructions;
+    private final String firstTurnInstructions;
     private final JsonNode schema;
 
     public LlmClient(
@@ -53,6 +55,7 @@ public class LlmClient {
         this.validator = validator;
         this.meters = meters;
         this.instructions = new ClassPathResource("analysis/instructions.txt").getContentAsString(StandardCharsets.UTF_8);
+        this.firstTurnInstructions = new ClassPathResource("analysis/first-turn-instructions.txt").getContentAsString(StandardCharsets.UTF_8);
         this.schema = mapper.readTree(new ClassPathResource("analysis/report-schema.json").getInputStream());
     }
 
@@ -85,8 +88,10 @@ public class LlmClient {
         JsonNode input = mapper.valueToTree(List.of(Map.of("role", "user", "content", content)));
         var body = request(evidence, incident, input);
         if (allowQueries) {
-            body.put("tools", List.of(tool()));
-            body.put("tool_choice", "auto");
+            body.remove("text");
+            body.put("instructions", body.get("instructions") + firstTurnInstructions);
+            body.put("tools", List.of(tool(), reportTool(evidence)));
+            body.put("tool_choice", "required");
             body.put("parallel_tool_calls", false);
         }
         Duration timeout = Duration.ofSeconds(30);
@@ -110,21 +115,11 @@ public class LlmClient {
                 .toList();
         long inputTokens = usage(response, "input_tokens");
         long outputTokens = usage(response, "output_tokens");
-        if (!calls.isEmpty()) {
-            if (!allowQueries || calls.size() != 1) {
+        if (allowQueries) {
+            if (calls.size() != 1) {
                 throw new RemoteCallException("UNEXPECTED_TOOL_CALL");
             }
-            JsonNode call = calls.getFirst();
-            QuerySelection selection = selection(call);
-            return new LlmTurn(
-                    input,
-                    response.path("output"),
-                    null,
-                    selection,
-                    call.path("call_id").asText(),
-                    inputTokens,
-                    outputTokens
-            );
+            return selectedTurn(calls.getFirst(), response, input, evidence, inputTokens, outputTokens);
         }
         return new LlmTurn(
                 input,
@@ -137,11 +132,40 @@ public class LlmClient {
         );
     }
 
-    private QuerySelection selection(JsonNode call) {
-        if (!TOOL_NAME.equals(call.path("name").asText())
-                || !call.path("call_id").asText("").matches("[A-Za-z0-9_-]{1,200}")) {
+    private LlmTurn selectedTurn(
+            JsonNode call,
+            JsonNode response,
+            JsonNode input,
+            EvidenceBundle evidence,
+            long inputTokens,
+            long outputTokens
+    ) {
+        String name = call.path("name").asText("");
+        if (!List.of(TOOL_NAME, REPORT_TOOL_NAME).contains(name)
+                || !call.path("call_id").isString()
+                || !call.path("call_id").asText().matches("[A-Za-z0-9_-]{1,200}")
+                || !call.path("arguments").isString()) {
             throw new RemoteCallException("INVALID_TOOL_ARGUMENTS");
         }
+        AnalysisResult report = null;
+        QuerySelection selection = null;
+        if (REPORT_TOOL_NAME.equals(name)) {
+            report = report(call.path("arguments").asText(), evidence, inputTokens, outputTokens);
+        } else {
+            selection = selection(call);
+        }
+        return new LlmTurn(
+                input,
+                response.path("output"),
+                report,
+                selection,
+                call.path("call_id").asText(),
+                inputTokens,
+                outputTokens
+        );
+    }
+
+    private QuerySelection selection(JsonNode call) {
         String arguments = call.path("arguments").asText("");
         if (arguments.length() > 2000) {
             throw new RemoteCallException("INVALID_TOOL_ARGUMENTS");
@@ -286,6 +310,16 @@ public class LlmClient {
         );
     }
 
+    private Map<String, Object> reportTool(EvidenceBundle evidence) {
+        return Map.of(
+                "type", "function",
+                "name", REPORT_TOOL_NAME,
+                "description", "현재 관측 자료가 질문에서 요구한 범위를 충족하고 추가 조회가 필요하지 않을 때 보고서를 제출해 답변을 마칩니다. 자료 종류나 관측 구간이 부족하면 collect_incident_evidence를 선택합니다.",
+                "strict", true,
+                "parameters", schemaFor(evidence)
+        );
+    }
+
     private JsonNode schemaFor(EvidenceBundle evidence) {
         if (!evidence.hasEvidence()) {
             throw new RemoteCallException("NO_EVIDENCE");
@@ -324,7 +358,19 @@ public class LlmClient {
                 .map(item -> item.path("text").asText())
                 .findFirst()
                 .orElseThrow(() -> new RemoteCallException("MISSING_MODEL_OUTPUT"));
+        return report(output, evidence, inputTokens, outputTokens);
+    }
+
+    private AnalysisResult report(
+            String output,
+            EvidenceBundle evidence,
+            long inputTokens,
+            long outputTokens
+    ) {
         AnalysisReport report = mapper.readValue(output, AnalysisReport.class);
+        if (report == null) {
+            throw new IllegalArgumentException("INVALID_MODEL_OUTPUT");
+        }
         validator.validate(report, evidence);
         return new AnalysisResult(
                 report,

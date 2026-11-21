@@ -1,0 +1,21 @@
+{
+  "id": "resp_fixture",
+  "model": "test-model",
+  "status": "completed",
+  "output": [
+    {
+      "arguments": "{\"summary\":\"수집 성공 값은 1로 관측됐습니다\",\"assessment\":\"PARTIAL\",\"observedFacts\":[{\"description\":\"기본 근거의 수집 성공 값은 1입니다\",\"evidenceIds\":[\"E1\"]}],\"hypotheses\":[],\"missingEvidence\":[\"수집 성공만으로 서비스 전체의 상태를 판단할 수 없습니다\"]}",
+      "call_id": "call_fixture",
+      "id": "fc_fixture",
+      "name": "submit_incident_report",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 50
+  },
+  "error": null,
+  "incomplete_details": null
+}

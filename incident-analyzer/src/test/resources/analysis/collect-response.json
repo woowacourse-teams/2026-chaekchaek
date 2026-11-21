@@ -1,0 +1,21 @@
+{
+  "id": "resp_fixture",
+  "model": "test-model",
+  "status": "completed",
+  "output": [
+    {
+      "arguments": "{\"queries\":[\"error_request_details\"]}",
+      "call_id": "call_fixture",
+      "id": "fc_fixture",
+      "name": "collect_incident_evidence",
+      "status": "completed",
+      "type": "function_call"
+    }
+  ],
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 50
+  },
+  "error": null,
+  "incomplete_details": null
+}
