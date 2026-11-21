@@ -29,14 +29,32 @@ public class EvidenceCollector {
         var items = new ArrayList<EvidenceItem>();
         var missing = new ArrayList<String>();
         collectLogs(task, items, missing);
-        collectScalar("loki", "최근 5분 5xx 접근 로그 건수", () -> loki.errorCount(task.environment(), to), items, missing);
-        collectScalar("loki", "직전 5분 5xx 접근 로그 건수", () -> loki.errorCount(task.environment(), to.minusSeconds(300)), items, missing);
+        collectAccessCount(task, 0, items, missing);
+        collectAccessCount(task, 300, items, missing);
         for (var metric : metricQueries(task.environment()).entrySet()) {
-            collectScalar("prometheus", metric.getKey(), () -> prometheus.query(metric.getValue(), to), items, missing);
+            collectScalar("prometheus", metric.getKey(), () -> prometheus.query(metric.getValue(), to), Map.of(), items, missing);
         }
         return new EvidenceBundle(
                 to.minusSeconds(600),
                 to,
+                items,
+                missing
+        );
+    }
+
+    private void collectAccessCount(
+            IncidentSnapshot task,
+            int offsetSeconds,
+            List<EvidenceItem> items,
+            List<String> missing
+    ) {
+        Instant to = task.startsAt().minusSeconds(offsetSeconds);
+        String description = "발생 전 " + offsetSeconds / 60 + "~" + (offsetSeconds / 60 + 5) + "분 5xx 접근 로그 건수";
+        collectScalar(
+                "loki",
+                description,
+                () -> loki.errorCount(task.environment(), to),
+                Map.of("from", to.minusSeconds(300).toString(), "to", to.toString()),
                 items,
                 missing
         );
@@ -87,6 +105,7 @@ public class EvidenceCollector {
             String source,
             String description,
             Supplier<JsonNode> query,
+            Map<String, String> interval,
             List<EvidenceItem> items,
             List<String> missing
     ) {
@@ -97,11 +116,13 @@ public class EvidenceCollector {
                 missing.add(description + ": 유효한 샘플이 없습니다");
                 return;
             }
+            var values = new LinkedHashMap<>(interval);
+            values.put("value", value);
             items.add(new EvidenceItem(
                     "E" + (items.size() + 1),
                     source,
                     description,
-                    Map.of("value", value)
+                    values
             ));
         } catch (RuntimeException exception) {
             missing.add(description + ": 조회에 실패했습니다");

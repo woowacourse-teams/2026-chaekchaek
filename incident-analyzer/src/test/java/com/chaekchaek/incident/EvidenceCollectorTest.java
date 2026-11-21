@@ -48,6 +48,30 @@ class EvidenceCollectorTest {
     }
 
     @Test
+    @DisplayName("접근 로그 집계의 두 5분 구간을 이름과 실제 조회 시각으로 구분한다")
+    void should_LabelDistinctIntervals_When_CollectingAccessCounts() {
+        // given
+        given(loki.logs(anyString(), any(), any())).willReturn(mapper.createArrayNode());
+        given(loki.errorCount(anyString(), any())).willReturn(mapper.readTree("[{\"value\":[1,\"18\"]}]"));
+        given(prometheus.query(anyString(), any())).willReturn(mapper.createArrayNode());
+        var collector = new EvidenceCollector(loki, prometheus, new SafeLogExtractor(), mapper);
+        var at = Fixtures.incident().startsAt();
+        // when
+        var evidence = collector.collect(Fixtures.incident());
+        // then
+        verify(loki).errorCount("dev", at);
+        verify(loki).errorCount("dev", at.minusSeconds(300));
+        assertThat(evidence.items()).extracting(item -> item.description()).containsExactly(
+                "발생 전 0~5분 5xx 접근 로그 건수",
+                "발생 전 5~10분 5xx 접근 로그 건수"
+        );
+        assertThat(evidence.items().getFirst().values()).containsEntry("from", at.minusSeconds(300).toString())
+                .containsEntry("to", at.toString()).containsEntry("value", "18");
+        assertThat(evidence.items().getLast().values()).containsEntry("from", at.minusSeconds(600).toString())
+                .containsEntry("to", at.minusSeconds(300).toString()).containsEntry("value", "18");
+    }
+
+    @Test
     @DisplayName("모든 자료가 없으면 정상 수치로 대체하지 않고 자료 부족을 기록한다")
     void should_RecordMissingEvidence_When_SourcesAreEmptyOrUnavailable() {
         // given
