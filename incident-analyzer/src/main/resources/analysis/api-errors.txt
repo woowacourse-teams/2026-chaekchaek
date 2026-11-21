@@ -2,5 +2,6 @@
 EXTERNAL_API_ERROR는 책췍의 502 응답이다. upstreamService, upstreamStatus, failureKind가 있을 때만 공급자와 실패 종류를 구체화한다.
 upstreamStatus=429이면 공급자 사용량, 제한 정책, 같은 시각 요청량을 확인한다. TIMEOUT이면 외부 응답과 네트워크, 호스트 지표를 함께 확인한다.
 DB 연결 대기 증가가 있으면 장시간 트랜잭션, 쿼리 지연, DB 수집 상태를 확인한다. 풀 크기 변경은 해결로 단정하지 않는다.
-INTERNAL_SERVER_ERROR는 대표 예외 종류와 애플리케이션 프레임을 확인한다. 소스 코드를 읽었다고 주장하지 않는다.
+INTERNAL_SERVER_ERROR는 대표 예외 종류, 정제된 요청 경로와 예외 메시지 요약을 함께 확인한다. 소스 코드를 읽었다고 주장하지 않는다.
 /health의 200은 DB와 외부 API 정상 상태를 증명하지 않는다.
+원인 설명에는 기본 요청 상세의 경로와 예외 메시지 요약을 사용한다. 상세가 없거나 발생 전 5~15분까지 필요한 경우 error_request_details를 조회한다. NoResourceFoundException과 No static resource 요약은 없는 리소스를 요청한 실패를 뒷받침한다. wp-includes/wlwmanifest.xml, xmlrpc.php 같은 경로가 함께 관측되면 WordPress 탐색 패턴이라는 후보를 설명할 수 있다. 로그에 없는 행위자, 익명 여부, 침해 성공이나 서비스 전체 영향을 단정하지 않는다. 없는 리소스 요청에 500이 기록됐다는 관측과 그 상태를 만드는 소스 코드의 원인은 구분한다.

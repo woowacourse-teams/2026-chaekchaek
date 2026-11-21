@@ -14,8 +14,9 @@ import com.chaekchaek.incident.question.dto.PreparedReply;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -59,7 +60,27 @@ class AnalysisMessageQueryTest {
         JsonNode baseQuery = pane(actions.getFirst().path("elements").get(0).path("url").asText())
                 .path("queries").get(0);
         assertThat(baseQuery.path("queryType").asText()).isEqualTo("range");
+        assertThat(baseQuery.path("expr").asText()).isEqualTo(QueryName.ERROR_REQUEST_DETAILS.expression("dev"));
+        JsonNode basePane = pane(actions.getFirst().path("elements").get(0).path("url").asText());
+        assertThat(basePane.path("range").path("from").asText()).isEqualTo(String.valueOf(Fixtures.incident().startsAt().minusSeconds(300).toEpochMilli()));
+        assertThat(basePane.path("range").path("to").asText()).isEqualTo(String.valueOf(Fixtures.incident().startsAt().toEpochMilli()));
         assertThat(blocks.toString()).contains("SUCCESS", "NO_DATA", "FAILED", "SKIPPED_DEADLINE", "상위 5개만 표시합니다");
+    }
+
+    @Test
+    @DisplayName("요청 상세의 재현 링크는 저장된 식과 구간을 range로 연다")
+    void should_ReproduceRangeQuery_When_RenderingRequestDetails() {
+        // given
+        var detail = execution(QueryName.ERROR_REQUEST_DETAILS, QueryStatus.SUCCESS);
+        // when
+        var reply = new AnalysisMessage(properties(), mapper).reply(Fixtures.incident(), Fixtures.result(), List.of(detail));
+        // then
+        JsonNode blocks = mapper.valueToTree(reply.message()).path("blocks");
+        JsonNode pane = pane(blocks.get(blocks.size() - 1).path("elements").get(0).path("url").asText());
+        assertThat(pane.path("queries").get(0).path("queryType").asText()).isEqualTo("range");
+        assertThat(pane.path("queries").get(0).path("expr").asText()).isEqualTo(detail.expression());
+        assertThat(pane.path("range").path("from").asText()).isEqualTo(String.valueOf(detail.from().toEpochMilli()));
+        assertThat(pane.path("range").path("to").asText()).isEqualTo(String.valueOf(detail.to().toEpochMilli()));
     }
 
     @Test
@@ -68,14 +89,27 @@ class AnalysisMessageQueryTest {
         // given
         var facts = Collections.nCopies(10, Fixtures.report("E1").observedFacts().getFirst());
         var hypotheses = Collections.nCopies(3, Fixtures.report("E1").hypotheses().getFirst());
-        var evidence = IntStream.rangeClosed(1, 21)
+        var evidence = new ArrayList<>(IntStream.rangeClosed(1, 22)
                 .mapToObj(index -> new EvidenceItem(
                         "E" + index,
                         "prometheus",
                         "다중 결과",
                         Map.of("row1", "pool=HikariPool-1, value=0")
                 ))
-                .toList();
+                .toList());
+        var detailValues = new LinkedHashMap<String, String>();
+        for (int index = 1; index <= 5; index++) {
+            detailValues.put("row" + index, "정제된 상세".repeat(75));
+        }
+        detailValues.put("from", Fixtures.incident().startsAt().minusSeconds(300).toString());
+        detailValues.put("to", Fixtures.incident().startsAt().toString());
+        detailValues.put("unit", "samples");
+        evidence.set(17, new EvidenceItem(
+                "E18",
+                "loki",
+                "발생 전 0~5분 오류 요청 상세 표본",
+                detailValues
+        ));
         var result = new AnalysisResult(
                 new AnalysisReport(
                         "수집된 관측 자료를 확인했습니다",
@@ -95,7 +129,12 @@ class AnalysisMessageQueryTest {
         var reply = new AnalysisMessage(properties(), mapper).reply(Fixtures.incident(), result, executions());
         // then
         JsonNode blocks = mapper.valueToTree(reply.message()).path("blocks");
-        assertThat(blocks.size()).isEqualTo(42);
+        assertThat(blocks.size()).isEqualTo(43);
+        assertThat(blocks.valueStream()
+                .map(block -> block.path("text").path("text").asText())
+                .filter(text -> text.startsWith("E18 [loki]"))
+                .findFirst()
+                .orElseThrow()).contains("row5=", "from=", "to=");
         assertThat(reply.inputTokens()).isEqualTo(200);
         assertThat(reply.outputTokens()).isEqualTo(100);
         for (JsonNode block : blocks) {
@@ -134,20 +173,27 @@ class AnalysisMessageQueryTest {
     }
 
     private List<QueryExecution> executions() {
-        return Arrays.stream(QueryName.values())
-                .map(query -> new QueryExecution(
-                        query.getId(),
-                        query.getSource(),
-                        query.getDescription(),
-                        query.expression("dev"),
-                        Fixtures.incident().startsAt().minusSeconds(900),
-                        Fixtures.incident().startsAt(),
-                        QueryStatus.values()[query.ordinal()],
-                        true,
-                        "E18",
-                        List.of("상위 5개만 표시합니다")
-                ))
-                .toList();
+        return List.of(
+                execution(QueryName.DB_POOL_WAIT_PEAK, QueryStatus.SUCCESS),
+                execution(QueryName.HTTP_LATENCY_P95, QueryStatus.NO_DATA),
+                execution(QueryName.ERROR_TYPE_COUNTS, QueryStatus.FAILED),
+                execution(QueryName.EXTERNAL_API_FAILURE_COUNTS, QueryStatus.SKIPPED_DEADLINE)
+        );
+    }
+
+    private QueryExecution execution(QueryName query, QueryStatus status) {
+        return new QueryExecution(
+                query.getId(),
+                query.getSource(),
+                query.getDescription(),
+                query.expression("dev"),
+                Fixtures.incident().startsAt().minusSeconds(900),
+                Fixtures.incident().startsAt(),
+                status,
+                true,
+                "E18",
+                List.of("상위 5개만 표시합니다")
+        );
     }
 
     private IncidentProperties properties() {

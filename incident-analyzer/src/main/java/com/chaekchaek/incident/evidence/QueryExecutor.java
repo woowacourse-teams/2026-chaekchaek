@@ -27,6 +27,7 @@ public class QueryExecutor {
     private static final int MAX_ROWS = 5;
     private final PrometheusClient prometheus;
     private final LokiClient loki;
+    private final ErrorRequestDetails requestDetails;
     private final Clock clock;
     private final MeterRegistry meters;
 
@@ -66,8 +67,16 @@ public class QueryExecutor {
         try {
             JsonNode result = query(name, expression, incident.startsAt());
             boolean truncated = result.size() > MAX_ROWS;
-            Map<String, String> rows = rows(name, result, notes);
-            if (truncated) {
+            Map<String, String> rows;
+            if (name.isRange()) {
+                var samples = requestDetails.extract(result, incident.startsAt().minusSeconds(900), incident.startsAt());
+                rows = new LinkedHashMap<>(samples.rows());
+                notes.addAll(samples.limitations());
+                truncated = samples.truncated();
+            } else {
+                rows = rows(name, result, notes);
+            }
+            if (truncated && !name.isRange()) {
                 notes.add("상위 5개 결과만 포함했습니다");
             }
             if (rows.isEmpty()) {
@@ -92,6 +101,9 @@ public class QueryExecutor {
     }
 
     private JsonNode query(QueryName name, String expression, Instant at) {
+        if (name.isRange()) {
+            return loki.queryRange(expression, at.minusSeconds(900), at);
+        }
         if ("loki".equals(name.getSource())) {
             return loki.query(expression, at);
         }

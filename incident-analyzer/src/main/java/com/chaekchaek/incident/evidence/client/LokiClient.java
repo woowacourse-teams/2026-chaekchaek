@@ -3,6 +3,7 @@ package com.chaekchaek.incident.evidence.client;
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
 import com.chaekchaek.incident.config.IncidentProperties;
+import java.math.BigInteger;
 import java.net.URI;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -19,17 +20,28 @@ public class LokiClient {
     public JsonNode logs(String environment, Instant from, Instant to) {
         String query = "{app=\"chaekchaek\",env=\"" + environment
                 + "\"} | json | type=\"error\" | status >= 500 | status < 600 | __error__=\"\"";
+        return queryRange(query, from, to);
+    }
+
+    public JsonNode queryRange(String query, Instant from, Instant to) {
         URI uri = UriComponentsBuilder.fromUri(properties.lokiUrl())
                 .path("/loki/api/v1/query_range")
                 .queryParam("query", "{query}")
-                .queryParam("start", from.getEpochSecond() + "000000000")
-                .queryParam("end", to.getEpochSecond() + "000000000")
+                .queryParam("start", nanoseconds(from))
+                .queryParam("end", nanoseconds(to))
                 .queryParam("limit", 200)
                 .queryParam("direction", "backward")
                 .encode()
                 .buildAndExpand(query)
                 .toUri();
         return checked(http.get(uri));
+    }
+
+    private String nanoseconds(Instant at) {
+        return BigInteger.valueOf(at.getEpochSecond())
+                .multiply(BigInteger.valueOf(1_000_000_000))
+                .add(BigInteger.valueOf(at.getNano()))
+                .toString();
     }
 
     public JsonNode errorCount(String environment, Instant at) {
@@ -53,6 +65,10 @@ public class LokiClient {
         if (!"success".equals(response.path("status").asText())) {
             throw new RemoteCallException("LOKI_QUERY_FAILED");
         }
-        return response.path("data").path("result");
+        JsonNode result = response.path("data").path("result");
+        if (!result.isArray()) {
+            throw new RemoteCallException("INVALID_LOKI_RESPONSE");
+        }
+        return result;
     }
 }

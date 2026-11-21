@@ -192,12 +192,12 @@ class QuestionWorkerTest {
                 mapper.readTree("[{\"content\":\"private-question sk-secret\"}]"),
                 mapper.readTree("[{\"type\":\"reasoning\",\"encrypted_content\":\"opaque-private-reasoning\"}]"),
                 null,
-                new QuerySelection(List.of(QueryName.DB_POOL_WAIT_PEAK)),
+                new QuerySelection(List.of(QueryName.ERROR_REQUEST_DETAILS)),
                 "call_1",
                 100,
                 50
         );
-        var batch = Fixtures.queryBatch();
+        var batch = Fixtures.requestDetailsBatch();
         given(budget.reserve()).willReturn(true);
         given(llm.begin(any(), any(), any(), any(), eq(true))).willReturn(first);
         given(queries.execute(any(), any(), any(), any())).willReturn(batch);
@@ -216,7 +216,7 @@ class QuestionWorkerTest {
         order.verify(slack).reply(task, reply.getValue());
         order.verify(questions).delivered("EvQUESTION");
         JsonNode body = mapper.valueToTree(reply.getValue().message());
-        assertThat(body.toString()).contains("E1", "E2", "value=5", "pool=HikariPool-1, value=3", "SUCCESS", "표본만 확인했습니다");
+        assertThat(body.toString()).contains("E1", "E2", "value=5", "wp-includes/wlwmanifest.xml", "No static resource", "SUCCESS", "원본 경로별 집계가 아닙니다");
         assertThat(body.toString()).doesNotContain("private-question", "sk-secret", "opaque-private-reasoning", "encrypted_content");
         var actions = body.path("blocks")
                 .valueStream()
@@ -226,9 +226,9 @@ class QuestionWorkerTest {
         JsonNode baseQuery = pane(actions.getFirst().path("elements").get(0).path("url").asText()).path("queries").get(0);
         assertThat(baseQuery.path("queryType").asText()).isEqualTo("range");
         JsonNode additional = pane(actions.getLast().path("elements").get(0).path("url").asText());
-        assertThat(additional.path("datasource").asText()).isEqualTo("prometheus");
-        assertThat(additional.path("queries").get(0).path("expr").asText()).isEqualTo(QueryName.DB_POOL_WAIT_PEAK.expression("dev"));
-        assertThat(additional.path("queries").get(0).path("instant").asBoolean()).isTrue();
+        assertThat(additional.path("datasource").asText()).isEqualTo("loki");
+        assertThat(additional.path("queries").get(0).path("expr").asText()).isEqualTo(QueryName.ERROR_REQUEST_DETAILS.expression("dev"));
+        assertThat(additional.path("queries").get(0).path("queryType").asText()).isEqualTo("range");
         assertThat(additional.path("range").path("from").asText()).isEqualTo(String.valueOf(batch.evidence().from().toEpochMilli()));
         assertThat(additional.path("range").path("to").asText()).isEqualTo(String.valueOf(batch.evidence().to().toEpochMilli()));
         assertThat(reply.getValue().inputTokens()).isEqualTo(100);

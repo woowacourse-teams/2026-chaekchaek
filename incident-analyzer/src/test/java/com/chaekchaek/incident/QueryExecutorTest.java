@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.chaekchaek.incident.common.JsonHttpClient;
 import com.chaekchaek.incident.common.RemoteCallException;
+import com.chaekchaek.incident.evidence.ErrorRequestDetails;
 import com.chaekchaek.incident.evidence.QueryExecutor;
 import com.chaekchaek.incident.evidence.QueryName;
 import com.chaekchaek.incident.evidence.client.LokiClient;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
@@ -126,7 +128,7 @@ class QueryExecutorTest {
     @DisplayName("최종 답변에 필요한 시간이 부족하면 추가 조회를 실행하지 않는다")
     void should_SkipQueries_When_DeadlineIsNear() {
         // given
-        var selection = selection(QueryName.DB_POOL_WAIT_PEAK, QueryName.ERROR_TYPE_COUNTS);
+        var selection = selection(QueryName.DB_POOL_WAIT_PEAK, QueryName.ERROR_TYPE_COUNTS, QueryName.ERROR_REQUEST_DETAILS);
         // when
         var result = executor().execute(selection, Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(39));
         // then
@@ -154,6 +156,7 @@ class QueryExecutorTest {
     void should_RejectInvalidSelection_When_RequestExceedsCatalog() {
         // when & then
         assertThatThrownBy(() -> selection(QueryName.DB_POOL_WAIT_PEAK, QueryName.DB_POOL_WAIT_PEAK)).isInstanceOf(RemoteCallException.class);
+        assertThatThrownBy(() -> selection(QueryName.values())).isInstanceOf(RemoteCallException.class);
         assertThatThrownBy(() -> new QuerySelection(List.of())).isInstanceOf(RemoteCallException.class);
         assertThatThrownBy(() -> QueryName.fromId("arbitrary_sql")).isInstanceOf(RemoteCallException.class);
         assertThatThrownBy(() -> QueryName.DB_POOL_WAIT_PEAK.expression("dev\"} or up")).isInstanceOf(RemoteCallException.class);
@@ -170,9 +173,9 @@ class QueryExecutorTest {
             }
             var properties = Fixtures.properties(server.url("/").toString());
             var http = new JsonHttpClient(mapper);
-            var executor = new QueryExecutor(new PrometheusClient(properties, http), new LokiClient(properties, http), clock, meters);
+            var executor = new QueryExecutor(new PrometheusClient(properties, http), new LokiClient(properties, http), new ErrorRequestDetails(mapper), clock, meters);
             // when
-            executor.execute(selection(QueryName.values()), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+            executor.execute(selection(QueryName.DB_POOL_WAIT_PEAK, QueryName.HTTP_LATENCY_P95, QueryName.ERROR_TYPE_COUNTS, QueryName.EXTERNAL_API_FAILURE_COUNTS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
             // then
             for (int index = 0; index < 4; index++) {
                 var request = server.takeRequest();
@@ -184,8 +187,77 @@ class QueryExecutorTest {
         }
     }
 
+    @Test
+    @DisplayName("상세 조회는 발생 전 15분의 오류 로그를 고정된 range 요청으로 전송한다")
+    void should_SendBoundedRangeQuery_When_RequestDetailsAreSelected() throws Exception {
+        // given
+        try (var server = new MockWebServer()) {
+            server.start();
+            server.enqueue(new MockResponse().setBody("{\"status\":\"success\",\"data\":{\"result\":[]}}"));
+            var properties = Fixtures.properties(server.url("/").toString());
+            var http = new JsonHttpClient(mapper);
+            var executor = new QueryExecutor(new PrometheusClient(properties, http), new LokiClient(properties, http), new ErrorRequestDetails(mapper), clock, meters);
+            // when
+            var result = executor.execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+            // then
+            var url = server.takeRequest().getRequestUrl();
+            assertThat(url.encodedPath()).isEqualTo("/loki/api/v1/query_range");
+            assertThat(url.queryParameter("query")).isEqualTo(QueryName.ERROR_REQUEST_DETAILS.expression("dev"));
+            assertThat(url.queryParameter("query")).contains("env=\"dev\"", "type=\"error\"", "status >= 500", "status < 600");
+            assertThat(url.queryParameter("start")).isEqualTo(Fixtures.incident().startsAt().minusSeconds(900).getEpochSecond() + "000000000");
+            assertThat(url.queryParameter("end")).isEqualTo(Fixtures.incident().startsAt().getEpochSecond() + "000000000");
+            assertThat(url.queryParameter("limit")).isEqualTo("200");
+            assertThat(url.queryParameter("direction")).isEqualTo("backward");
+            assertThat(url.queryParameter("time")).isNull();
+            assertThat(result.executions().getFirst().status()).isEqualTo(QueryStatus.NO_DATA);
+        }
+    }
+
+    @Test
+    @DisplayName("상세 조회의 빈 결과와 제외된 표본과 API 실패와 응답 구조 오류를 구분한다")
+    void should_DistinguishMissingAndFailed_When_RequestDetailsAreUnavailable() {
+        // given
+        given(loki.queryRange(anyString(), any(), any())).willReturn(
+                mapper.createArrayNode(),
+                mapper.readTree("[{\"values\":[[\"1794910000000000000\",\"not-json\"]]}]"),
+                mapper.readTree("{}")
+        ).willThrow(new RemoteCallException("HTTP_500"));
+        // when
+        var empty = executor().execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+        var excluded = executor().execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+        var malformed = executor().execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+        var failed = executor().execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+        // then
+        assertThat(empty.executions().getFirst().status()).isEqualTo(QueryStatus.NO_DATA);
+        assertThat(excluded.executions().getFirst().status()).isEqualTo(QueryStatus.NO_DATA);
+        assertThat(excluded.executions().getFirst().limitations()).anyMatch(note -> note.contains("제외했습니다"));
+        assertThat(malformed.executions().getFirst().status()).isEqualTo(QueryStatus.FAILED);
+        assertThat(failed.executions().getFirst().status()).isEqualTo(QueryStatus.FAILED);
+        assertThat(empty.evidence().items()).isEqualTo(Fixtures.evidence().items());
+    }
+
+    @Test
+    @DisplayName("메시지가 제외돼도 유효한 상세 경로를 다음 근거 ID로 추가한다")
+    void should_AppendEvidenceWithoutRenumbering_When_OnlyPathIsAvailable() {
+        // given
+        var time = Fixtures.incident().startsAt().minusSeconds(1);
+        String log = "{\"type\":\"error\",\"status\":500,\"method\":\"GET\",\"path\":\"/xmlrpc.php?secret=query\",\"message\":\"secret-message\"}";
+        given(loki.queryRange(anyString(), any(), any())).willReturn(mapper.valueToTree(List.of(Map.of(
+                "values", List.of(List.of(time.getEpochSecond() + "000000000", log))
+        ))));
+        // when
+        var result = executor().execute(selection(QueryName.ERROR_REQUEST_DETAILS), Fixtures.incident(), Fixtures.evidence(), Fixtures.NOW.plusSeconds(90));
+        // then
+        assertThat(result.executions().getFirst().status()).isEqualTo(QueryStatus.SUCCESS);
+        assertThat(result.executions().getFirst().evidenceId()).isEqualTo("E2");
+        assertThat(result.evidence().items().getFirst()).isEqualTo(Fixtures.evidence().items().getFirst());
+        assertThat(result.evidence().items().getLast().values().get("row1")).contains("path=/xmlrpc.php", "firstSeenAt=" + time);
+        assertThat(result.evidence().toString()).doesNotContain("secret", "query=");
+        assertThat(result.executions().getFirst().limitations()).anyMatch(note -> note.contains("메시지는 제외"));
+    }
+
     private QueryExecutor executor() {
-        return new QueryExecutor(prometheus, loki, clock, meters);
+        return new QueryExecutor(prometheus, loki, new ErrorRequestDetails(mapper), clock, meters);
     }
 
     private QuerySelection selection(QueryName... queries) {

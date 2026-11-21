@@ -12,7 +12,8 @@ public enum QueryName {
     DB_POOL_WAIT_PEAK("db_pool_wait_peak", "prometheus", "DB 연결 대기 구간 최대값", "connections", List.of("pool")),
     HTTP_LATENCY_P95("http_latency_p95", "prometheus", "HTTP 요청 응답 시간 p95", "seconds", List.of()),
     ERROR_TYPE_COUNTS("error_type_counts", "loki", "오류 코드와 예외 종류별 전체 집계 상위 5개", "errors", List.of("errorCode", "exception")),
-    EXTERNAL_API_FAILURE_COUNTS("external_api_failure_counts", "loki", "외부 API 실패 유형별 전체 집계 상위 5개", "errors", List.of("upstreamService", "upstreamStatus", "failureKind"));
+    EXTERNAL_API_FAILURE_COUNTS("external_api_failure_counts", "loki", "외부 API 실패 유형별 전체 집계 상위 5개", "errors", List.of("upstreamService", "upstreamStatus", "failureKind")),
+    ERROR_REQUEST_DETAILS("error_request_details", "loki", "오류 요청의 정제된 경로와 예외 메시지 요약 표본", "samples", List.of());
 
     private final String id;
     private final String source;
@@ -32,11 +33,16 @@ public enum QueryName {
             case ERROR_TYPE_COUNTS -> "topk(6, sum by (errorCode, exception) (count_over_time(" + logs
                     + " | json kind=\"type\", errorCode=\"errorCode\", exception=\"exception\", status=\"status\""
                     + " | kind=\"error\" | status >= 500 | status < 600 | errorCode != \"\" | __error__=\"\" [15m])))";
+            case ERROR_REQUEST_DETAILS -> logs + " | json | type=\"error\" | status >= 500 | status < 600 | __error__=\"\"";
             case EXTERNAL_API_FAILURE_COUNTS -> "topk(6, sum by (upstreamService, upstreamStatus, failureKind) (count_over_time(" + logs
                     + " | json kind=\"type\", errorCode=\"errorCode\", status=\"status\", upstreamService=\"upstreamService\", upstreamStatus=\"upstreamStatus\", failureKind=\"failureKind\""
                     + " | kind=\"error\" | status >= 500 | status < 600 | errorCode=\"EXTERNAL_API_ERROR\""
                     + " | upstreamService != \"\" | failureKind != \"\" | __error__=\"\" [15m])))";
         };
+    }
+
+    public boolean isRange() {
+        return this == ERROR_REQUEST_DETAILS;
     }
 
     public static QueryName fromId(String id) {

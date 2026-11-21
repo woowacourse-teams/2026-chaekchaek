@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 final class Fixtures {
     static final Instant NOW = Instant.parse("2026-11-17T10:00:00Z");
@@ -119,6 +121,29 @@ final class Fixtures {
         );
     }
 
+    static JsonNode requestLogs(JsonMapper mapper) {
+        var entries = mapper.createArrayNode();
+        for (int index = 0; index < 18; index++) {
+            String path = "/oauth2/authorization/google/private-name/wp-includes/wlwmanifest.xml?token=private-query";
+            String stack = "org.springframework.web.servlet.resource.NoResourceFoundException: No static resource "
+                    + path.substring(1) + " for request '" + path + "'.";
+            String log = mapper.writeValueAsString(Map.of(
+                    "type", "error",
+                    "status", 500,
+                    "errorCode", "INTERNAL_SERVER_ERROR",
+                    "method", "GET",
+                    "path", path,
+                    "exception", "NoResourceFoundException",
+                    "stack_trace", stack,
+                    "message", "private-message",
+                    "requestId", "private-request",
+                    "headers", "private-header"
+            ));
+            entries.add(mapper.valueToTree(List.of(incident().startsAt().minusSeconds(1).getEpochSecond() + "000000000", log)));
+        }
+        return mapper.valueToTree(List.of(Map.of("stream", Map.of("source", "private-label"), "values", entries)));
+    }
+
     static QueryBatch queryBatch() {
         var additional = new EvidenceItem(
                 "E2",
@@ -144,6 +169,40 @@ final class Fixtures {
                         false,
                         "E2",
                         List.of()
+                ))
+        );
+    }
+
+    static QueryBatch requestDetailsBatch() {
+        var detail = new EvidenceItem(
+                "E2",
+                "loki",
+                QueryName.ERROR_REQUEST_DETAILS.getDescription(),
+                Map.of(
+                        "row1", "method=GET, path=/oauth2/authorization/google/{redacted}/wp-includes/wlwmanifest.xml, exception=NoResourceFoundException, exceptionMessageSummary=No static resource /oauth2/authorization/google/{redacted}/wp-includes/wlwmanifest.xml, sampleCount=18",
+                        "fetchedSamples", "18",
+                        "validSamples", "18",
+                        "unit", "samples"
+                )
+        );
+        return new QueryBatch(
+                new EvidenceBundle(
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        List.of(evidence().items().getFirst(), detail),
+                        List.of("표본 내 건수이며 원본 경로별 집계가 아닙니다")
+                ),
+                List.of(new QueryExecution(
+                        QueryName.ERROR_REQUEST_DETAILS.getId(),
+                        "loki",
+                        QueryName.ERROR_REQUEST_DETAILS.getDescription(),
+                        QueryName.ERROR_REQUEST_DETAILS.expression("dev"),
+                        incident().startsAt().minusSeconds(900),
+                        incident().startsAt(),
+                        QueryStatus.SUCCESS,
+                        false,
+                        "E2",
+                        List.of("정제된 요청 상세 표본입니다")
                 ))
         );
     }
