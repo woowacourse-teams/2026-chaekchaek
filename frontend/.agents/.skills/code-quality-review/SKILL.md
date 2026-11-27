@@ -15,4 +15,6 @@ description: >
   - 현재 브랜치의 commit 을 push 한다
   - push 이전과 이후의 commit 사이의 변경사항을 리뷰 대상으로 삼는다
   - 여러 commit이 포함된 경우 개별적으로 리뷰하지 않고 누적된 변경사항을 기준으로 리뷰한다
-  - 리뷰 결과를 GitHub에 기록한다
+  - 리뷰 결과를 GitHub의 commit comment 로 기록한다
+    - 특정 코드에 대한 리뷰는 해당 코드가 변경된 commit에 inline comment로 남긴다
+    - 전반적인 설계 및 구현 접근 방식에 대한 리뷰는 이번 push의 마지막 commit에 남긴다
